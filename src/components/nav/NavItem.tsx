@@ -1,17 +1,18 @@
 import { Button, ButtonProps, useTheme } from '@mui/material';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { UrlObject } from 'url';
 import { OpaqueButton } from '../common/OpaqueButton';
 
 export interface INavItemProps extends ButtonProps {
-  to: string;
+  to: UrlObject;
   title: string;
 }
 
 export const NavItem = ({ to, title, sx, ...props }: INavItemProps) => {
   const theme = useTheme();
   const router = useRouter();
-  const active = to == router.route;
+  const active = to.pathname == router.route;
 
   return (
     <Link href={to}>
