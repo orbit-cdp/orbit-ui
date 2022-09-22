@@ -33,7 +33,7 @@ declare module '@mui/material/Button' {
   }
 }
 
-const FONT: string = "'DM Sans'";
+const FONT: string = '"DM Sans", Roboto';
 
 const pxToRem = (px: number) => {
   const remVal = px / 16;
@@ -101,6 +101,11 @@ const theme: Theme = createTheme({
     body1: {
       fontFamily: FONT,
       fontWeight: 500,
+      fontSize: pxToRem(14),
+    },
+    body2: {
+      fontFamily: FONT,
+      fontWeight: 700,
       fontSize: pxToRem(14),
     },
     subtitle1: {
