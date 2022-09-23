@@ -12,14 +12,14 @@ declare module '@mui/material/styles/createPalette' {
   interface PaletteOptions {
     lend?: PaletteColorOptions;
     borrow?: PaletteColorOptions;
-    stake?: PaletteColorOptions;
+    backstop?: PaletteColorOptions;
     menu?: PaletteColorOptions;
   }
 
   interface Palette {
     lend: PaletteColor;
     borrow: PaletteColor;
-    stake: PaletteColor;
+    backstop: PaletteColor;
     menu: PaletteColorOptions;
   }
 }
@@ -28,7 +28,7 @@ declare module '@mui/material/Button' {
   interface ButtonPropsColorOverrides {
     lend: true;
     borrow: true;
-    stake: true;
+    backstop: true;
     menu: false;
   }
 }
@@ -65,7 +65,7 @@ const theme: Theme = createTheme({
       main: '#FF8A00',
       opaque: '#FF8A0026',
     },
-    stake: {
+    backstop: {
       main: '#E16BFF',
       opaque: '#E16BFF26',
     },
@@ -80,43 +80,52 @@ const theme: Theme = createTheme({
   },
   typography: {
     fontFamily: FONT,
-    button: {
-      textTransform: 'none',
-    },
     h1: {
       fontFamily: FONT,
       fontWeight: 700,
       fontSize: pxToRem(20),
+      lineHeight: 1.6,
     },
     h2: {
       fontFamily: FONT,
       fontWeight: 700,
       fontSize: pxToRem(18),
+      lineHeight: 1.473,
     },
     h3: {
       fontFamily: FONT,
       fontWeight: 500,
-      fontSize: pxToRem(16),
+      fontSize: pxToRem(18),
+      lineHeight: 1.473,
     },
+    h4: {
+      fontFamily: FONT,
+      fontWeight: 700,
+      fontSize: pxToRem(16),
+      lineHeight: 1.3125,
+    },
+    h5: undefined,
+    h6: undefined,
+    subtitle1: undefined,
+    subtitle2: undefined,
     body1: {
       fontFamily: FONT,
       fontWeight: 500,
-      fontSize: pxToRem(14),
+      fontSize: pxToRem(16),
+      lineHeight: 1.3125,
     },
     body2: {
       fontFamily: FONT,
-      fontWeight: 700,
-      fontSize: pxToRem(14),
-    },
-    subtitle1: {
-      fontFamily: FONT,
       fontWeight: 400,
-      fontSize: pxToRem(12),
+      fontSize: pxToRem(14),
+      lineHeight: 1.125,
     },
-    subtitle2: {
+    button: {
+      textTransform: 'none',
       fontFamily: FONT,
-      fontWeight: 700,
-      fontSize: pxToRem(12),
+      fontWeight: 500,
+      fontSize: pxToRem(16),
+      lineHeight: 1.3125,
     },
   },
   breakpoints: {
