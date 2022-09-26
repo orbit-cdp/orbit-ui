@@ -1,9 +1,11 @@
-import { Menu, MenuItem } from '@mui/material';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import { Menu, MenuItem, useTheme } from '@mui/material';
 import React from 'react';
-import { DropdownButton } from '../common/DropdownButton';
+import { CustomButton } from '../common/CustomButton';
 import { PoolHeader } from './PoolHeader';
 
 export const PoolMenu = () => {
+  const theme = useTheme();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -17,9 +19,14 @@ export const PoolMenu = () => {
 
   return (
     <>
-      <DropdownButton id="pool-dropdown-button" onClick={handleClick}>
+      <CustomButton
+        id="pool-dropdown-button"
+        onClick={handleClick}
+        sx={{ width: '100%', '&:hover': { backgroundColor: theme.palette.background.default } }}
+      >
         <PoolHeader name="Blend" />
-      </DropdownButton>
+        <ArrowDropDownIcon sx={{ color: theme.palette.text.secondary }} />
+      </CustomButton>
       <Menu
         id="pool-menu"
         anchorEl={anchorEl}

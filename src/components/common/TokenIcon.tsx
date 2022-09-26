@@ -1,20 +1,10 @@
-import { Icon, IconProps } from '@mui/material';
-import Image from 'next/image';
 import React from 'react';
+import { Icon } from './Icon';
 
-export interface TokenIconProps extends IconProps {
+export interface TokenIconProps {
   symbol: string;
 }
 
 export const TokenIcon: React.FC<TokenIconProps> = ({ symbol, ...props }) => {
-  return (
-    <Icon sx={{ borderRadius: '50%', ...props.sx }} {...props}>
-      <Image
-        src={`/icons/tokens/${symbol.toLowerCase()}.svg`}
-        alt={`${symbol}`}
-        width="100%"
-        height="100%"
-      />
-    </Icon>
-  );
+  return <Icon src={`/icons/tokens/${symbol.toLowerCase()}.svg`} alt={`${symbol}`} {...props} />;
 };

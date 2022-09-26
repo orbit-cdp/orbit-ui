@@ -9,7 +9,13 @@ export const WalletWarning = () => {
   return (
     <OpaqueButton
       palette={theme.palette.warning}
-      sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+      sx={{
+        width: '100%',
+        display: 'flex',
+        padding: '12px',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      }}
     >
       <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
         <InfoOutlinedIcon sx={{ marginRight: '6px' }} />
@@ -17,7 +23,7 @@ export const WalletWarning = () => {
           No account connected. Please connect your wallet to use Blend.
         </Typography>
       </Box>
-      <ArrowForwardIcon />
+      <ArrowForwardIcon fontSize="inherit" />
     </OpaqueButton>
   );
 };

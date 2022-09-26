@@ -22,11 +22,19 @@ export const StackedText: React.FC<StackedTextProps> = ({
   const muiTitleColor = titleColor ? titleColor : 'text.secondary';
   const muiTextColor = textColor ? textColor : 'text.primary';
   return (
-    <Box sx={{ flexDirection: 'column', justifyContent: 'center', ...props.sx }}>
-      <Typography variant="body2" color={muiTitleColor} sx={{ alignItems: 'flex-end' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        ...props.sx,
+      }}
+    >
+      <Typography variant="body2" color={muiTitleColor}>
         {title}
       </Typography>
-      <Typography variant={textVariant} color={muiTextColor} sx={{ alignItems: 'flex-start' }}>
+      <Typography variant={textVariant} color={muiTextColor}>
         {text}
       </Typography>
     </Box>
