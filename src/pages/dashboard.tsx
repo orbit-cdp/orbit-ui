@@ -1,7 +1,9 @@
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { Row } from '../components/common/Row';
-import { Section, SectionSize } from '../components/common/Section';
+import { SectionSize } from '../components/common/Section';
+import { SectionBase } from '../components/common/SectionBase';
+import { WalletWarning } from '../components/common/WalletWarning';
 
 const Dashboard: NextPage = () => {
   const router = useRouter();
@@ -9,8 +11,9 @@ const Dashboard: NextPage = () => {
 
   return (
     <Row>
-      <Section width={SectionSize.LARGE}>Dashboard for:</Section>
-      <Section width={SectionSize.SMALL}>{poolId}</Section>
+      <SectionBase sx={{ width: SectionSize.FULL, margin: '6px' }}>
+        <WalletWarning />
+      </SectionBase>
     </Row>
   );
 };
