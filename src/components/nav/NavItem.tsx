@@ -1,8 +1,8 @@
-import { Button, ButtonProps, useTheme } from '@mui/material';
+import { ButtonProps, useTheme } from '@mui/material';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { UrlObject } from 'url';
-import { OpaqueButton } from '../common/OpaqueButton';
+import { ToggleButton } from '../common/ToggleButton';
 
 export interface INavItemProps extends ButtonProps {
   to: UrlObject;
@@ -16,24 +16,14 @@ export const NavItem = ({ to, title, sx, ...props }: INavItemProps) => {
 
   return (
     <Link href={to}>
-      {active ? (
-        <OpaqueButton
-          palette={theme.palette.primary}
-          sx={{ margin: '0px 6px 0px', ...sx }}
-          {...props}
-        >
-          {title}
-        </OpaqueButton>
-      ) : (
-        <Button
-          variant="text"
-          color="primary"
-          sx={{ color: theme.palette.common.white, margin: '0px 6px 0px', ...sx }}
-          {...props}
-        >
-          {title}
-        </Button>
-      )}
+      <ToggleButton
+        active={active}
+        palette={theme.palette.primary}
+        sx={{ margin: '0px 6px 0px', ...sx }}
+        {...props}
+      >
+        {title}
+      </ToggleButton>
     </Link>
   );
 };

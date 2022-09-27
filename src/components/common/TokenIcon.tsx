@@ -1,7 +1,8 @@
+import { IconProps as MuiIconProps } from '@mui/material';
 import React from 'react';
 import { Icon } from './Icon';
 
-export interface TokenIconProps {
+export interface TokenIconProps extends MuiIconProps {
   symbol: string;
 }
 
