@@ -86,6 +86,7 @@ export const BackstopPreviewBar = () => {
             <Icon
               src={'/icons/dashboard/bkstp_queue.svg'}
               alt={`backstop queue icon`}
+              isCircle={false}
               sx={{ marginLeft: '12px' }}
             />
           </Box>

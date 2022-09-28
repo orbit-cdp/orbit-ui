@@ -15,10 +15,10 @@ export const PoolExploreBar = () => {
       <Section width={SectionSize.SMALL} sx={{ alignItems: 'center' }}>
         <OpaqueButton
           palette={theme.palette.primary}
-          sx={{ width: '100%', justifyContent: 'space-between' }}
+          sx={{ width: '100%', height: '100%', justifyContent: 'space-between' }}
         >
           Explore Pools
-          <ArrowForwardIcon />
+          <ArrowForwardIcon fontSize="inherit" />
         </OpaqueButton>
       </Section>
     </Row>

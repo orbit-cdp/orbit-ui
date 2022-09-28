@@ -17,7 +17,7 @@ export const PoolNavBar = () => {
         >
           Go Back
         </Button>
-        <PoolHeader name="YieldBlox" />
+        <PoolHeader name="Blend" />
       </Section>
     </Row>
   );
