@@ -1,13 +1,26 @@
 import type { NextPage } from 'next';
 import { Row } from '../components/common/Row';
-import { Section, SectionSize } from '../components/common/Section';
+import { SectionBase } from '../components/common/SectionBase';
+import { PoolCard } from '../components/markets/PoolCard';
 
 const Markets: NextPage = () => {
   return (
-    <Row>
-      <Section width={SectionSize.LARGE}>Large Section</Section>
-      <Section width={SectionSize.SMALL}>Small Section</Section>
-    </Row>
+    <>
+      <Row>
+        <SectionBase type="alt" sx={{ margin: '6px', padding: '6px' }}>
+          Markets
+        </SectionBase>
+      </Row>
+      <Row
+        sx={{
+          background: '#212429E5',
+          height: '2px',
+          width: 'calc(100% - 24px)',
+          margin: '12px',
+        }}
+      ></Row>
+      <PoolCard></PoolCard>
+    </>
   );
 };
 
