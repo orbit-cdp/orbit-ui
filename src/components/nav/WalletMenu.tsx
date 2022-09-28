@@ -1,9 +1,8 @@
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-
 import { Button, Menu, MenuItem, Typography, useTheme } from '@mui/material';
 import React from 'react';
 import * as formatter from '../../utils/formatter';
-import { DropdownButton } from '../common/DropdownButton';
+import { CustomButton } from '../common/CustomButton';
 import { WalletIcon } from '../common/WalletIcon';
 
 export const WalletMenu = () => {
@@ -35,16 +34,17 @@ export const WalletMenu = () => {
   return (
     <>
       {isConnected ? (
-        <DropdownButton
+        <CustomButton
           id="wallet-dropdown-button"
           onClick={handleClickDropdown}
           sx={{ width: '100%', height: '100%', color: theme.palette.text.secondary }}
         >
           <WalletIcon name={'Freighter'} />
-          <Typography variant="h3" color={theme.palette.text.primary}>
+          <Typography variant="body1" color={theme.palette.text.primary}>
             {formatter.toCompactAddress(address)}
           </Typography>
-        </DropdownButton>
+          <ArrowDropDownIcon sx={{ color: theme.palette.text.secondary }} />
+        </CustomButton>
       ) : (
         <Button
           id="connect-wallet-dropdown-button"

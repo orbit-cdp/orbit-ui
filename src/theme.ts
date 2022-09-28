@@ -77,6 +77,10 @@ const theme: Theme = createTheme({
       primary: '#FFFFFF',
       secondary: '#979797',
     },
+    warning: {
+      main: '#FFCB00',
+      opaque: '#FFCB0026',
+    },
   },
   typography: {
     fontFamily: FONT,
