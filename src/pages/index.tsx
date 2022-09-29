@@ -1,25 +1,25 @@
 import type { NextPage } from 'next';
+import { Divider } from '../components/common/Divider';
 import { Row } from '../components/common/Row';
 import { SectionBase } from '../components/common/SectionBase';
-import { PoolCard } from '../components/markets/PoolCard';
+import { WalletWarning } from '../components/common/WalletWarning';
+import { MarketCard } from '../components/markets/MarketCard';
 
 const Markets: NextPage = () => {
   return (
     <>
+      <Row sx={{ padding: '6px' }}>
+        <WalletWarning />
+      </Row>
       <Row>
         <SectionBase type="alt" sx={{ margin: '6px', padding: '6px' }}>
           Markets
         </SectionBase>
       </Row>
-      <Row
-        sx={{
-          background: '#212429E5',
-          height: '2px',
-          width: 'calc(100% - 24px)',
-          margin: '12px',
-        }}
-      ></Row>
-      <PoolCard></PoolCard>
+      <Divider />
+      <MarketCard name="Blend"></MarketCard>
+      <MarketCard name="Stellar"></MarketCard>
+      <MarketCard name="LumenSwap"></MarketCard>
     </>
   );
 };

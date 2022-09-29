@@ -7,7 +7,7 @@ export interface WalletHeaderProps extends BoxProps {
   name: string;
 }
 
-export const PoolHeader: React.FC<WalletHeaderProps> = ({ name, sx, ...props }) => {
+export const WalletHeader: React.FC<WalletHeaderProps> = ({ name, sx, ...props }) => {
   return (
     <Box
       sx={{

@@ -15,6 +15,7 @@ export const WalletWarning = () => {
         padding: '12px',
         justifyContent: 'space-between',
         alignItems: 'center',
+        paddingRight: '20px',
       }}
     >
       <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
