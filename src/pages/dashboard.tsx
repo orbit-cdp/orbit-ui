@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { BackstopPreviewBar } from '../components/backstop/BackstopPreviewBar';
 import { BorrowMarketList } from '../components/borrow/BorrowMarketList';
 import { CustomButton } from '../components/common/CustomButton';
+import { Divider } from '../components/common/Divider';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { ToggleButton } from '../components/common/ToggleButton';
@@ -74,11 +75,14 @@ const Dashboard: NextPage = () => {
         </Section>
       </Row>
       <Row sx={{ padding: '6px', justifyContent: 'space-between' }}>
-        <Typography variant="body1">{`Assets to ${lend ? 'lend' : 'borrow'}`}</Typography>
+        <Typography variant="body1" sx={{ margin: '6px' }}>{`Assets to ${
+          lend ? 'lend' : 'borrow'
+        }`}</Typography>
         <Box
           sx={{
             display: 'flex',
             alignItems: 'baseline',
+            margin: '6px',
           }}
         >
           <Typography variant="body2" mr={1}>
@@ -87,6 +91,7 @@ const Dashboard: NextPage = () => {
           <Typography variant="body1">$888.888M</Typography>
         </Box>
       </Row>
+      <Divider />
       {lend ? <LendMarketList /> : <BorrowMarketList />}
     </>
   );
