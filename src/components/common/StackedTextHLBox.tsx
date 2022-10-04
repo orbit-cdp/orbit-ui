@@ -5,13 +5,11 @@ import { StackedText } from '../common/StackedText';
 
 export interface StackedTextHLBoxProps extends SectionProps {
   name: string;
-  width: string;
 }
 
 export const StackedTextHLBox: React.FC<StackedTextHLBoxProps> = ({
   name,
   palette,
-  width,
   sx,
   ...props
 }) => {
