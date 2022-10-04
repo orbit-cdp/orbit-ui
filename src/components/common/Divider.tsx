@@ -1,15 +1,15 @@
+import { Box } from '@mui/material';
 import theme from '../../theme';
-import { Row } from './Row';
 
-export const Divider: React.FC<DividerProps> = ({ children, sx, ...props }) => {
+export const Divider: React.FC<DividerProps> = ({ sx, ...props }) => {
   return (
-    <Row
+    <Box
       sx={{
         background: theme.palette.background.paper,
         height: '2px',
         width: 'calc(100% - 24px)',
         margin: '12px',
       }}
-    ></Row>
+    ></Box>
   );
 };

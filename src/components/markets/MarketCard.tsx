@@ -17,9 +17,7 @@ export const MarketCard: React.FC<MarketCardProps> = ({ name, sx, ...props }) =>
   return (
     <Section
       sx={{
-        margin: '6px',
-        display: 'flex',
-        padding: '6px',
+        margin: '12px',
         flexWrap: 'wrap',
         ...sx,
       }}
@@ -45,9 +43,21 @@ export const MarketCard: React.FC<MarketCardProps> = ({ name, sx, ...props }) =>
         </Box>
       </Row>
       <Row>
-        <StackedTextHLBox name="Lent" palette={theme.palette.lend}></StackedTextHLBox>
-        <StackedTextHLBox name="Borrowed" palette={theme.palette.borrow}></StackedTextHLBox>
-        <StackedTextHLBox name="Backstop" palette={theme.palette.backstop}></StackedTextHLBox>
+        <StackedTextHLBox
+          name="Lent"
+          palette={theme.palette.lend}
+          sx={{ width: '33.33%' }}
+        ></StackedTextHLBox>
+        <StackedTextHLBox
+          name="Borrowed"
+          palette={theme.palette.borrow}
+          sx={{ width: '33.33%' }}
+        ></StackedTextHLBox>
+        <StackedTextHLBox
+          name="Backstop"
+          palette={theme.palette.backstop}
+          sx={{ width: '33.33%' }}
+        ></StackedTextHLBox>
       </Row>
       <Row>
         <OpaqueButton

@@ -5,25 +5,26 @@ import { StackedText } from '../common/StackedText';
 
 export interface StackedTextHLBoxProps extends SectionProps {
   name: string;
-  palette: PaletteColor;
+  width: string;
 }
 
 export const StackedTextHLBox: React.FC<StackedTextHLBoxProps> = ({
   name,
   palette,
+  width,
   sx,
   ...props
 }) => {
   return (
     <Box
       sx={{
-        background: theme.palette.background.default,
         padding: '6px',
         margin: '6px',
-        width: '33.33%',
         borderRadius: '5px',
         display: 'flex',
         flexDirection: 'row',
+        background: theme.palette.background.default,
+        ...sx,
       }}
     >
       <StackedText
