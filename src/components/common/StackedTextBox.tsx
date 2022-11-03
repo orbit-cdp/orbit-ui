@@ -3,16 +3,11 @@ import theme from '../../theme';
 import { SectionProps } from '../common/Section';
 import { StackedText } from '../common/StackedText';
 
-export interface StackedTextHLBoxProps extends SectionProps {
+export interface StackedTextBoxProps extends SectionProps {
   name: string;
 }
 
-export const StackedTextHLBox: React.FC<StackedTextHLBoxProps> = ({
-  name,
-  palette,
-  sx,
-  ...props
-}) => {
+export const StackedTextBox: React.FC<StackedTextBoxProps> = ({ name, sx, ...props }) => {
   return (
     <Box
       sx={{
@@ -28,18 +23,8 @@ export const StackedTextHLBox: React.FC<StackedTextHLBoxProps> = ({
       <StackedText
         title={`${name}`}
         text="888.888M"
-        sx={{ width: '100%', padding: '6px', color: palette }}
+        sx={{ width: '100%', padding: '6px' }}
       ></StackedText>
-      <Box
-        sx={{
-          position: 'relative',
-          right: '-4px',
-          width: '8px',
-          borderRadius: '0 5px 5px 0',
-          background: palette.opaque,
-          margin: '-6px',
-        }}
-      ></Box>
     </Box>
   );
 };

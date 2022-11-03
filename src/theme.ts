@@ -47,6 +47,7 @@ const theme: Theme = createTheme({
     background: {
       default: '#191B1F',
       paper: '#212429E5',
+      opaque: '#191B1F',
     },
     primary: {
       main: '#36B04A',
@@ -71,7 +72,7 @@ const theme: Theme = createTheme({
     },
     menu: {
       main: '#2E3138',
-      light: '#565A6840',
+      light: '#2E313893',
     },
     text: {
       primary: '#FFFFFF',
