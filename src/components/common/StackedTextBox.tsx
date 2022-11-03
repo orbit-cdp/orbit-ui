@@ -1,9 +1,8 @@
-import { Box } from '@mui/material';
+import { Box, BoxProps } from '@mui/material';
 import theme from '../../theme';
-import { SectionProps } from '../common/Section';
 import { StackedText } from '../common/StackedText';
 
-export interface StackedTextBoxProps extends SectionProps {
+export interface StackedTextBoxProps extends BoxProps {
   name: string;
 }
 
@@ -19,6 +18,7 @@ export const StackedTextBox: React.FC<StackedTextBoxProps> = ({ name, sx, ...pro
         background: theme.palette.background.default,
         ...sx,
       }}
+      {...props}
     >
       <StackedText
         title={`${name}`}

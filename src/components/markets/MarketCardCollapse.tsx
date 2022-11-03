@@ -1,6 +1,5 @@
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { Box, BoxProps, Typography } from '@mui/material';
-import theme from '../../theme';
+import { Box, BoxProps, Typography, useTheme } from '@mui/material';
 import { Icon } from '../common/Icon';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { Row } from '../common/Row';
@@ -11,12 +10,9 @@ export interface MarketCardCollapseProps extends BoxProps {
   name: string;
 }
 
-export const MarketCardCollapse: React.FC<MarketCardCollpseProps> = ({
-  name,
-  palette,
-  sx,
-  ...props
-}) => {
+export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({ name, sx, ...props }) => {
+  const theme = useTheme();
+
   return (
     <Box
       sx={{
@@ -27,7 +23,7 @@ export const MarketCardCollapse: React.FC<MarketCardCollpseProps> = ({
     >
       <Row>
         <OpaqueButton
-          palette={theme.palette.background}
+          palette={theme.palette.primary}
           sx={{
             width: '100%',
             margin: '6px',
@@ -38,7 +34,7 @@ export const MarketCardCollapse: React.FC<MarketCardCollpseProps> = ({
           }}
         >
           <Box sx={{ margin: '6px', height: '30px' }}>
-            <Icon src={'/icons/pageicons/oracle_icon.svg'} isCircle={false} />
+            <Icon src={'/icons/pageicons/oracle_icon.svg'} alt="oracle-icon" isCircle={false} />
           </Box>
           <Box sx={{ padding: '6px', display: 'flex', flexDirection: 'row', height: '30px' }}>
             <Box sx={{ paddingRight: '12px', lineHeight: '100%' }}>Oracle</Box>
@@ -96,14 +92,9 @@ export const MarketCardCollapse: React.FC<MarketCardCollpseProps> = ({
               </Box>
             </Row>
             <Row>
-              <StackedTextBox
-                name="Backstop APR"
-                palette={theme.palette.backstop}
-                sx={{ width: '50%' }}
-              ></StackedTextBox>
+              <StackedTextBox name="Backstop APR" sx={{ width: '50%' }}></StackedTextBox>
               <StackedTextBox
                 name="Q4W"
-                palette={theme.palette.backstop}
                 sx={{ width: '50%', color: theme.palette.backstop.main }}
               ></StackedTextBox>
             </Row>

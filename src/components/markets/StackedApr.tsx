@@ -1,19 +1,12 @@
-import { Box, Typography } from '@mui/material';
+import { Box, BoxProps, Typography } from '@mui/material';
 import theme from '../../theme';
-import { SectionProps } from '../common/Section';
 
-export interface StackedAprProps extends SectionProps {
+export interface StackedAprProps extends BoxProps {
   aprLend: string;
   aprBorrow: string;
 }
 
-export const StackedApr: React.FC<StackedAprProps> = ({
-  aprLend,
-  aprBorrow,
-  palette,
-  sx,
-  ...props
-}) => {
+export const StackedApr: React.FC<StackedAprProps> = ({ aprLend, aprBorrow, sx, ...props }) => {
   return (
     <Box
       sx={{
@@ -22,6 +15,7 @@ export const StackedApr: React.FC<StackedAprProps> = ({
         flexDirection: 'column',
         ...sx,
       }}
+      {...props}
     >
       <Box
         sx={{

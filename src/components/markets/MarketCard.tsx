@@ -1,32 +1,25 @@
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { Box, Collapse } from '@mui/material';
+import { Box, BoxProps, Collapse, useTheme } from '@mui/material';
 import { useState } from 'react';
-import theme from '../../theme';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { Row } from '../common/Row';
-import { Section, SectionProps } from '../common/Section';
+import { Section, SectionSize } from '../common/Section';
 import { StackedTextHLBox } from '../common/StackedTextHLBox';
 import { TokenIcon } from '../common/TokenIcon';
 import { PoolHeader } from '../pool/PoolHeader';
 import { MarketCardCollapse } from './MarketCardCollapse';
 
-export interface MarketCardProps extends SectionProps {
+export interface MarketCardProps extends BoxProps {
   name: string;
 }
 
-export const MarketCard: React.FC<MarketCardProps> = ({ name, sx, ...props }) => {
-  const [expand, setExpand] = useState();
+export const MarketCard: React.FC<MarketCardProps> = ({ name, sx }) => {
+  const theme = useTheme();
+  const [expand, setExpand] = useState(false);
 
   return (
-    <Section
-      sx={{
-        margin: '12px',
-        flexWrap: 'wrap',
-        ...sx,
-      }}
-      {...props}
-    >
+    <Section width={SectionSize.FULL} sx={{ flexDirection: 'column' }}>
       <Box
         onClick={() => setExpand(!expand)}
         sx={{
@@ -36,7 +29,7 @@ export const MarketCard: React.FC<MarketCardProps> = ({ name, sx, ...props }) =>
           },
         }}
       >
-        <Row sx={{ justifyContent: 'space-between' }}>
+        <Row>
           <PoolHeader name={name} sx={{ margin: '6px', padding: '6px' }} />
           <Box
             sx={{
