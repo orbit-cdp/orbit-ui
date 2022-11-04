@@ -1,64 +1,71 @@
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { Box } from '@mui/material';
-import theme from '../../theme';
+import { Box, BoxProps, Collapse, useTheme } from '@mui/material';
+import { useState } from 'react';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { Row } from '../common/Row';
-import { Section, SectionProps } from '../common/Section';
+import { Section, SectionSize } from '../common/Section';
 import { StackedTextHLBox } from '../common/StackedTextHLBox';
 import { TokenIcon } from '../common/TokenIcon';
 import { PoolHeader } from '../pool/PoolHeader';
+import { MarketCardCollapse } from './MarketCardCollapse';
 
-export interface MarketCardProps extends SectionProps {
+export interface MarketCardProps extends BoxProps {
   name: string;
 }
 
-export const MarketCard: React.FC<MarketCardProps> = ({ name, sx, ...props }) => {
+export const MarketCard: React.FC<MarketCardProps> = ({ name, sx }) => {
+  const theme = useTheme();
+  const [expand, setExpand] = useState(false);
+
   return (
-    <Section
-      sx={{
-        margin: '12px',
-        flexWrap: 'wrap',
-        ...sx,
-      }}
-      {...props}
-    >
-      <Row sx={{ justifyContent: 'space-between' }}>
-        <PoolHeader name={name} sx={{ margin: '6px', padding: '6px' }} />
-        <Box
-          sx={{
-            margin: '6px',
-            padding: '6px',
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-          }}
-        >
+    <Section width={SectionSize.FULL} sx={{ flexDirection: 'column' }}>
+      <Box
+        onClick={() => setExpand(!expand)}
+        sx={{
+          width: '100%',
+          '&:hover': {
+            cursor: 'pointer',
+          },
+        }}
+      >
+        <Row>
+          <PoolHeader name={name} sx={{ margin: '6px', padding: '6px' }} />
           <Box
-            sx={{ color: theme.palette.text.secondary, paddingRight: '12px', lineHeight: '100%' }}
+            sx={{
+              margin: '6px',
+              padding: '6px',
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
           >
-            Details
+            <Box
+              sx={{ color: theme.palette.text.secondary, paddingRight: '12px', lineHeight: '100%' }}
+            >
+              Details
+            </Box>
+            <ArrowDropDownIcon sx={{ color: theme.palette.text.secondary }} />
           </Box>
-          <ArrowDropDownIcon sx={{ color: theme.palette.text.secondary }} />
-        </Box>
-      </Row>
-      <Row>
-        <StackedTextHLBox
-          name="Lent"
-          palette={theme.palette.lend}
-          sx={{ width: '33.33%' }}
-        ></StackedTextHLBox>
-        <StackedTextHLBox
-          name="Borrowed"
-          palette={theme.palette.borrow}
-          sx={{ width: '33.33%' }}
-        ></StackedTextHLBox>
-        <StackedTextHLBox
-          name="Backstop"
-          palette={theme.palette.backstop}
-          sx={{ width: '33.33%' }}
-        ></StackedTextHLBox>
-      </Row>
+        </Row>
+        <Row>
+          <StackedTextHLBox
+            name="Lent"
+            palette={theme.palette.lend}
+            sx={{ width: '33.33%' }}
+          ></StackedTextHLBox>
+          <StackedTextHLBox
+            name="Borrowed"
+            palette={theme.palette.borrow}
+            sx={{ width: '33.33%' }}
+          ></StackedTextHLBox>
+          <StackedTextHLBox
+            name="Backstop"
+            palette={theme.palette.backstop}
+            sx={{ width: '33.33%' }}
+          ></StackedTextHLBox>
+        </Row>
+      </Box>
       <Row>
         <OpaqueButton
           palette={theme.palette.primary}
@@ -83,6 +90,9 @@ export const MarketCard: React.FC<MarketCardProps> = ({ name, sx, ...props }) =>
           </Box>
         </OpaqueButton>
       </Row>
+      <Collapse in={expand} sx={{ width: '100%' }}>
+        <MarketCardCollapse name={name}></MarketCardCollapse>
+      </Collapse>
     </Section>
   );
 };

@@ -1,10 +1,9 @@
-import { Box } from '@mui/material';
-import theme from '../../theme';
-import { SectionProps } from '../common/Section';
+import { Box, BoxProps, PaletteColor, useTheme } from '@mui/material';
 import { StackedText } from '../common/StackedText';
 
-export interface StackedTextHLBoxProps extends SectionProps {
+export interface StackedTextHLBoxProps extends BoxProps {
   name: string;
+  palette: PaletteColor;
 }
 
 export const StackedTextHLBox: React.FC<StackedTextHLBoxProps> = ({
@@ -13,6 +12,8 @@ export const StackedTextHLBox: React.FC<StackedTextHLBoxProps> = ({
   sx,
   ...props
 }) => {
+  const theme = useTheme();
+
   return (
     <Box
       sx={{
@@ -24,11 +25,12 @@ export const StackedTextHLBox: React.FC<StackedTextHLBoxProps> = ({
         background: theme.palette.background.default,
         ...sx,
       }}
+      {...props}
     >
       <StackedText
         title={`${name}`}
         text="888.888M"
-        sx={{ width: '100%', padding: '6px' }}
+        sx={{ width: '100%', padding: '6px', color: palette.main }}
       ></StackedText>
       <Box
         sx={{

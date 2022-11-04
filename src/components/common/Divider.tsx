@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
 import theme from '../../theme';
 
-export const Divider: React.FC<DividerProps> = ({ sx, ...props }) => {
+export const Divider: React.FC = () => {
   return (
     <Box
       sx={{

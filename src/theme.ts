@@ -20,7 +20,7 @@ declare module '@mui/material/styles/createPalette' {
     lend: PaletteColor;
     borrow: PaletteColor;
     backstop: PaletteColor;
-    menu: PaletteColorOptions;
+    menu: PaletteColor;
   }
 }
 
@@ -71,7 +71,7 @@ const theme: Theme = createTheme({
     },
     menu: {
       main: '#2E3138',
-      light: '#565A6840',
+      light: '#2E313893',
     },
     text: {
       primary: '#FFFFFF',
