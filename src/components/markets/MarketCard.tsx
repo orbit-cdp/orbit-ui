@@ -19,7 +19,7 @@ export const MarketCard: React.FC<MarketCardProps> = ({ name, sx }) => {
   const [expand, setExpand] = useState(false);
 
   return (
-    <Section width={SectionSize.FULL} sx={{ flexDirection: 'column' }}>
+    <Section width={SectionSize.FULL} sx={{ flexDirection: 'column', marginBottom: '12px' }}>
       <Box
         onClick={() => setExpand(!expand)}
         sx={{

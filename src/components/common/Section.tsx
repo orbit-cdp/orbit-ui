@@ -5,6 +5,7 @@ export enum SectionSize {
   LARGE = 'calc(64.3045% - 12px)',
   FULL = 'calc(100% - 12px)',
   TILE = 'calc(50% - 12px)',
+  THIRD = 'calc(33.33% - 12px)',
 }
 
 export interface SectionProps extends SectionBaseProps {

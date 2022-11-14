@@ -23,7 +23,7 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({ name, sx
     >
       <Row>
         <OpaqueButton
-          palette={theme.palette.primary}
+          palette={theme.palette.accent}
           sx={{
             width: '100%',
             margin: '6px',
