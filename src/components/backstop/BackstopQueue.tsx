@@ -1,6 +1,5 @@
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
-import { NextText } from '../common/NextText';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
@@ -8,6 +7,10 @@ import { TokenIcon } from '../common/TokenIcon';
 
 export const BackstopQueue = () => {
   const theme = useTheme();
+
+  const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
+  const NOW_IN_MS = new Date().getTime();
+  const dateTimeAfterThirtyDays = NOW_IN_MS + THIRTY_DAYS_IN_MS;
 
   return (
     <Row>
@@ -40,13 +43,14 @@ export const BackstopQueue = () => {
               sx={{ color: theme.palette.primary.main, marginRight: '12px', fontSize: '35px' }}
             />
             <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
-            <NextText
-              title="BLND-USDC LP"
-              titleColor="inherit"
-              text="668.886k"
-              textColor="inherit"
-              type="normal"
-            />
+            <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+              <Typography variant="h4" sx={{ marginRight: '6px' }}>
+                668.886k
+              </Typography>
+              <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                BLND-USDC LP
+              </Typography>
+            </Box>
           </Box>
         </Row>
         <Row>
@@ -66,13 +70,14 @@ export const BackstopQueue = () => {
             />
             <TokenIcon symbol="blnd" sx={{ marginRight: '12px' }}></TokenIcon>
             <Box>
-              <NextText
-                title="BLND"
-                titleColor="inherit"
-                text="668.886k"
-                textColor="inherit"
-                type="normal"
-              />
+              <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                <Typography variant="h4" sx={{ marginRight: '6px' }}>
+                  688.666k
+                </Typography>
+                <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                  BLND
+                </Typography>
+              </Box>
               <Typography variant="body2">21d 23h 58m 55s</Typography>
             </Box>
           </Box>

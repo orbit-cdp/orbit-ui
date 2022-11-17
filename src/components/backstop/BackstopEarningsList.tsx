@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import { useSettings } from '../../contexts';
-import { BSEarningsTable } from './BSEarningsTable';
+import { BackstopEarningsRow } from './BackstopEarningsRow';
 
 export interface EarningsAssetData {
   address: string;
@@ -30,7 +30,7 @@ const tempEarningsData: EarningsAssetData[] = [
   },
 ];
 
-export const BSEarningsList = () => {
+export const BackstopEarningsList = () => {
   const { viewType } = useSettings();
 
   const headerNum = 2;
@@ -73,7 +73,7 @@ export const BSEarningsList = () => {
         </Typography>
       </Box>
       {tempEarningsData.map((AssetData) => (
-        <BSEarningsTable assetData={AssetData} key={AssetData.address} />
+        <BackstopEarningsRow assetData={AssetData} key={AssetData.address} />
       ))}
     </Box>
   );

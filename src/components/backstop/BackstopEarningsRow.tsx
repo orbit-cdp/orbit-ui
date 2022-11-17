@@ -2,13 +2,17 @@ import { Box, BoxProps, Typography, useTheme } from '@mui/material';
 import { useSettings } from '../../contexts';
 import * as formatter from '../../utils/formatter';
 import { TokenHeader } from '../common/TokenHeader';
-import { EarningsAssetData } from './BSEarningsList';
+import { EarningsAssetData } from './BackstopEarningsList';
 
-export interface BSEarningsTableProps extends BoxProps {
+export interface BackstopEarningsRowProps extends BoxProps {
   assetData: EarningsAssetData;
 }
 
-export const BSEarningsTable: React.FC<BSEarningsTableProps> = ({ assetData, sx, ...props }) => {
+export const BackstopEarningsRow: React.FC<BackstopEarningsRowProps> = ({
+  assetData,
+  sx,
+  ...props
+}) => {
   const theme = useTheme();
   const { viewType } = useSettings();
 
@@ -24,9 +28,6 @@ export const BSEarningsTable: React.FC<BSEarningsTableProps> = ({ assetData, sx,
         marginBottom: '12px',
         borderRadius: '5px',
         justifyContent: 'space-between',
-        '&:hover': {
-          background: theme.palette.menu.light,
-        },
         ...sx,
       }}
       {...props}

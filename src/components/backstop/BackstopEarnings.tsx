@@ -2,7 +2,7 @@ import { Box, Typography, useTheme } from '@mui/material';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
-import { BSEarningsList } from './BSEarningsList';
+import { BackstopEarningsList } from './BackstopEarningsList';
 
 export const BackstopEarnings = () => {
   const theme = useTheme();
@@ -32,7 +32,7 @@ export const BackstopEarnings = () => {
             Confirm claim
           </OpaqueButton>
         </Row>
-        <BSEarningsList />
+        <BackstopEarningsList />
       </Section>
     </Row>
   );

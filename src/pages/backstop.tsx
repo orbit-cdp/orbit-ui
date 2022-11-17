@@ -7,7 +7,6 @@ import { BackstopEarnings } from '../components/backstop/BackstopEarnings';
 import { BackstopQueue } from '../components/backstop/BackstopQueue';
 import { CustomButton } from '../components/common/CustomButton';
 import { Divider } from '../components/common/Divider';
-import { NextText } from '../components/common/NextText';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { SectionBase } from '../components/common/SectionBase';
@@ -124,13 +123,14 @@ const Backstop: NextPage = () => {
             >
               <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
                 <TokenIcon symbol="blnd" sx={{ marginRight: '12px' }}></TokenIcon>
-                <NextText
-                  title="BLND"
-                  titleColor="inherit"
-                  text="888.888M"
-                  textColor="inherit"
-                  type="normal"
-                />
+                <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                  <Typography variant="h4" sx={{ marginRight: '6px' }}>
+                    688.666k
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                    BLND
+                  </Typography>
+                </Box>
               </Box>
               <ArrowForwardIcon fontSize="inherit" />
             </CustomButton>
@@ -150,13 +150,14 @@ const Backstop: NextPage = () => {
             >
               <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
                 <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
-                <NextText
-                  title="BLND-USDC LP"
-                  titleColor="inherit"
-                  text="888.888M"
-                  textColor="inherit"
-                  type="normal"
-                />
+                <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                  <Typography variant="h4" sx={{ marginRight: '6px' }}>
+                    668.886k
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                    BLND-USDC LP
+                  </Typography>
+                </Box>
               </Box>
               <ArrowForwardIcon fontSize="inherit" />
             </CustomButton>
