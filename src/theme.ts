@@ -14,6 +14,8 @@ declare module '@mui/material/styles/createPalette' {
     borrow?: PaletteColorOptions;
     backstop?: PaletteColorOptions;
     menu?: PaletteColorOptions;
+    positive?: PaletteColorOptions;
+    accent?: PaletteColorOptions;
   }
 
   interface Palette {
@@ -21,6 +23,8 @@ declare module '@mui/material/styles/createPalette' {
     borrow: PaletteColor;
     backstop: PaletteColor;
     menu: PaletteColor;
+    positive: PaletteColor;
+    accent: PaletteColor;
   }
 }
 
@@ -29,6 +33,8 @@ declare module '@mui/material/Button' {
     lend: true;
     borrow: true;
     backstop: true;
+    positive: true;
+    accent: true;
     menu: false;
   }
 }
@@ -68,6 +74,14 @@ const theme: Theme = createTheme({
     backstop: {
       main: '#E16BFF',
       opaque: '#E16BFF26',
+    },
+    positive: {
+      main: '#2775C9',
+      opaque: '#2775C930',
+    },
+    accent: {
+      main: '#191B1F',
+      opaque: '#191B1F',
     },
     menu: {
       main: '#2E3138',
