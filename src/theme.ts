@@ -122,7 +122,12 @@ const theme: Theme = createTheme({
       fontSize: pxToRem(16),
       lineHeight: 1.3125,
     },
-    h5: undefined,
+    h5: {
+      fontFamily: FONT,
+      fontWeight: 400,
+      fontSize: pxToRem(16),
+      lineHeight: 1.3125,
+    },
     h6: undefined,
     subtitle1: undefined,
     subtitle2: undefined,
