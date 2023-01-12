@@ -1,5 +1,6 @@
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
+import { LinkBox } from '../common/LinkBox';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
@@ -30,12 +31,17 @@ export const BackstopQueue = () => {
           </Box>
         </Row>
         <Row>
-          <OpaqueButton
-            palette={theme.palette.primary}
-            sx={{ width: '100%', margin: '6px', padding: '6px' }}
+          <LinkBox
+            sx={{ width: '100%', marginRight: '12px' }}
+            to={{ pathname: '/backstop-q4w', query: { poolId: 'poolId' } }}
           >
-            New queue
-          </OpaqueButton>
+            <OpaqueButton
+              palette={theme.palette.primary}
+              sx={{ width: '100%', margin: '6px', padding: '6px' }}
+            >
+              New queue
+            </OpaqueButton>
+          </LinkBox>
         </Row>
         <Row>
           <Box sx={{ margin: '6px', padding: '6px', display: 'flex', alignItems: 'center' }}>
@@ -65,6 +71,8 @@ export const BackstopQueue = () => {
           <Box sx={{ margin: '6px', padding: '6px', display: 'flex', alignItems: 'center' }}>
             <CircularProgress
               sx={{ color: theme.palette.backstop.main, marginRight: '12px' }}
+              size="30px"
+              thickness={4.5}
               variant="determinate"
               value={75}
             />

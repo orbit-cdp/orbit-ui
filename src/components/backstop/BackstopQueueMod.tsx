@@ -55,6 +55,8 @@ export const BackstopQueueMod = () => {
           <Box sx={{ margin: '6px', padding: '6px', display: 'flex', alignItems: 'center' }}>
             <CircularProgress
               sx={{ color: theme.palette.backstop.main, marginRight: '12px' }}
+              size="30px"
+              thickness={4.5}
               variant="determinate"
               value={75}
             />

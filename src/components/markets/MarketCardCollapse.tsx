@@ -1,6 +1,7 @@
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, BoxProps, Typography, useTheme } from '@mui/material';
 import { Icon } from '../common/Icon';
+import { LinkBox } from '../common/LinkBox';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { Row } from '../common/Row';
 import { StackedTextBox } from '../common/StackedTextBox';
@@ -45,61 +46,66 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({ name, sx
         </OpaqueButton>
       </Row>
       <Row>
-        <OpaqueButton
-          palette={theme.palette.backstop}
-          sx={{
-            width: '100%',
-            margin: '6px',
-            padding: '6px',
-            alignItems: 'center',
-            color: theme.palette.backstop.main,
-          }}
+        <LinkBox
+          sx={{ width: '100%', marginRight: '12px' }}
+          to={{ pathname: '/backstop', query: { poolId: 'poolId' } }}
         >
-          <Box
+          <OpaqueButton
+            palette={theme.palette.backstop}
             sx={{
-              flexWrap: 'flex',
               width: '100%',
-              borderRadius: '5px',
-              '&:hover': {
-                background: theme.palette.backstop.opaque,
-              },
+              margin: '6px',
+              padding: '6px',
+              alignItems: 'center',
+              color: theme.palette.backstop.main,
             }}
           >
-            <Row sx={{ alignItems: 'center' }}>
-              <Box
-                sx={{
-                  margin: '6px',
-                  padding: '6px',
-                  width: '100%',
-                  color: theme.palette.text.primary,
-                }}
-              >
-                <Typography
-                  variant="body2"
-                  sx={{ float: 'left' }}
-                >{`${name} Pool Backstop`}</Typography>
-              </Box>
-              <Box
-                sx={{
-                  padding: '6px',
-                  display: 'flex',
-                  flexDirection: 'row',
-                  height: '30px',
-                  color: theme.palette.text.primary,
-                }}
-              >
-                <ArrowForwardIcon fontSize="inherit" />
-              </Box>
-            </Row>
-            <Row>
-              <StackedTextBox name="Backstop APR" sx={{ width: '50%' }}></StackedTextBox>
-              <StackedTextBox
-                name="Q4W"
-                sx={{ width: '50%', color: theme.palette.backstop.main }}
-              ></StackedTextBox>
-            </Row>
-          </Box>
-        </OpaqueButton>
+            <Box
+              sx={{
+                flexWrap: 'flex',
+                width: '100%',
+                borderRadius: '5px',
+                '&:hover': {
+                  background: theme.palette.backstop.opaque,
+                },
+              }}
+            >
+              <Row sx={{ alignItems: 'center' }}>
+                <Box
+                  sx={{
+                    margin: '6px',
+                    padding: '6px',
+                    width: '100%',
+                    color: theme.palette.text.primary,
+                  }}
+                >
+                  <Typography
+                    variant="body2"
+                    sx={{ float: 'left' }}
+                  >{`${name} Pool Backstop`}</Typography>
+                </Box>
+                <Box
+                  sx={{
+                    padding: '6px',
+                    display: 'flex',
+                    flexDirection: 'row',
+                    height: '30px',
+                    color: theme.palette.text.primary,
+                  }}
+                >
+                  <ArrowForwardIcon fontSize="inherit" />
+                </Box>
+              </Row>
+              <Row>
+                <StackedTextBox name="Backstop APR" sx={{ width: '50%' }}></StackedTextBox>
+                <StackedTextBox
+                  name="Q4W"
+                  sx={{ width: '50%', color: theme.palette.backstop.main }}
+                ></StackedTextBox>
+              </Row>
+            </Box>
+          </OpaqueButton>
+        </LinkBox>
       </Row>
       <MarketsList />
     </Box>
