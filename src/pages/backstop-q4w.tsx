@@ -1,15 +1,13 @@
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { BackstopQueueAnvil } from '../components/backstop/BackstopQueueAnvil';
 import { BackstopQueueDropdown } from '../components/backstop/BackstopQueueDropdown';
 import { BackstopQueueMod } from '../components/backstop/BackstopQueueMod';
-import { CustomButton } from '../components/common/CustomButton';
+import { GoBackHeader } from '../components/common/GoBackHeader';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
 import { WalletWarning } from '../components/common/WalletWarning';
-import { PoolHeader } from '../components/pool/PoolHeader';
 
 const BackstopQ4W: NextPage = () => {
   const theme = useTheme();
@@ -19,26 +17,7 @@ const BackstopQ4W: NextPage = () => {
         <WalletWarning />
       </Row>
       <Row>
-        <Section width={SectionSize.FULL} sx={{ padding: '12px' }}>
-          <CustomButton
-            id="go-back-button"
-            sx={{
-              marginRight: '12px',
-              '&:hover': { backgroundColor: theme.palette.background.default },
-            }}
-          >
-            <Box sx={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
-              <ArrowBackIcon fontSize="inherit" />
-              <Typography
-                variant="h5"
-                sx={{ paddingLeft: '6px', paddingRight: '6px', lineHeight: '100%' }}
-              >
-                Go back
-              </Typography>
-            </Box>
-          </CustomButton>
-          <PoolHeader name="Blend" />
-        </Section>
+        <GoBackHeader />
       </Row>
       <Row>
         <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>

@@ -26,7 +26,9 @@ export const WithdrawAnvil = () => {
             boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.25)',
           }}
         >
-          <Typography variant="body2">Amount to withdraw</Typography>
+          <Typography variant="body2" sx={{ marginLeft: '12px', marginBottom: '12px' }}>
+            Amount to withdraw
+          </Typography>
           <Box
             sx={{
               width: '100%',

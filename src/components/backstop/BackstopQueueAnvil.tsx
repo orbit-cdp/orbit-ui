@@ -25,7 +25,9 @@ export const BackstopQueueAnvil = () => {
             boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.25)',
           }}
         >
-          <Typography variant="body2">Amount to Q4W</Typography>
+          <Typography variant="body2" sx={{ marginLeft: '12px', marginBottom: '12px' }}>
+            Amount to Q4W
+          </Typography>
           <Box
             sx={{
               width: '100%',
