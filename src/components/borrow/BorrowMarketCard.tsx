@@ -3,6 +3,7 @@ import { Box, BoxProps, Typography, useTheme } from '@mui/material';
 import { useSettings } from '../../contexts';
 import * as formatter from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
+import { LinkBox } from '../common/LinkBox';
 import { SectionBase } from '../common/SectionBase';
 import { TokenHeader } from '../common/TokenHeader';
 import { BorrowMarketAssetData } from './BorrowMarketList';
@@ -29,56 +30,60 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({ assetData, s
       }}
       {...props}
     >
-      <CustomButton
-        sx={{
-          width: '100%',
-          '&:hover': {
-            color: theme.palette.borrow.main,
-          },
-        }}
-      >
-        <TokenHeader code={assetData.code} issuer={assetData.issuer} sx={{ width: tableWidth }} />
-        <Box
+      <LinkBox sx={{ width: '100%' }} to={{ pathname: '/borrow', query: { poolId: 'poolId' } }}>
+        <CustomButton
           sx={{
-            width: tableWidth,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
+            width: '100%',
+            '&:hover': {
+              color: theme.palette.borrow.main,
+            },
           }}
         >
-          <Typography variant="body1">{formatter.toBalance(assetData.poolBalance)}</Typography>
-        </Box>
-        <Box
-          sx={{
-            width: tableWidth,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <Typography variant="body1">{formatter.toPercentage(assetData.apr)}</Typography>
-        </Box>
-        <Box
-          sx={{
-            width: tableWidth,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <Typography variant="body1">{formatter.toPercentage(assetData.borrowFactor)}</Typography>
-        </Box>
-        <Box
-          sx={{
-            width: tableWidth,
-            display: 'flex',
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-          }}
-        >
-          <ArrowForwardIcon fontSize="inherit" />
-        </Box>
-      </CustomButton>
+          <TokenHeader code={assetData.code} issuer={assetData.issuer} sx={{ width: tableWidth }} />
+          <Box
+            sx={{
+              width: tableWidth,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Typography variant="body1">{formatter.toBalance(assetData.poolBalance)}</Typography>
+          </Box>
+          <Box
+            sx={{
+              width: tableWidth,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Typography variant="body1">{formatter.toPercentage(assetData.apr)}</Typography>
+          </Box>
+          <Box
+            sx={{
+              width: tableWidth,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Typography variant="body1">
+              {formatter.toPercentage(assetData.borrowFactor)}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              width: tableWidth,
+              display: 'flex',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+            }}
+          >
+            <ArrowForwardIcon fontSize="inherit" />
+          </Box>
+        </CustomButton>
+      </LinkBox>
     </SectionBase>
   );
 };

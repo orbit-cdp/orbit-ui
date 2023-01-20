@@ -7,6 +7,7 @@ import { BackstopPreviewBar } from '../components/backstop/BackstopPreviewBar';
 import { BorrowMarketList } from '../components/borrow/BorrowMarketList';
 import { CustomButton } from '../components/common/CustomButton';
 import { Divider } from '../components/common/Divider';
+import { LinkBox } from '../components/common/LinkBox';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { ToggleButton } from '../components/common/ToggleButton';
@@ -41,17 +42,19 @@ const Dashboard: NextPage = () => {
       </Row>
       <PoolExploreBar />
       <Row sx={{ padding: '6px' }}>
-        <CustomButton
-          sx={{
-            color: theme.palette.text.primary,
-            '&:hover': {
-              color: theme.palette.backstop.main,
-            },
-          }}
-        >
-          <Typography variant="body1">Backstop Manager</Typography>
-          <ArrowForwardIcon fontSize="inherit" sx={{ marginLeft: '6px' }} />
-        </CustomButton>
+        <LinkBox sx={{ width: '100%' }} to={{ pathname: '/backstop', query: { poolId: 'poolId' } }}>
+          <CustomButton
+            sx={{
+              color: theme.palette.text.primary,
+              '&:hover': {
+                color: theme.palette.backstop.main,
+              },
+            }}
+          >
+            <Typography variant="body1">Backstop Manager</Typography>
+            <ArrowForwardIcon fontSize="inherit" sx={{ marginLeft: '6px' }} />
+          </CustomButton>
+        </LinkBox>
       </Row>
       <BackstopPreviewBar />
       <Row>

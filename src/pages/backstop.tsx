@@ -7,6 +7,7 @@ import { BackstopEarnings } from '../components/backstop/BackstopEarnings';
 import { BackstopQueue } from '../components/backstop/BackstopQueue';
 import { CustomButton } from '../components/common/CustomButton';
 import { Divider } from '../components/common/Divider';
+import { LinkBox } from '../components/common/LinkBox';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { SectionBase } from '../components/common/SectionBase';
@@ -109,58 +110,68 @@ const Backstop: NextPage = () => {
             deposit ? 'deposit' : 'withdraw'
           }`}</Typography>
           <Row>
-            <CustomButton
-              sx={{
-                width: '100%',
-                margin: '6px',
-                padding: '12px',
-                color: theme.palette.text.primary,
-                backgroundColor: theme.palette.background.default,
-                '&:hover': {
-                  color: theme.palette.backstop.main,
-                },
-              }}
+            <LinkBox
+              sx={{ width: '100%', marginRight: '12px' }}
+              to={{ pathname: '/backstop-deposit', query: { poolId: 'poolId' } }}
             >
-              <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                <TokenIcon symbol="blnd" sx={{ marginRight: '12px' }}></TokenIcon>
-                <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-                  <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                    688.666k
-                  </Typography>
-                  <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                    BLND
-                  </Typography>
+              <CustomButton
+                sx={{
+                  width: '100%',
+                  margin: '6px',
+                  padding: '12px',
+                  color: theme.palette.text.primary,
+                  backgroundColor: theme.palette.background.default,
+                  '&:hover': {
+                    color: theme.palette.backstop.main,
+                  },
+                }}
+              >
+                <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+                  <TokenIcon symbol="blnd" sx={{ marginRight: '12px' }}></TokenIcon>
+                  <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                    <Typography variant="h4" sx={{ marginRight: '6px' }}>
+                      688.666k
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                      BLND
+                    </Typography>
+                  </Box>
                 </Box>
-              </Box>
-              <ArrowForwardIcon fontSize="inherit" />
-            </CustomButton>
+                <ArrowForwardIcon fontSize="inherit" />
+              </CustomButton>
+            </LinkBox>
           </Row>
           <Row>
-            <CustomButton
-              sx={{
-                width: '100%',
-                margin: '6px',
-                padding: '12px',
-                color: theme.palette.text.primary,
-                backgroundColor: theme.palette.background.default,
-                '&:hover': {
-                  color: theme.palette.backstop.main,
-                },
-              }}
+            <LinkBox
+              sx={{ width: '100%', marginRight: '12px' }}
+              to={{ pathname: '/backstop-deposit', query: { poolId: 'poolId' } }}
             >
-              <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
-                <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-                  <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                    668.886k
-                  </Typography>
-                  <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                    BLND-USDC LP
-                  </Typography>
+              <CustomButton
+                sx={{
+                  width: '100%',
+                  margin: '6px',
+                  padding: '12px',
+                  color: theme.palette.text.primary,
+                  backgroundColor: theme.palette.background.default,
+                  '&:hover': {
+                    color: theme.palette.backstop.main,
+                  },
+                }}
+              >
+                <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+                  <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
+                  <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                    <Typography variant="h4" sx={{ marginRight: '6px' }}>
+                      668.886k
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                      BLND-USDC LP
+                    </Typography>
+                  </Box>
                 </Box>
-              </Box>
-              <ArrowForwardIcon fontSize="inherit" />
-            </CustomButton>
+                <ArrowForwardIcon fontSize="inherit" />
+              </CustomButton>
+            </LinkBox>
           </Row>
         </Section>
       </Row>

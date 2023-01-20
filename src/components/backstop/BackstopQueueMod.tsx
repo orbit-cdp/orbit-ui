@@ -1,12 +1,11 @@
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
-import { LinkBox } from '../common/LinkBox';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
 import { TokenIcon } from '../common/TokenIcon';
 
-export const BackstopQueue = () => {
+export const BackstopQueueMod = () => {
   const theme = useTheme();
 
   const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
@@ -31,19 +30,6 @@ export const BackstopQueue = () => {
           </Box>
         </Row>
         <Row>
-          <LinkBox
-            sx={{ width: '100%', marginRight: '12px' }}
-            to={{ pathname: '/backstop-q4w', query: { poolId: 'poolId' } }}
-          >
-            <OpaqueButton
-              palette={theme.palette.primary}
-              sx={{ width: '100%', margin: '6px', padding: '6px' }}
-            >
-              New queue
-            </OpaqueButton>
-          </LinkBox>
-        </Row>
-        <Row>
           <Box sx={{ margin: '6px', padding: '6px', display: 'flex', alignItems: 'center' }}>
             <CheckCircleOutlineIcon
               sx={{ color: theme.palette.primary.main, marginRight: '12px', fontSize: '35px' }}
@@ -58,11 +44,9 @@ export const BackstopQueue = () => {
               </Typography>
             </Box>
           </Box>
-        </Row>
-        <Row>
           <OpaqueButton
             palette={theme.palette.positive}
-            sx={{ width: '100%', margin: '6px', padding: '6px' }}
+            sx={{ height: '35px', width: '108px', margin: '12px', padding: '6px' }}
           >
             Withdraw
           </OpaqueButton>
