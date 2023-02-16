@@ -175,7 +175,7 @@ const Backstop: NextPage = () => {
           </Row>
         </Section>
       </Row>
-      <Row sx={{ marginBottom: '12px' }}>
+      <Row sx={{ marginBottom: '12px', flexWrap: 'wrap' }}>
         <BackstopEarnings />
         <BackstopQueue />
       </Row>

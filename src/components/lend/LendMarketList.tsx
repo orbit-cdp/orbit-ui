@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import { useSettings } from '../../contexts';
+import { useSettings, ViewType } from '../../contexts';
 import { LendMarketCard } from './LendMarketCard';
 
 export interface LendMarketAssetData {
@@ -53,45 +53,84 @@ export const LendMarketList = () => {
         padding: '6px',
       }}
     >
-      <Box
-        sx={{
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '6px',
-          type: 'alt',
-        }}
-      >
-        <Typography variant="body2" color="text.secondary" sx={{ width: headerWidth }}>
-          Asset
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ width: headerWidth }}
+      {viewType === ViewType.REGULAR && (
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '6px',
+            type: 'alt',
+          }}
         >
-          Wallet Balance
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ width: headerWidth }}
+          <Typography variant="body2" color="text.secondary" sx={{ width: headerWidth }}>
+            Asset
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: headerWidth }}
+          >
+            Wallet Balance
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: headerWidth }}
+          >
+            APR
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: headerWidth }}
+          >
+            Collateral Factor
+          </Typography>
+          <Box sx={{ width: headerWidth }} />
+        </Box>
+      )}
+      {viewType !== ViewType.REGULAR && (
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '6px',
+            type: 'alt',
+          }}
         >
-          APR
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ width: headerWidth }}
-        >
-          Collateral Factor
-        </Typography>
-        <Box sx={{ width: headerWidth }} />
-      </Box>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ width: 'headerWidth + (headerWidth/headerNum)' }}
+          >
+            Asset
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: 'headerWidth + (headerWidth/headerNum)' }}
+          >
+            Wallet Balance
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: 'headerWidth + (headerWidth/headerNum)' }}
+          >
+            APR
+          </Typography>
+          <Box sx={{ width: 'headerWidth + (headerWidth/headerNum)' }} />
+        </Box>
+      )}
       {tempLendMarketData.map((lendAssetData) => (
         <LendMarketCard assetData={lendAssetData} key={lendAssetData.address} />
       ))}
