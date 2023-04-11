@@ -35,7 +35,7 @@ export const BackstopQueueMod = () => {
               sx={{ color: theme.palette.primary.main, marginRight: '12px', fontSize: '35px' }}
             />
             <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
-            <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
               <Typography variant="h4" sx={{ marginRight: '6px' }}>
                 668.886k
               </Typography>

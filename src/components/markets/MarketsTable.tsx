@@ -1,5 +1,5 @@
 import { Box, BoxProps, Typography, useTheme } from '@mui/material';
-import { useSettings } from '../../contexts';
+import { useSettings, ViewType } from '../../contexts';
 import * as formatter from '../../utils/formatter';
 import { TokenHeader } from '../common/TokenHeader';
 import { MarketsAssetData } from './MarketsList';
@@ -31,66 +31,119 @@ export const MarketsTable: React.FC<MarketsTableProps> = ({ assetData, sx, ...pr
       }}
       {...props}
     >
-      <TokenHeader
-        code={assetData.code}
-        issuer={assetData.issuer}
-        sx={{ width: tableWidth, marginRight: '12px' }}
-      />
-      <Box
-        sx={{
-          width: tableWidth,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <Typography variant="body1">{formatter.toBalance(assetData.lendTotal)}</Typography>
-      </Box>
-      <Box
-        sx={{
-          width: tableWidth,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <Typography variant="body1">{formatter.toBalance(assetData.borrowTotal)}</Typography>
-      </Box>
-      <Box
-        sx={{
-          width: tableWidth,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <Typography variant="body1">
-          {formatter.toPercentage(assetData.collateralFactor)}
-        </Typography>
-      </Box>
-      <Box
-        sx={{
-          width: tableWidth,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <Typography variant="body1">{formatter.toPercentage(assetData.liabilityFactor)}</Typography>
-      </Box>
-      <Box
-        sx={{
-          width: tableWidth,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <StackedApr
-          aprLend={formatter.toPercentage(assetData.aprLend)}
-          aprBorrow={formatter.toPercentage(assetData.aprBorrow)}
-        ></StackedApr>
-      </Box>
+      {viewType === ViewType.REGULAR && (
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '6px',
+            type: 'alt',
+          }}
+        >
+          <TokenHeader
+            code={assetData.code}
+            issuer={assetData.issuer}
+            sx={{ width: tableWidth, marginRight: '12px' }}
+          />
+          <Box
+            sx={{
+              width: tableWidth,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Typography variant="body1">{formatter.toBalance(assetData.lendTotal)}</Typography>
+          </Box>
+          <Box
+            sx={{
+              width: tableWidth,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Typography variant="body1">{formatter.toBalance(assetData.borrowTotal)}</Typography>
+          </Box>
+          <Box
+            sx={{
+              width: tableWidth,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Typography variant="body1">
+              {formatter.toPercentage(assetData.collateralFactor)}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              width: tableWidth,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Typography variant="body1">
+              {formatter.toPercentage(assetData.liabilityFactor)}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              width: tableWidth,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <StackedApr
+              aprLend={formatter.toPercentage(assetData.aprLend)}
+              aprBorrow={formatter.toPercentage(assetData.aprBorrow)}
+            ></StackedApr>
+          </Box>
+        </Box>
+      )}
+      {viewType !== ViewType.REGULAR && (
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '6px',
+            type: 'alt',
+          }}
+        >
+          <TokenHeader
+            code={assetData.code}
+            issuer=""
+            sx={{ width: 'tableWidth + (tableWidth*(tableNum/2))' }}
+          />
+          <Box
+            sx={{
+              width: 'tableWidth + (tableWidth*(tableNum/2))',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Typography variant="body1">{formatter.toBalance(assetData.lendTotal)}</Typography>
+          </Box>
+          <Box
+            sx={{
+              width: 'tableWidth + (tableWidth*(tableNum/2))',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Typography variant="body1">{formatter.toBalance(assetData.borrowTotal)}</Typography>
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 };

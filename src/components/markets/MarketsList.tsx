@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import { useSettings } from '../../contexts';
+import { useSettings, ViewType } from '../../contexts';
 import { MarketsTable } from './MarketsTable';
 
 export interface MarketsAssetData {
@@ -66,64 +66,98 @@ export const MarketsList = () => {
         marginTop: '12px',
       }}
     >
-      <Box
-        sx={{
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '6px',
-          type: 'alt',
-        }}
-      >
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ width: headerWidth, marginRight: '12px' }}
+      {viewType === ViewType.REGULAR && (
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '6px',
+            type: 'alt',
+          }}
         >
-          Asset
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ width: headerWidth }}
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ width: headerWidth, marginRight: '12px' }}
+          >
+            Asset
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: headerWidth }}
+          >
+            Total Lent
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: headerWidth }}
+          >
+            Total Borrowed
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: headerWidth }}
+          >
+            Collateral Factor
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: headerWidth }}
+          >
+            Liability Factor
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: headerWidth }}
+          >
+            APR
+          </Typography>
+        </Box>
+      )}
+      {viewType !== ViewType.REGULAR && (
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '6px',
+            type: 'alt',
+          }}
         >
-          Total Lent
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ width: headerWidth }}
-        >
-          Total Borrowed
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ width: headerWidth }}
-        >
-          Collateral Factor
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ width: headerWidth }}
-        >
-          Liability Factor
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ width: headerWidth }}
-        >
-          APR
-        </Typography>
-      </Box>
+          <Typography variant="body2" color="text.secondary" sx={{ width: '33.33%' }}>
+            Asset
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: 'headerWidth + (headerWidth*(headerNum/2))' }}
+          >
+            Total Lent
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: 'headerWidth + (headerWidth*(headerNum/2))' }}
+          >
+            Total Borrowed
+          </Typography>
+        </Box>
+      )}
       {tempMarketsData.map((AssetData) => (
         <MarketsTable assetData={AssetData} key={AssetData.address} />
       ))}

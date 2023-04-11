@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import { useSettings } from '../../contexts';
+import { useSettings, ViewType } from '../../contexts';
 import { BorrowMarketCard } from './BorrowMarketCard';
 
 export interface BorrowMarketAssetData {
@@ -53,45 +53,84 @@ export const BorrowMarketList = () => {
         padding: '6px',
       }}
     >
-      <Box
-        sx={{
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '6px',
-          type: 'alt',
-        }}
-      >
-        <Typography variant="body2" color="text.secondary" sx={{ width: headerWidth }}>
-          Asset
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ width: headerWidth }}
+      {viewType === ViewType.REGULAR && (
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '6px',
+            type: 'alt',
+          }}
         >
-          Available
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ width: headerWidth }}
+          <Typography variant="body2" color="text.secondary" sx={{ width: headerWidth }}>
+            Asset
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: headerWidth }}
+          >
+            Available
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: headerWidth }}
+          >
+            APR
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: headerWidth }}
+          >
+            Liability Factor
+          </Typography>
+          <Box sx={{ width: headerWidth }} />
+        </Box>
+      )}
+      {viewType !== ViewType.REGULAR && (
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '6px',
+            type: 'alt',
+          }}
         >
-          APR
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ width: headerWidth }}
-        >
-          Liability Factor
-        </Typography>
-        <Box sx={{ width: headerWidth }} />
-      </Box>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ width: 'headerWidth + (headerWidth/headerNum)' }}
+          >
+            Asset
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: 'headerWidth + (headerWidth/headerNum)' }}
+          >
+            Available
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: 'headerWidth + (headerWidth/headerNum)' }}
+          >
+            APR
+          </Typography>
+          <Box sx={{ width: 'headerWidth + (headerWidth/headerNum)' }} />
+        </Box>
+      )}
       {tempBorrowMarketData.map((BorrowAssetData) => (
         <BorrowMarketCard assetData={BorrowAssetData} key={BorrowAssetData.address} />
       ))}
