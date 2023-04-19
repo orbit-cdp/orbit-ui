@@ -1,11 +1,8 @@
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { Box, Typography, useTheme } from '@mui/material';
-import { CustomButton } from '../common/CustomButton';
-import { LinkBox } from '../common/LinkBox';
+import { Typography, useTheme } from '@mui/material';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
 import { StackedText } from '../common/StackedText';
-import { TokenIcon } from '../common/TokenIcon';
+import { LendPositionList } from './LendPositionList';
 
 export const LendPositions = () => {
   const theme = useTheme();
@@ -36,70 +33,7 @@ export const LendPositions = () => {
             ></StackedText>
           </Section>
         </Row>
-        <Row>
-          <LinkBox
-            sx={{ width: '100%', marginRight: '12px' }}
-            to={{ pathname: '/withdraw', query: { poolId: 'poolId' } }}
-          >
-            <CustomButton
-              sx={{
-                width: '100%',
-                margin: '6px',
-                padding: '12px',
-                color: theme.palette.text.primary,
-                backgroundColor: theme.palette.background.default,
-                '&:hover': {
-                  color: theme.palette.lend.main,
-                },
-              }}
-            >
-              <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                <TokenIcon symbol="blnd" sx={{ marginRight: '12px' }}></TokenIcon>
-                <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-                  <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                    688.666k
-                  </Typography>
-                  <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                    BLND
-                  </Typography>
-                </Box>
-              </Box>
-              <ArrowForwardIcon fontSize="inherit" />
-            </CustomButton>
-          </LinkBox>
-        </Row>
-        <Row>
-          <LinkBox
-            sx={{ width: '100%', marginRight: '12px' }}
-            to={{ pathname: '/withdraw', query: { poolId: 'poolId' } }}
-          >
-            <CustomButton
-              sx={{
-                width: '100%',
-                margin: '6px',
-                padding: '12px',
-                color: theme.palette.text.primary,
-                backgroundColor: theme.palette.background.default,
-                '&:hover': {
-                  color: theme.palette.lend.main,
-                },
-              }}
-            >
-              <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
-                <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-                  <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                    668.886k
-                  </Typography>
-                  <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                    BLND-USDC LP
-                  </Typography>
-                </Box>
-              </Box>
-              <ArrowForwardIcon fontSize="inherit" />
-            </CustomButton>
-          </LinkBox>
-        </Row>
+        <LendPositionList />
       </Section>
     </Row>
   );

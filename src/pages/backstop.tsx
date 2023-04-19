@@ -16,10 +16,13 @@ import { ToggleButton } from '../components/common/ToggleButton';
 import { TokenIcon } from '../components/common/TokenIcon';
 import { WalletWarning } from '../components/common/WalletWarning';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
+import { useSettings, ViewType } from '../contexts';
 
 const Backstop: NextPage = () => {
   const router = useRouter();
   const { poolId } = router.query;
+
+  const { viewType } = useSettings();
 
   const theme = useTheme();
 
@@ -175,10 +178,18 @@ const Backstop: NextPage = () => {
           </Row>
         </Section>
       </Row>
-      <Row sx={{ marginBottom: '12px', flexWrap: 'wrap' }}>
-        <BackstopEarnings />
-        <BackstopQueue />
-      </Row>
+      {viewType === ViewType.REGULAR && (
+        <Row sx={{ marginBottom: '12px' }}>
+          <BackstopEarnings />
+          <BackstopQueue />
+        </Row>
+      )}
+      {viewType !== ViewType.REGULAR && (
+        <Row sx={{ marginBottom: '12px', flexWrap: 'wrap' }}>
+          <BackstopEarnings />
+          <BackstopQueue />
+        </Row>
+      )}
     </>
   );
 };

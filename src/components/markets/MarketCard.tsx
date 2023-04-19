@@ -19,14 +19,21 @@ export const MarketCard: React.FC<MarketCardProps> = ({ name, sx }) => {
   const theme = useTheme();
   const [expand, setExpand] = useState(false);
 
+  const [rotateArrow, setRotateArrow] = useState(false);
+  const rotate = rotateArrow ? 'rotate(180deg)' : 'rotate(0)';
+
   return (
     <Section width={SectionSize.FULL} sx={{ flexDirection: 'column', marginBottom: '12px' }}>
       <Box
-        onClick={() => setExpand(!expand)}
+        onClick={() => {
+          setExpand(!expand);
+          setRotateArrow(!rotateArrow);
+        }}
         sx={{
           width: '100%',
           '&:hover': {
             cursor: 'pointer',
+            filter: 'brightness(110%)',
           },
         }}
       >
@@ -46,7 +53,13 @@ export const MarketCard: React.FC<MarketCardProps> = ({ name, sx }) => {
             >
               Details
             </Box>
-            <ArrowDropDownIcon sx={{ color: theme.palette.text.secondary }} />
+            <ArrowDropDownIcon
+              sx={{
+                color: theme.palette.text.secondary,
+                transform: rotate,
+                transition: 'all 0.2s linear',
+              }}
+            />
           </Box>
         </Row>
         <Row>
