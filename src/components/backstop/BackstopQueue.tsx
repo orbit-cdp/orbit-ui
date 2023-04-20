@@ -5,13 +5,10 @@ import { OpaqueButton } from '../common/OpaqueButton';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
 import { TokenIcon } from '../common/TokenIcon';
+import { BackstopQueueTimer } from './BackstopQueueTimer';
 
 export const BackstopQueue = () => {
   const theme = useTheme();
-
-  const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
-  const NOW_IN_MS = new Date().getTime();
-  const dateTimeAfterThirtyDays = NOW_IN_MS + THIRTY_DAYS_IN_MS;
 
   return (
     <Row>
@@ -27,7 +24,7 @@ export const BackstopQueue = () => {
               borderRadius: '5px',
             }}
           >
-            <Typography sx={{ padding: '6px' }}>Queued for withdrawal</Typography>
+            <Typography sx={{ padding: '6px' }}>Queued for withdrawal (Q4W)</Typography>
           </Box>
         </Row>
         <Row>
@@ -86,7 +83,7 @@ export const BackstopQueue = () => {
                   BLND
                 </Typography>
               </Box>
-              <Typography variant="body2">21d 23h 58m 55s</Typography>
+              <BackstopQueueTimer />
             </Box>
           </Box>
         </Row>
