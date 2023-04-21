@@ -1,11 +1,14 @@
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Menu, MenuItem, useTheme } from '@mui/material';
 import React from 'react';
+import { useBackstop } from '../../contexts/backstop';
 import { CustomButton } from '../common/CustomButton';
 import { PoolHeader } from './PoolHeader';
 
 export const PoolMenu = () => {
   const theme = useTheme();
+  const { rewardZone } = useBackstop();
+
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -40,12 +43,11 @@ export const PoolMenu = () => {
         <MenuItem onClick={handleClose}>
           <PoolHeader name="Stellar" />
         </MenuItem>
-        <MenuItem onClick={handleClose}>
-          <PoolHeader name="LumenSwap" />
-        </MenuItem>
-        <MenuItem onClick={handleClose}>
-          <PoolHeader name="Blend" />
-        </MenuItem>
+        {rewardZone.map((pool_id) => (
+          <MenuItem onClick={handleClose} key={pool_id}>
+            <PoolHeader name={pool_id} />
+          </MenuItem>
+        ))}
       </Menu>
     </>
   );
