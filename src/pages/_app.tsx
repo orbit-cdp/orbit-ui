@@ -5,6 +5,8 @@ import { ThemeProvider } from '@mui/material/styles';
 import { AppProps } from 'next/app';
 import Head from 'next/head';
 import { SettingsProvider } from '../contexts';
+import { BackstopProvider } from '../contexts/backstop';
+import { NetworkProvider } from '../contexts/network';
 import DefaultLayout from '../layouts/DefaultLayout';
 import theme from '../theme';
 
@@ -17,10 +19,14 @@ export default function MyApp(props: AppProps) {
       </Head>
       <ThemeProvider theme={theme}>
         <SettingsProvider>
-          <CssBaseline />
-          <DefaultLayout>
-            <Component {...pageProps} />
-          </DefaultLayout>
+          <NetworkProvider>
+            <BackstopProvider>
+              <CssBaseline />
+              <DefaultLayout>
+                <Component {...pageProps} />
+              </DefaultLayout>
+            </BackstopProvider>
+          </NetworkProvider>
         </SettingsProvider>
       </ThemeProvider>
     </>

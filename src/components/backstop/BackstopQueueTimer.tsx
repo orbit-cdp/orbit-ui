@@ -42,7 +42,7 @@ export const BackstopQueueTimer = () => {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     const savedDate = getLocalStorageValue('end_date');
-    if (savedDate != null && !isNaN(savedDate)) {
+    if (savedDate != null) {
       const currentTime = Date.now();
       const delta = parseInt(savedDate, 10) - currentTime;
 
