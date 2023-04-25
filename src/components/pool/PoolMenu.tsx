@@ -1,13 +1,14 @@
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Menu, MenuItem, useTheme } from '@mui/material';
 import React from 'react';
-import { useBackstop } from '../../contexts/backstop';
+import { useStore } from '../../store/store';
 import { CustomButton } from '../common/CustomButton';
 import { PoolHeader } from './PoolHeader';
 
 export const PoolMenu = () => {
   const theme = useTheme();
-  const { rewardZone } = useBackstop();
+  // const { rewardZone } = useBackstop();
+  const { rewardZone } = useStore();
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
