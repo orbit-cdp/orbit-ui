@@ -7,8 +7,8 @@ import { PoolHeader } from './PoolHeader';
 
 export const PoolMenu = () => {
   const theme = useTheme();
-  // const { rewardZone } = useBackstop();
-  const { rewardZone } = useStore();
+
+  const rewardZone = useStore((state) => state.rewardZone);
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);

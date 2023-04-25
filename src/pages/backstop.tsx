@@ -23,7 +23,7 @@ const Backstop: NextPage = () => {
   const router = useRouter();
   const { poolId } = router.query;
 
-  const { refreshBackstopUserData } = useStore();
+  const refreshBackstopUserData = useStore((state) => state.refreshBackstopUserData);
 
   const { viewType } = useSettings();
 
