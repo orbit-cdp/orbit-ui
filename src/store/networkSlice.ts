@@ -10,7 +10,7 @@ export interface NetworkSlice {
 }
 
 export const createNetworkSlice: StateCreator<DataStore, [], [], NetworkSlice> = (set, get) => ({
-  rpcUrl: 'http://localhost:8000/soroban/rpc',
+  rpcUrl: 'http://ec2-3-89-215-1.compute-1.amazonaws.com:80/soroban/rpc',
   passphrase: 'Standalone Network ; February 2017',
   rpcServer: () => {
     return new Server(get().rpcUrl, { allowHttp: true });
