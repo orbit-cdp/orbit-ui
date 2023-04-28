@@ -25,7 +25,7 @@ export interface PoolSlice {
   refreshPoolData: (pool_id: string) => Promise<void>;
   refreshPoolReserveData: (pool_id: string) => Promise<void>;
   refreshPoolUserData: (pool_id: string, user: string) => Promise<void>;
-  refreshPoolAll: (pool_id: string, user: string) => Promise<void>;
+  refreshPoolReserveAll: (pool_id: string, user: string) => Promise<void>;
 }
 
 export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set, get) => ({
@@ -84,25 +84,38 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
       console.error('unable to refresh backstop data:', e);
     }
   },
-  refreshPoolAll: async (pool_id: string, user: string) => {
+  refreshPoolReserveAll: async (pool_id: string, user: string) => {
     try {
       const stellar = get().rpcServer();
       const network = get().passphrase;
-      const pool = await loadPool(stellar, pool_id);
+      let pool = get().pools.get(pool_id);
+      let set_pool = false;
+      if (pool == undefined) {
+        pool = await loadPool(stellar, pool_id);
+        set_pool = true;
+      }
       const pool_reserves = await loadReservesForPool(stellar, network, pool);
-      const user_reserve_balanaces = await loadUserForPool(
+      const user_reserve_balances = await loadUserForPool(
         stellar,
         network,
         pool_id,
         pool_reserves,
         user
       );
-      useStore.setState((prev) => ({
-        pools: new Map(prev.pools).set(pool_id, pool),
-        reserves: new Map(prev.reserves).set(pool_id, pool_reserves),
-        resUserBalances: new Map(prev.resUserBalances).set(pool_id, user_reserve_balanaces),
-      }));
-      console.log('refreshed all data for:', pool_id);
+      if (set_pool) {
+        useStore.setState((prev) => ({
+          pools: new Map(prev.pools).set(pool_id, pool as Pool),
+          reserves: new Map(prev.reserves).set(pool_id, pool_reserves),
+          resUserBalances: new Map(prev.resUserBalances).set(pool_id, user_reserve_balances),
+        }));
+      } else {
+        useStore.setState((prev) => ({
+          reserves: new Map(prev.reserves).set(pool_id, pool_reserves),
+          resUserBalances: new Map(prev.resUserBalances).set(pool_id, user_reserve_balances),
+        }));
+      }
+
+      console.log('refreshed data for:', pool_id);
     } catch (e) {
       console.error('unable to refresh data:', e);
     }

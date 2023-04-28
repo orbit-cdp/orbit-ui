@@ -25,7 +25,7 @@ const Dashboard: NextPage = () => {
   const { poolId } = router.query;
 
   const theme = useTheme();
-  const refreshPoolAll = useStore((state) => state.refreshPoolAll);
+  const refreshPoolReserveAll = useStore((state) => state.refreshPoolReserveAll);
 
   // const pool = useStore((state) =>
   //   state.pools.get('b205ebaef0961b3ade0aada40861b5eaace5fe13ba5a9aeda96c92686a21b90c')
@@ -40,17 +40,14 @@ const Dashboard: NextPage = () => {
   const [lend, setLend] = useState<boolean>(true);
 
   useEffect(() => {
-    if (isMounted.current) {
+    if (isMounted.current && typeof poolId == 'string') {
       console.log('running');
-      refreshPoolAll(
-        'b205ebaef0961b3ade0aada40861b5eaace5fe13ba5a9aeda96c92686a21b90c',
-        'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K'
-      );
+      refreshPoolReserveAll(poolId, 'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K');
     } else {
       console.log('skipped');
       isMounted.current = true;
     }
-  }, [refreshPoolAll]);
+  }, [refreshPoolReserveAll]);
 
   const handleLendClick = () => {
     if (!lend) {
