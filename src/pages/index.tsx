@@ -8,7 +8,7 @@ import { MarketCard } from '../components/markets/MarketCard';
 const Markets: NextPage = () => {
   return (
     <>
-      <Row sx={{ padding: '6px' }}>
+      <Row>
         <WalletWarning />
       </Row>
       <Row>

@@ -7,6 +7,7 @@ import Head from 'next/head';
 import { SettingsProvider } from '../contexts';
 import { BackstopProvider } from '../contexts/backstop';
 import { NetworkProvider } from '../contexts/network';
+import { WalletProvider } from '../contexts/wallet';
 import DefaultLayout from '../layouts/DefaultLayout';
 import theme from '../theme';
 
@@ -19,14 +20,16 @@ export default function MyApp(props: AppProps) {
       </Head>
       <ThemeProvider theme={theme}>
         <SettingsProvider>
-          <NetworkProvider>
-            <BackstopProvider>
-              <CssBaseline />
-              <DefaultLayout>
-                <Component {...pageProps} />
-              </DefaultLayout>
-            </BackstopProvider>
-          </NetworkProvider>
+          <WalletProvider>
+            <NetworkProvider>
+              <BackstopProvider>
+                <CssBaseline />
+                <DefaultLayout>
+                  <Component {...pageProps} />
+                </DefaultLayout>
+              </BackstopProvider>
+            </NetworkProvider>
+          </WalletProvider>
         </SettingsProvider>
       </ThemeProvider>
     </>

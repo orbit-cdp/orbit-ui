@@ -12,7 +12,7 @@ const Withdraw: NextPage = () => {
   const theme = useTheme();
   return (
     <>
-      <Row sx={{ padding: '6px' }}>
+      <Row>
         <WalletWarning />
       </Row>
       <Row>

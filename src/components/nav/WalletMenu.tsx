@@ -1,16 +1,36 @@
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { Button, Menu, MenuItem, Typography, useTheme } from '@mui/material';
+import { Alert, Button, Menu, MenuItem, Snackbar, Typography, useTheme } from '@mui/material';
+import copy from 'copy-to-clipboard';
 import React from 'react';
+import { useWallet } from '../../contexts/wallet';
 import * as formatter from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
 import { WalletIcon } from '../common/WalletIcon';
 
 export const WalletMenu = () => {
   const theme = useTheme();
+  const { connect, disconnect, connected, walletAddress } = useWallet();
 
-  // TODO: Fetch from some context
-  const isConnected = false;
-  const address = 'GCFEEFCTEA4XD43ZYF2PXQ23NF4HF55SIEOTB53YEN5F6XYIUNTJA3NJ';
+  //snackbars
+  const [openCon, setOpenCon] = React.useState(false);
+  const [openDis, setOpenDis] = React.useState(false);
+  const [openCopy, setOpenCopy] = React.useState(false);
+
+  const handleDisconnectWallet = () => {
+    disconnect();
+    setOpenDis(true);
+  };
+
+  const handleCopyAddress = () => {
+    copy(walletAddress || '');
+    setOpenCopy(true);
+  };
+
+  const handleSnackClose = () => {
+    setOpenCon(false);
+    setOpenDis(false);
+    setOpenCopy(false);
+  };
 
   const [anchorElDropdown, setAnchorElDropdown] = React.useState<null | HTMLElement>(null);
   const openDropdown = Boolean(anchorElDropdown);
@@ -33,7 +53,7 @@ export const WalletMenu = () => {
 
   return (
     <>
-      {isConnected ? (
+      {connected ? (
         <CustomButton
           id="wallet-dropdown-button"
           onClick={handleClickDropdown}
@@ -41,7 +61,7 @@ export const WalletMenu = () => {
         >
           <WalletIcon name={'Freighter'} />
           <Typography variant="body1" color={theme.palette.text.primary}>
-            {formatter.toCompactAddress(address)}
+            {formatter.toCompactAddress(walletAddress)}
           </Typography>
           <ArrowDropDownIcon sx={{ color: theme.palette.text.secondary }} />
         </CustomButton>
@@ -70,9 +90,23 @@ export const WalletMenu = () => {
           backgroundColor: theme.palette.menu.main,
         }}
       >
-        <MenuItem onClick={handleClose}>Docs</MenuItem>
-        <MenuItem onClick={handleClose}>User agreement</MenuItem>
-        <MenuItem onClick={handleClose}>Privacy policy</MenuItem>
+        <MenuItem
+          onClick={() => {
+            handleClose();
+            handleCopyAddress();
+          }}
+        >
+          Copy address
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            handleClose();
+            handleDisconnectWallet();
+          }}
+          sx={{ color: '#E7424C' }}
+        >
+          Disconnect
+        </MenuItem>
       </Menu>
       <Menu
         id="connect-wallet-menu"
@@ -87,19 +121,83 @@ export const WalletMenu = () => {
           backgroundColor: theme.palette.menu.main,
         }}
       >
-        <MenuItem onClick={handleClose}>
+        <MenuItem
+          onClick={() => {
+            handleClose();
+            connect();
+            setOpenCon(true);
+          }}
+        >
           <WalletIcon name={'Freighter'} />
           <Typography variant="h3" color={theme.palette.text.primary} sx={{ marginLeft: '6px' }}>
             Freighter
           </Typography>
         </MenuItem>
-        <MenuItem onClick={handleClose}>
-          <WalletIcon name={'Albedo'} />
-          <Typography variant="h3" color={theme.palette.text.primary} sx={{ marginLeft: '6px' }}>
-            Albedo
-          </Typography>
-        </MenuItem>
       </Menu>
+
+      <Snackbar
+        open={openCon}
+        autoHideDuration={4000}
+        onClose={handleSnackClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+      >
+        <Alert
+          onClose={handleClose}
+          severity="success"
+          sx={{
+            backgroundColor: theme.palette.primary.opaque,
+            alignItems: 'center',
+            width: '100%',
+          }}
+        >
+          Wallet connected.
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={openDis}
+        autoHideDuration={4000}
+        onClose={handleSnackClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+      >
+        <Alert
+          onClose={handleClose}
+          severity="success"
+          sx={{
+            backgroundColor: theme.palette.primary.opaque,
+            alignItems: 'center',
+            width: '100%',
+          }}
+        >
+          Wallet disconnected.
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={openCopy}
+        autoHideDuration={4000}
+        onClose={handleSnackClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+      >
+        <Alert
+          onClose={handleClose}
+          severity="success"
+          sx={{
+            backgroundColor: theme.palette.primary.opaque,
+            alignItems: 'center',
+            width: '100%',
+          }}
+        >
+          Wallet address copied to clipboard.
+        </Alert>
+      </Snackbar>
     </>
   );
 };
