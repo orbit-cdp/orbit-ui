@@ -13,11 +13,13 @@ export const WalletWarning = () => {
   const handleSnackClose = () => {
     setOpenCon(false);
   };
+  if (connected) {
+  }
 
   return (
     <>
       {connected ? (
-        <Box></Box>
+        <></>
       ) : (
         <OpaqueButton
           onClick={() => {
