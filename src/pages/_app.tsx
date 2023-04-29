@@ -6,6 +6,7 @@ import { AppProps } from 'next/app';
 import Head from 'next/head';
 import { useEffect } from 'react';
 import { SettingsProvider } from '../contexts';
+import { WalletProvider } from '../contexts/wallet';
 import DefaultLayout from '../layouts/DefaultLayout';
 import { useStore } from '../store/store';
 import theme from '../theme';
@@ -25,10 +26,12 @@ export default function MyApp(props: AppProps) {
       </Head>
       <ThemeProvider theme={theme}>
         <SettingsProvider>
-          <CssBaseline />
-          <DefaultLayout>
-            <Component {...pageProps} />
-          </DefaultLayout>
+          <WalletProvider>
+            <CssBaseline />
+            <DefaultLayout>
+              <Component {...pageProps} />
+            </DefaultLayout>
+          </WalletProvider>
         </SettingsProvider>
       </ThemeProvider>
     </>

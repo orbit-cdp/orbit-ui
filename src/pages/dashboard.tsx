@@ -63,7 +63,7 @@ const Dashboard: NextPage = () => {
 
   return (
     <>
-      <Row sx={{ padding: '6px' }}>
+      <Row>
         <WalletWarning />
       </Row>
       <PoolExploreBar />
