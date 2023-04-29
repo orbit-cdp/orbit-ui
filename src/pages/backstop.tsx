@@ -2,7 +2,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BackstopEarnings } from '../components/backstop/BackstopEarnings';
 import { BackstopQueue } from '../components/backstop/BackstopQueue';
 import { CustomButton } from '../components/common/CustomButton';
@@ -17,14 +17,16 @@ import { TokenIcon } from '../components/common/TokenIcon';
 import { WalletWarning } from '../components/common/WalletWarning';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
 import { useSettings, ViewType } from '../contexts';
+import { useStore } from '../store/store';
 
 const Backstop: NextPage = () => {
+  const { viewType } = useSettings();
+  const theme = useTheme();
+  const isMounted = useRef(false);
+
   const router = useRouter();
   const { poolId } = router.query;
-
-  const { viewType } = useSettings();
-
-  const theme = useTheme();
+  const refreshBackstopUserData = useStore((state) => state.refreshBackstopUserData);
 
   const [deposit, setDeposit] = useState<boolean>(true);
 
@@ -39,6 +41,14 @@ const Backstop: NextPage = () => {
       setDeposit(false);
     }
   };
+
+  useEffect(() => {
+    if (isMounted.current) {
+      refreshBackstopUserData('GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K');
+    } else {
+      isMounted.current = true;
+    }
+  }, [refreshBackstopUserData]);
 
   return (
     <>

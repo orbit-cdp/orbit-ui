@@ -6,6 +6,7 @@ export interface PoolHeaderProps extends BoxProps {
 }
 
 export const PoolHeader: React.FC<PoolHeaderProps> = ({ name, sx, ...props }) => {
+  const res_name = name.length > 12 ? name.substring(0, 9) + '...' : name;
   return (
     <Box
       sx={{
@@ -18,9 +19,9 @@ export const PoolHeader: React.FC<PoolHeaderProps> = ({ name, sx, ...props }) =>
       }}
       {...props}
     >
-      <PoolIcon name={name} sx={{ height: '30px', width: '30px' }} />
+      <PoolIcon name={res_name} sx={{ height: '30px', width: '30px' }} />
       <Typography variant="h3" sx={{ marginLeft: '6px' }}>
-        {`${name} Pool`}
+        {`${res_name} Pool`}
       </Typography>
     </Box>
   );

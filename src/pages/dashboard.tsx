@@ -2,7 +2,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BackstopPreviewBar } from '../components/backstop/BackstopPreviewBar';
 import { BorrowMarketList } from '../components/borrow/BorrowMarketList';
 import { BorrowPositions } from '../components/borrow/BorrowPositions';
@@ -17,14 +17,37 @@ import { PositionOverview } from '../components/dashboard/PositionOverview';
 import { LendMarketList } from '../components/lend/LendMarketList';
 import { LendPositions } from '../components/lend/LendPositions';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
+import { useStore } from '../store/store';
 
 const Dashboard: NextPage = () => {
+  const isMounted = useRef(false);
   const router = useRouter();
   const { poolId } = router.query;
 
   const theme = useTheme();
+  const refreshPoolReserveAll = useStore((state) => state.refreshPoolReserveAll);
+
+  // const pool = useStore((state) =>
+  //   state.pools.get('b205ebaef0961b3ade0aada40861b5eaace5fe13ba5a9aeda96c92686a21b90c')
+  // );
+  // const reserves = useStore((state) =>
+  //   state.reserves.get('b205ebaef0961b3ade0aada40861b5eaace5fe13ba5a9aeda96c92686a21b90c')
+  // );
+  // const user_res_balances = useStore((state) =>
+  //   state.resUserBalances.get('b205ebaef0961b3ade0aada40861b5eaace5fe13ba5a9aeda96c92686a21b90c')
+  // );
 
   const [lend, setLend] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (isMounted.current && typeof poolId == 'string') {
+      console.log('running');
+      refreshPoolReserveAll(poolId, 'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K');
+    } else {
+      console.log('skipped');
+      isMounted.current = true;
+    }
+  }, [refreshPoolReserveAll]);
 
   const handleLendClick = () => {
     if (!lend) {
