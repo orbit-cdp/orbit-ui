@@ -14,7 +14,7 @@ export interface BackstopSlice {
 
 export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice> = (set, get) => ({
   backstopContract: new BackstopContract(
-    'aa59ebb5f5c5fa7e3ae3c70e4373541eec32cb093a7174fa0aa2efaf493595b0'
+    '00a387e057e2542ce4fe2610c33e0ef7a41cd8d6a25b78fd8ae2517e81e5daa3'
   ),
   rewardZone: [],
   shares: new Map<string, BigInt>(),
@@ -28,7 +28,7 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
         'base64'
       );
       let rz_dataEntry = await stellar.getContractData(contract._contract.contractId(), rz_datakey);
-      set({ rewardZone: data_entry_converter.toHexStringArray(rz_dataEntry.xdr) });
+      set({ rewardZone: data_entry_converter.toStringArray(rz_dataEntry.xdr, 'hex') });
     } catch (e) {
       console.error('unable to refresh backstop data:', e);
     }
@@ -116,7 +116,7 @@ async function loadQ4W(
         contract._contract.contractId(),
         q4w_datakey
       );
-      q4w_map.set(rz_id, Q4W.fromXDR(q4w_dataEntry.xdr));
+      q4w_map.set(rz_id, Q4W.fromContractDataXDR(q4w_dataEntry.xdr));
     } catch (e: any) {
       if (e?.message?.includes('not found') === false) {
         console.error('unable to fetch q4w for: ', rz_id);

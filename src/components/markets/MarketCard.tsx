@@ -2,6 +2,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, BoxProps, Collapse, useTheme } from '@mui/material';
 import { useState } from 'react';
+import { useStore } from '../../store/store';
 import { LinkBox } from '../common/LinkBox';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { Row } from '../common/Row';
@@ -12,12 +13,14 @@ import { PoolHeader } from '../pool/PoolHeader';
 import { MarketCardCollapse } from './MarketCardCollapse';
 
 export interface MarketCardProps extends BoxProps {
-  name: string;
+  poolId: string;
 }
 
-export const MarketCard: React.FC<MarketCardProps> = ({ name, sx }) => {
+export const MarketCard: React.FC<MarketCardProps> = ({ poolId, sx }) => {
   const theme = useTheme();
   const [expand, setExpand] = useState(false);
+
+  const pool = useStore((state) => state.pools.get(poolId));
 
   const [rotateArrow, setRotateArrow] = useState(false);
   const rotate = rotateArrow ? 'rotate(180deg)' : 'rotate(0)';
@@ -38,7 +41,7 @@ export const MarketCard: React.FC<MarketCardProps> = ({ name, sx }) => {
         }}
       >
         <Row>
-          <PoolHeader name={name} sx={{ margin: '6px', padding: '6px' }} />
+          <PoolHeader name={pool?.name ?? 'blend'} sx={{ margin: '6px', padding: '6px' }} />
           <Box
             sx={{
               margin: '6px',
@@ -83,7 +86,7 @@ export const MarketCard: React.FC<MarketCardProps> = ({ name, sx }) => {
       <Row>
         <LinkBox
           sx={{ width: '100%', marginRight: '12px' }}
-          to={{ pathname: '/dashboard', query: { poolId: 'poolId' } }}
+          to={{ pathname: '/dashboard', query: { poolId: poolId } }}
         >
           <OpaqueButton
             palette={theme.palette.primary}
@@ -110,7 +113,7 @@ export const MarketCard: React.FC<MarketCardProps> = ({ name, sx }) => {
         </LinkBox>
       </Row>
       <Collapse in={expand} sx={{ width: '100%' }}>
-        <MarketCardCollapse name={name}></MarketCardCollapse>
+        <MarketCardCollapse name={pool?.name ?? 'blend'}></MarketCardCollapse>
       </Collapse>
     </Section>
   );
