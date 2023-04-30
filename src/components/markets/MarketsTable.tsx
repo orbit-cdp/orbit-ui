@@ -42,11 +42,7 @@ export const MarketsTable: React.FC<MarketsTableProps> = ({ assetData, sx, ...pr
             type: 'alt',
           }}
         >
-          <TokenHeader
-            code={assetData.code}
-            issuer={assetData.issuer}
-            sx={{ width: tableWidth, marginRight: '12px' }}
-          />
+          <TokenHeader id={'temp'} sx={{ width: tableWidth, marginRight: '12px' }} />
           <Box
             sx={{
               width: tableWidth,
@@ -117,11 +113,7 @@ export const MarketsTable: React.FC<MarketsTableProps> = ({ assetData, sx, ...pr
             type: 'alt',
           }}
         >
-          <TokenHeader
-            code={assetData.code}
-            issuer=""
-            sx={{ width: 'tableWidth + (tableWidth*(tableNum/2))' }}
-          />
+          <TokenHeader id={'temp'} sx={{ width: 'tableWidth + (tableWidth*(tableNum/2))' }} />
           <Box
             sx={{
               width: 'tableWidth + (tableWidth*(tableNum/2))',

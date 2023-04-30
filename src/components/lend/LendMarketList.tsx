@@ -1,5 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import { useSettings, ViewType } from '../../contexts';
+import { useStore } from '../../store/store';
+import { PoolComponentProps } from '../common/PoolComponentProps';
 import { LendMarketCard } from './LendMarketCard';
 
 export interface LendMarketAssetData {
@@ -38,10 +40,12 @@ const tempLendMarketData: LendMarketAssetData[] = [
   },
 ];
 
-export const LendMarketList = () => {
+export const LendMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
+  const poolReserves = useStore((state) => state.reserve_est.get(poolId));
+  const userReserves = useStore((state) => state.user_bal_est.get(poolId));
 
-  const headerNum = 5;
+  const headerNum = viewType === ViewType.REGULAR ? 5 : 4;
   const headerWidth = `${(100 / headerNum).toFixed(2)}%`;
   return (
     <Box
@@ -53,36 +57,36 @@ export const LendMarketList = () => {
         padding: '6px',
       }}
     >
-      {viewType === ViewType.REGULAR && (
-        <Box
-          sx={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '6px',
-            type: 'alt',
-          }}
+      <Box
+        sx={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '6px',
+          type: 'alt',
+        }}
+      >
+        <Typography variant="body2" color="text.secondary" sx={{ width: headerWidth }}>
+          Asset
+        </Typography>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          align="center"
+          sx={{ width: headerWidth }}
         >
-          <Typography variant="body2" color="text.secondary" sx={{ width: headerWidth }}>
-            Asset
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            sx={{ width: headerWidth }}
-          >
-            Wallet Balance
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            sx={{ width: headerWidth }}
-          >
-            APR
-          </Typography>
+          Wallet Balance
+        </Typography>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          align="center"
+          sx={{ width: headerWidth }}
+        >
+          APR
+        </Typography>
+        {headerNum >= 5 && (
           <Typography
             variant="body2"
             color="text.secondary"
@@ -91,49 +95,21 @@ export const LendMarketList = () => {
           >
             Collateral Factor
           </Typography>
-          <Box sx={{ width: headerWidth }} />
-        </Box>
+        )}
+
+        <Box sx={{ width: headerWidth }} />
+      </Box>
+      {poolReserves ? (
+        poolReserves.map((reserve) => (
+          <LendMarketCard
+            key={reserve.id}
+            reserveData={reserve}
+            balance={userReserves?.get(reserve.id)?.asset ?? 0}
+          />
+        ))
+      ) : (
+        <></>
       )}
-      {viewType !== ViewType.REGULAR && (
-        <Box
-          sx={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '6px',
-            type: 'alt',
-          }}
-        >
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ width: 'headerWidth + (headerWidth/headerNum)' }}
-          >
-            Asset
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            sx={{ width: 'headerWidth + (headerWidth/headerNum)' }}
-          >
-            Wallet Balance
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            sx={{ width: 'headerWidth + (headerWidth/headerNum)' }}
-          >
-            APR
-          </Typography>
-          <Box sx={{ width: 'headerWidth + (headerWidth/headerNum)' }} />
-        </Box>
-      )}
-      {tempLendMarketData.map((lendAssetData) => (
-        <LendMarketCard assetData={lendAssetData} key={lendAssetData.address} />
-      ))}
     </Box>
   );
 };
