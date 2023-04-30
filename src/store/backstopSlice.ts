@@ -3,6 +3,9 @@ import { Address, Server, xdr } from 'soroban-client';
 import { StateCreator } from 'zustand';
 import { DataStore } from './store';
 
+/**
+ * Ledger state for the backstop
+ */
 export interface BackstopSlice {
   backstopContract: BackstopContract;
   rewardZone: string[];
