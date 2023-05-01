@@ -1,18 +1,23 @@
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { Box, BoxProps, Typography, useTheme } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
+import { useStore } from '../../store/store';
+import { toCompactAddress, toPercentage } from '../../utils/formatter';
 import { Icon } from '../common/Icon';
 import { LinkBox } from '../common/LinkBox';
 import { OpaqueButton } from '../common/OpaqueButton';
+import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { StackedTextBox } from '../common/StackedTextBox';
 import { MarketsList } from './MarketsList';
 
-export interface MarketCardCollapseProps extends BoxProps {
-  name: string;
-}
-
-export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({ name, sx, ...props }) => {
+export const MarketCardCollapse: React.FC<PoolComponentProps> = ({ poolId, sx, ...props }) => {
   const theme = useTheme();
+
+  const pool = useStore((state) => state.pools.get(poolId));
+  const poolBackstopBalance = useStore((state) => state.poolBackstopBalance.get(poolId));
+  let decimalQ4WRatio = poolBackstopBalance
+    ? Number(poolBackstopBalance.q4w) / Number(poolBackstopBalance.shares)
+    : 0;
 
   return (
     <Box
@@ -38,7 +43,9 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({ name, sx
             <Icon src={'/icons/pageicons/oracle_icon.svg'} alt="oracle-icon" isCircle={false} />
           </Box>
           <Box sx={{ padding: '6px', display: 'flex', flexDirection: 'row', height: '30px' }}>
-            <Box sx={{ paddingRight: '12px', lineHeight: '100%' }}>Oracle</Box>
+            <Box sx={{ paddingRight: '12px', lineHeight: '100%' }}>{`Oracle ${toCompactAddress(
+              pool?.config.oracle
+            )}`}</Box>
             <Box>
               <ArrowForwardIcon fontSize="inherit" />
             </Box>
@@ -97,17 +104,22 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({ name, sx
                 </Box>
               </Row>
               <Row>
-                <StackedTextBox name="Backstop APR" sx={{ width: '50%' }}></StackedTextBox>
+                <StackedTextBox
+                  name="Backstop APR"
+                  text={toPercentage(0.1234)}
+                  sx={{ width: '50%' }}
+                />
                 <StackedTextBox
                   name="Q4W"
+                  text={toPercentage(decimalQ4WRatio)}
                   sx={{ width: '50%', color: theme.palette.backstop.main }}
-                ></StackedTextBox>
+                />
               </Row>
             </Box>
           </OpaqueButton>
         </LinkBox>
       </Row>
-      <MarketsList />
+      <MarketsList poolId={poolId} />
     </Box>
   );
 };

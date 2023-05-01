@@ -3,11 +3,13 @@ import { StackedText } from '../common/StackedText';
 
 export interface StackedTextHLBoxProps extends BoxProps {
   name: string;
+  text: string;
   palette: PaletteColor;
 }
 
 export const StackedTextHLBox: React.FC<StackedTextHLBoxProps> = ({
   name,
+  text,
   palette,
   sx,
   ...props
@@ -28,8 +30,8 @@ export const StackedTextHLBox: React.FC<StackedTextHLBoxProps> = ({
       {...props}
     >
       <StackedText
-        title={`${name}`}
-        text="888.888M"
+        title={name}
+        text={text}
         sx={{ width: '100%', padding: '6px', color: palette.main }}
       ></StackedText>
       <Box

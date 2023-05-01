@@ -1,10 +1,13 @@
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { Box, BoxProps, Collapse, useTheme } from '@mui/material';
+import { Box, Collapse, useTheme } from '@mui/material';
 import { useState } from 'react';
 import { useStore } from '../../store/store';
+import { toBalance } from '../../utils/formatter';
+import { TOKEN_META } from '../../utils/token_display';
 import { LinkBox } from '../common/LinkBox';
 import { OpaqueButton } from '../common/OpaqueButton';
+import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
 import { StackedTextHLBox } from '../common/StackedTextHLBox';
@@ -12,15 +15,13 @@ import { TokenIcon } from '../common/TokenIcon';
 import { PoolHeader } from '../pool/PoolHeader';
 import { MarketCardCollapse } from './MarketCardCollapse';
 
-export interface MarketCardProps extends BoxProps {
-  poolId: string;
-}
-
-export const MarketCard: React.FC<MarketCardProps> = ({ poolId, sx }) => {
+export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
   const theme = useTheme();
   const [expand, setExpand] = useState(false);
 
   const pool = useStore((state) => state.pools.get(poolId));
+  const poolEst = useStore((state) => state.pool_est.get(poolId));
+  const poolBackstopBal = useStore((state) => state.poolBackstopBalance.get(poolId));
 
   const [rotateArrow, setRotateArrow] = useState(false);
   const rotate = rotateArrow ? 'rotate(180deg)' : 'rotate(0)';
@@ -68,16 +69,19 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, sx }) => {
         <Row>
           <StackedTextHLBox
             name="Lent"
+            text={poolEst ? `$${toBalance(poolEst.total_supply_base)}` : '--'}
             palette={theme.palette.lend}
             sx={{ width: '33.33%' }}
           ></StackedTextHLBox>
           <StackedTextHLBox
             name="Borrowed"
+            text={poolEst ? `$${toBalance(poolEst.total_liabilities_base)}` : '--'}
             palette={theme.palette.borrow}
             sx={{ width: '33.33%' }}
           ></StackedTextHLBox>
           <StackedTextHLBox
             name="Backstop"
+            text={poolBackstopBal ? toBalance(Number(poolBackstopBal.tokens) / 1e7) : '--'}
             palette={theme.palette.backstop}
             sx={{ width: '33.33%' }}
           ></StackedTextHLBox>
@@ -99,9 +103,14 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, sx }) => {
             }}
           >
             <Box sx={{ margin: '6px', height: '30px' }}>
-              <TokenIcon symbol="blnd" sx={{ marginRight: '6px' }}></TokenIcon>
-              <TokenIcon symbol="usdc" sx={{ marginRight: '6px' }}></TokenIcon>
-              <TokenIcon symbol="eth" sx={{ marginRight: '6px' }}></TokenIcon>
+              {pool ? (
+                pool.reserves.map((reserveId) => {
+                  const code = TOKEN_META[reserveId as keyof typeof TOKEN_META]?.code ?? 'unknown';
+                  return <TokenIcon symbol={code} sx={{ marginRight: '6px' }} />;
+                })
+              ) : (
+                <></>
+              )}
             </Box>
             <Box sx={{ padding: '6px', display: 'flex', flexDirection: 'row', height: '30px' }}>
               <Box sx={{ paddingRight: '12px', lineHeight: '100%' }}>Dashboard</Box>
@@ -113,7 +122,7 @@ export const MarketCard: React.FC<MarketCardProps> = ({ poolId, sx }) => {
         </LinkBox>
       </Row>
       <Collapse in={expand} sx={{ width: '100%' }}>
-        <MarketCardCollapse name={pool?.name ?? 'blend'}></MarketCardCollapse>
+        <MarketCardCollapse poolId={poolId}></MarketCardCollapse>
       </Collapse>
     </Section>
   );
