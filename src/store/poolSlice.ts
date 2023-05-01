@@ -18,13 +18,18 @@ export type Pool = {
   reserves: string[];
 };
 
+/**
+ * Ledger state for a set of pools
+ */
 export interface PoolSlice {
   pools: Map<string, Pool>;
   reserves: Map<string, Map<string, Reserve>>;
   resUserBalances: Map<string, Map<string, ReserveBalance>>;
+  poolPrices: Map<string, Map<string, number>>;
   refreshPoolData: (pool_id: string) => Promise<void>;
   refreshPoolReserveData: (pool_id: string) => Promise<void>;
   refreshPoolUserData: (pool_id: string, user: string) => Promise<void>;
+  refreshPrices: (pool_id: string) => Promise<void>;
   refreshPoolReserveAll: (pool_id: string, user: string) => Promise<void>;
 }
 
@@ -32,6 +37,7 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
   pools: new Map<string, Pool>(),
   reserves: new Map<string, Map<string, Reserve>>(),
   resUserBalances: new Map<string, Map<string, ReserveBalance>>(),
+  poolPrices: new Map<string, Map<string, number>>(),
   refreshPoolData: async (pool_id: string) => {
     try {
       const stellar = get().rpcServer();
@@ -84,6 +90,22 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
       console.error('unable to refresh backstop data:', e);
     }
   },
+  refreshPrices: async (pool_id: string) => {
+    try {
+      const stellar = get().rpcServer();
+      const pool = get().pools.get(pool_id);
+      if (pool == undefined) {
+        throw Error('unknown pool');
+      }
+      const prices = await loadOraclePrices(stellar, pool);
+      useStore.setState((prev) => ({
+        poolPrices: new Map(prev.poolPrices).set(pool_id, prices),
+      }));
+      console.log('refreshed prices for pool:', pool_id);
+    } catch (e: any) {
+      console.error('unable to refresh prices:', e);
+    }
+  },
   refreshPoolReserveAll: async (pool_id: string, user: string) => {
     try {
       const stellar = get().rpcServer();
@@ -94,6 +116,7 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
         pool = await loadPool(stellar, pool_id);
         set_pool = true;
       }
+      const prices = await loadOraclePrices(stellar, pool);
       const pool_reserves = await loadReservesForPool(stellar, network, pool);
       const user_reserve_balances = await loadUserForPool(
         stellar,
@@ -104,12 +127,14 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
       );
       if (set_pool) {
         useStore.setState((prev) => ({
+          poolPrices: new Map(prev.poolPrices).set(pool_id, prices),
           pools: new Map(prev.pools).set(pool_id, pool as Pool),
           reserves: new Map(prev.reserves).set(pool_id, pool_reserves),
           resUserBalances: new Map(prev.resUserBalances).set(pool_id, user_reserve_balances),
         }));
       } else {
         useStore.setState((prev) => ({
+          poolPrices: new Map(prev.poolPrices).set(pool_id, prices),
           reserves: new Map(prev.reserves).set(pool_id, pool_reserves),
           resUserBalances: new Map(prev.resUserBalances).set(pool_id, user_reserve_balances),
         }));
@@ -262,4 +287,24 @@ async function loadUserForPool(
   }
 
   return user_balance_map;
+}
+
+async function loadOraclePrices(stellar: Server, pool: Pool): Promise<Map<string, number>> {
+  let price_map = new Map<string, number>();
+  let decimals = 7;
+  for (const asset_id of pool.reserves) {
+    try {
+      let price_datakey = xdr.ScVal.scvVec([
+        xdr.ScVal.scvSymbol('Prices'),
+        xdr.ScVal.scvBytes(Buffer.from(asset_id, 'hex')),
+      ]);
+      let price_entry = await stellar.getContractData(pool.config.oracle, price_datakey);
+      let price = data_entry_converter.toNumber(price_entry.xdr);
+      price = price / 10 ** decimals;
+      price_map.set(asset_id, price);
+    } catch (e: any) {
+      console.error(`unable to fetch a price for ${asset_id}:`, e);
+    }
+  }
+  return price_map;
 }

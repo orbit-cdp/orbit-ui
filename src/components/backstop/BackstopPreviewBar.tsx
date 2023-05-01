@@ -1,16 +1,32 @@
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, useTheme } from '@mui/material';
 import { useSettings, ViewType } from '../../contexts';
+import { useStore } from '../../store/store';
+import { toBalance, toPercentage } from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
 import { Icon } from '../common/Icon';
 import { LinkBox } from '../common/LinkBox';
+import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
 import { StackedText } from '../common/StackedText';
 
-export const BackstopPreviewBar = () => {
+export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
   const theme = useTheme();
+
+  const poolBackstopBalance = useStore((state) => state.poolBackstopBalance.get(poolId));
+  const userBackstopBalance = useStore((state) => state.shares.get(poolId));
+
+  let decimalSize = Number(poolBackstopBalance?.tokens ?? 0) / 1e7;
+  let decimalQ4WRatio = poolBackstopBalance
+    ? Number(poolBackstopBalance.q4w) / Number(poolBackstopBalance.shares)
+    : 0;
+  let decimalUserBalance =
+    poolBackstopBalance && userBackstopBalance
+      ? (Number(userBackstopBalance) / 1e7) *
+        (Number(poolBackstopBalance.tokens) / Number(poolBackstopBalance.shares))
+      : 0;
 
   return (
     <Row>
@@ -39,9 +55,9 @@ export const BackstopPreviewBar = () => {
                   sx={{ marginRight: '12px' }}
                 />
                 <StackedText
-                  title="Claimable earnings"
+                  title="Balance"
                   titleColor="inherit"
-                  text="$888.888k"
+                  text={toBalance(decimalUserBalance)}
                   textColor="inherit"
                   type="large"
                 />
@@ -68,7 +84,7 @@ export const BackstopPreviewBar = () => {
               <StackedText
                 title="Backstop Size"
                 titleColor="inherit"
-                text="$888.888M"
+                text={toBalance(decimalSize)}
                 textColor="inherit"
                 type="large"
               />
@@ -88,7 +104,7 @@ export const BackstopPreviewBar = () => {
               <StackedText
                 title="Backstop Q4W"
                 titleColor="inherit"
-                text="28.888%"
+                text={toPercentage(decimalQ4WRatio)}
                 textColor="inherit"
                 type="large"
               />

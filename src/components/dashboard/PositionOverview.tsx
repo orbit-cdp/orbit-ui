@@ -1,10 +1,20 @@
 import { Box, CircularProgress, useTheme } from '@mui/material';
+import { useStore } from '../../store/store';
+import { toBalance, toPercentage } from '../../utils/formatter';
 import { Icon } from '../common/Icon';
+import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { StackedText } from '../common/StackedText';
 
-export const PositionOverview = () => {
+export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
+
+  const user_estimates = useStore((state) => state.user_est.get(poolId));
+
+  const borrow_capacity_fill =
+    user_estimates == undefined
+      ? 100
+      : (1 - user_estimates.borrow_capacity_base / user_estimates.total_borrowed_base) * 100;
 
   return (
     <Row>
@@ -25,9 +35,9 @@ export const PositionOverview = () => {
           }}
         >
           <StackedText
-            title="Net APR"
+            title="Net APY"
             titleColor="inherit"
-            text="28.888%"
+            text={toPercentage(user_estimates?.net_apy ?? 0)}
             textColor="inherit"
             type="large"
           />
@@ -49,7 +59,7 @@ export const PositionOverview = () => {
           <StackedText
             title="Borrow Capacity"
             titleColor="inherit"
-            text="$88.668"
+            text={`$${toBalance(user_estimates?.borrow_capacity_base ?? 0)}`}
             textColor="inherit"
             type="large"
           />
@@ -58,7 +68,7 @@ export const PositionOverview = () => {
             size="30px"
             thickness={4.5}
             variant="determinate"
-            value={75}
+            value={borrow_capacity_fill}
           />
         </Box>
       </Box>

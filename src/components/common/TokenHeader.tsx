@@ -1,14 +1,17 @@
 import { Box, BoxProps, Typography } from '@mui/material';
+import { TOKEN_META } from '../../utils/token_display';
 import { TokenIcon } from './TokenIcon';
 
 /// @dev TODO: Consider consolidation of icons / headers
 
 export interface TokenHeaderProps extends BoxProps {
-  code: string;
-  issuer: string;
+  id: string;
 }
 
-export const TokenHeader: React.FC<TokenHeaderProps> = ({ code, issuer, sx, ...props }) => {
+export const TokenHeader: React.FC<TokenHeaderProps> = ({ id, sx, ...props }) => {
+  // TODO: Find a better way to do this
+  const code = TOKEN_META[id as keyof typeof TOKEN_META]?.code ?? 'unknown';
+  const issuer = TOKEN_META[id as keyof typeof TOKEN_META]?.issuer ?? 'unknown';
   return (
     <Box
       sx={{

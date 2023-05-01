@@ -18,36 +18,65 @@ import { LendMarketList } from '../components/lend/LendMarketList';
 import { LendPositions } from '../components/lend/LendPositions';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
 import { useStore } from '../store/store';
+import { toBalance } from '../utils/formatter';
 
 const Dashboard: NextPage = () => {
   const isMounted = useRef(false);
   const router = useRouter();
   const { poolId } = router.query;
+  const safePoolId = typeof poolId == 'string' && /^[0-9a-f]{64}$/.test(poolId) ? poolId : '';
 
   const theme = useTheme();
   const refreshPoolReserveAll = useStore((state) => state.refreshPoolReserveAll);
-
-  // const pool = useStore((state) =>
-  //   state.pools.get('b205ebaef0961b3ade0aada40861b5eaace5fe13ba5a9aeda96c92686a21b90c')
-  // );
-  // const reserves = useStore((state) =>
-  //   state.reserves.get('b205ebaef0961b3ade0aada40861b5eaace5fe13ba5a9aeda96c92686a21b90c')
-  // );
-  // const user_res_balances = useStore((state) =>
-  //   state.resUserBalances.get('b205ebaef0961b3ade0aada40861b5eaace5fe13ba5a9aeda96c92686a21b90c')
-  // );
+  const estimateToLatestLedger = useStore((state) => state.estimateToLatestLedger);
+  const refreshPoolBackstopData = useStore((state) => state.refreshPoolBackstopData);
+  const reserves = useStore((state) => state.reserves.get(safePoolId));
+  const pool_est = useStore((state) => state.pool_est.get(safePoolId));
 
   const [lend, setLend] = useState<boolean>(true);
 
+  // TODO: Add long timer to refresh ledger data
   useEffect(() => {
-    if (isMounted.current && typeof poolId == 'string') {
-      console.log('running');
-      refreshPoolReserveAll(poolId, 'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K');
+    if (isMounted.current && safePoolId != '') {
+      refreshPoolReserveAll(safePoolId, 'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K');
     } else {
-      console.log('skipped');
       isMounted.current = true;
     }
-  }, [refreshPoolReserveAll]);
+  }, [refreshPoolReserveAll, safePoolId]);
+
+  useEffect(() => {
+    if (isMounted.current && safePoolId != '') {
+      estimateToLatestLedger(
+        safePoolId,
+        'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K'
+      );
+      const estimationInterval = setInterval(() => {
+        estimateToLatestLedger(
+          safePoolId,
+          'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K'
+        );
+      }, 60 * 1000);
+
+      return () => clearInterval(estimationInterval);
+    }
+  }, [estimateToLatestLedger, safePoolId, reserves]);
+
+  useEffect(() => {
+    if (isMounted.current && safePoolId != '') {
+      refreshPoolBackstopData(
+        safePoolId,
+        'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K'
+      );
+      const backstopInterval = setInterval(() => {
+        refreshPoolBackstopData(
+          safePoolId,
+          'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K'
+        );
+      }, 90 * 1000);
+
+      return () => clearInterval(backstopInterval);
+    }
+  }, [refreshPoolBackstopData, safePoolId]);
 
   const handleLendClick = () => {
     if (!lend) {
@@ -67,9 +96,12 @@ const Dashboard: NextPage = () => {
         <WalletWarning />
       </Row>
       <PoolExploreBar />
-      <PositionOverview />
+      <PositionOverview poolId={safePoolId} />
       <Row sx={{ padding: '6px' }}>
-        <LinkBox sx={{ width: '100%' }} to={{ pathname: '/backstop', query: { poolId: 'poolId' } }}>
+        <LinkBox
+          sx={{ width: '100%' }}
+          to={{ pathname: '/backstop', query: { poolId: safePoolId } }}
+        >
           <CustomButton
             sx={{
               color: theme.palette.text.primary,
@@ -83,7 +115,7 @@ const Dashboard: NextPage = () => {
           </CustomButton>
         </LinkBox>
       </Row>
-      <BackstopPreviewBar />
+      <BackstopPreviewBar poolId={safePoolId} />
       <Row>
         <Section width={SectionSize.FULL} sx={{ padding: '0px' }}>
           <ToggleButton
@@ -104,7 +136,7 @@ const Dashboard: NextPage = () => {
           </ToggleButton>
         </Section>
       </Row>
-      {lend ? <LendPositions /> : <BorrowPositions />}
+      {lend ? <LendPositions poolId={safePoolId} /> : <BorrowPositions poolId={safePoolId} />}
       <Row sx={{ padding: '6px', justifyContent: 'space-between' }}>
         <Typography variant="body1" sx={{ margin: '6px' }}>{`Assets to ${
           lend ? 'lend' : 'borrow'
@@ -119,11 +151,13 @@ const Dashboard: NextPage = () => {
           <Typography variant="body2" mr={1}>
             Market size:
           </Typography>
-          <Typography variant="body1">$888.888M</Typography>
+          <Typography variant="body1">{`$${toBalance(
+            pool_est?.total_supply_base ?? 0
+          )}`}</Typography>
         </Box>
       </Row>
       <Divider />
-      {lend ? <LendMarketList /> : <BorrowMarketList />}
+      {lend ? <LendMarketList poolId={safePoolId} /> : <BorrowMarketList poolId={safePoolId} />}
     </>
   );
 };
