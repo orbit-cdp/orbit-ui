@@ -1,14 +1,56 @@
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
+import { useState } from 'react';
+import { useStore } from '../../store/store';
+import { toBalance, toPercentage } from '../../utils/formatter';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
+import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
+import { ValueChange } from '../common/ValueChange';
 
-export const BorrowAnvil = () => {
+export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
+
+  const reserve = useStore((state) => state.reserves.get(poolId)?.get(assetId));
+  const prices = useStore((state) => state.poolPrices.get(poolId));
+  const user_est = useStore((state) => state.user_est.get(poolId));
+  const user_bal_est = useStore((state) => state.user_bal_est.get(poolId)?.get(assetId));
+
+  const reserve_symbol = reserve?.symbol ?? '';
+
+  const assetToBase = prices?.get(assetId) ?? 1;
+  const baseToAsset = 1 / assetToBase;
+  const curBorrowCap = (user_est?.borrow_capacity_base ?? 0) * baseToAsset;
+  const curBorrowLimit = user_est
+    ? user_est.borrow_capacity_base / user_est.total_borrowed_base
+    : 0;
+
+  const [toBorrow, setToBorrow] = useState<string>('0');
+  const [newBorrowCap, setNewBorrowCap] = useState<number>(curBorrowCap);
+  const [newBorrowLimit, setNewBorrowLimit] = useState<number>(curBorrowLimit);
+
+  const handleBorrowAmountChange = (borrowInput: string) => {
+    if (/^[0-9]*\.?[0-9]{0,7}$/.test(borrowInput)) {
+      let num_borrow = Number(borrowInput);
+      let borrow_base = num_borrow * assetToBase;
+      let tempNewBorrowCap = curBorrowCap - num_borrow;
+      let tempNewBorrowLimit = user_est
+        ? (user_est.borrow_capacity_base - borrow_base) / user_est.total_borrowed_base
+        : 0;
+      if (tempNewBorrowCap > 0) {
+        setToBorrow(borrowInput);
+        setNewBorrowCap(tempNewBorrowCap);
+        setNewBorrowLimit(tempNewBorrowLimit);
+      }
+    }
+  };
+
+  const handleBorrowMax = () => {
+    setToBorrow('999999999');
+  };
 
   return (
     <Row>
@@ -38,7 +80,14 @@ export const BorrowAnvil = () => {
               marginBottom: '12px',
             }}
           >
-            <InputBar palette={theme.palette.borrow} sx={{ width: '100%' }} />
+            <InputBar
+              symbol={reserve?.symbol ?? ''}
+              value={toBorrow}
+              onValueChange={handleBorrowAmountChange}
+              onSetMax={handleBorrowMax}
+              palette={theme.palette.borrow}
+              sx={{ width: '100%' }}
+            />
             <OpaqueButton
               palette={theme.palette.borrow}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
@@ -48,7 +97,7 @@ export const BorrowAnvil = () => {
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              $100.00
+              {`$${toBalance(Number(toBorrow) * assetToBase)}`}
             </Typography>
           </Box>
         </Box>
@@ -66,56 +115,20 @@ export const BorrowAnvil = () => {
             sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}
           />
           <Typography variant="h5" sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}>
-            $28.88
+            $1.88
           </Typography>
           <HelpOutlineIcon fontSize="inherit" sx={{ color: theme.palette.text.secondary }} />
         </Box>
-        <Box
-          sx={{
-            marginLeft: '24px',
-            marginBottom: '12px',
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-          }}
-        >
-          <Typography variant="h5" sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}>
-            Borrow capacity
-          </Typography>
-          <Typography variant="h5" sx={{ color: theme.palette.text.primary, marginRight: '6px' }}>
-            89.13 USDC
-          </Typography>
-          <ArrowForwardIcon
-            fontSize="inherit"
-            sx={{ color: theme.palette.text.primary, marginRight: '6px' }}
-          />
-          <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>
-            189.13 USDC
-          </Typography>
-        </Box>
-        <Box
-          sx={{
-            marginLeft: '24px',
-            marginBottom: '12px',
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-          }}
-        >
-          <Typography variant="h5" sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}>
-            Borrow limit
-          </Typography>
-          <Typography variant="h5" sx={{ color: theme.palette.text.primary, marginRight: '6px' }}>
-            90.88%
-          </Typography>
-          <ArrowForwardIcon
-            fontSize="inherit"
-            sx={{ color: theme.palette.text.primary, marginRight: '6px' }}
-          />
-          <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>
-            80.82%
-          </Typography>
-        </Box>
+        <ValueChange
+          title="Borrow capacity"
+          curValue={`${toBalance(curBorrowCap)} ${reserve_symbol}`}
+          newValue={`${toBalance(newBorrowCap)} ${reserve_symbol}`}
+        />
+        <ValueChange
+          title="Borrow limit"
+          curValue={toPercentage(curBorrowLimit)}
+          newValue={toPercentage(newBorrowLimit)}
+        />
       </Section>
     </Row>
   );
