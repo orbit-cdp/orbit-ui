@@ -29,6 +29,7 @@ const Dashboard: NextPage = () => {
   const theme = useTheme();
   const refreshPoolReserveAll = useStore((state) => state.refreshPoolReserveAll);
   const estimateToLatestLedger = useStore((state) => state.estimateToLatestLedger);
+  const refreshPoolBackstopData = useStore((state) => state.refreshPoolBackstopData);
   const reserves = useStore((state) => state.reserves.get(safePoolId));
   const pool_est = useStore((state) => state.pool_est.get(safePoolId));
 
@@ -60,6 +61,23 @@ const Dashboard: NextPage = () => {
     }
   }, [estimateToLatestLedger, safePoolId, reserves]);
 
+  useEffect(() => {
+    if (isMounted.current && safePoolId != '') {
+      refreshPoolBackstopData(
+        safePoolId,
+        'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K'
+      );
+      const backstopInterval = setInterval(() => {
+        refreshPoolBackstopData(
+          safePoolId,
+          'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K'
+        );
+      }, 90 * 1000);
+
+      return () => clearInterval(backstopInterval);
+    }
+  }, [refreshPoolBackstopData, safePoolId]);
+
   const handleLendClick = () => {
     if (!lend) {
       setLend(true);
@@ -80,7 +98,10 @@ const Dashboard: NextPage = () => {
       <PoolExploreBar />
       <PositionOverview poolId={safePoolId} />
       <Row sx={{ padding: '6px' }}>
-        <LinkBox sx={{ width: '100%' }} to={{ pathname: '/backstop', query: { poolId: poolId } }}>
+        <LinkBox
+          sx={{ width: '100%' }}
+          to={{ pathname: '/backstop', query: { poolId: safePoolId } }}
+        >
           <CustomButton
             sx={{
               color: theme.palette.text.primary,
@@ -94,7 +115,7 @@ const Dashboard: NextPage = () => {
           </CustomButton>
         </LinkBox>
       </Row>
-      <BackstopPreviewBar />
+      <BackstopPreviewBar poolId={safePoolId} />
       <Row>
         <Section width={SectionSize.FULL} sx={{ padding: '0px' }}>
           <ToggleButton
