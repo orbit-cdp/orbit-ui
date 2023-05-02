@@ -18,11 +18,13 @@ import { LendMarketList } from '../components/lend/LendMarketList';
 import { LendPositions } from '../components/lend/LendPositions';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
 import { useSettings } from '../contexts';
+import { useWallet } from '../contexts/wallet';
 import { useStore } from '../store/store';
 import { toBalance } from '../utils/formatter';
 
 const Dashboard: NextPage = () => {
   const { setLastPool, showLend, setShowLend } = useSettings();
+  const { connected, walletAddress } = useWallet();
 
   const isMounted = useRef(false);
   const router = useRouter();
@@ -33,52 +35,29 @@ const Dashboard: NextPage = () => {
   const refreshPoolReserveAll = useStore((state) => state.refreshPoolReserveAll);
   const estimateToLatestLedger = useStore((state) => state.estimateToLatestLedger);
   const refreshPoolBackstopData = useStore((state) => state.refreshPoolBackstopData);
-  const reserves = useStore((state) => state.reserves.get(safePoolId));
   const pool_est = useStore((state) => state.pool_est.get(safePoolId));
 
-  // TODO: Add long timer to refresh ledger data
   useEffect(() => {
-    if (isMounted.current && safePoolId != '') {
+    const updateDashboard = async () => {
+      if (safePoolId != '') {
+        await refreshPoolReserveAll(safePoolId, connected ? walletAddress : undefined);
+        if (connected) {
+          await refreshPoolBackstopData(safePoolId, walletAddress);
+        }
+        await estimateToLatestLedger(safePoolId, connected ? walletAddress : undefined);
+      }
+    };
+    if (isMounted.current) {
       setLastPool(safePoolId);
-      refreshPoolReserveAll(safePoolId, 'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K');
+      updateDashboard();
+      const refreshInterval = setInterval(() => {
+        updateDashboard();
+      }, 60 * 1000);
+      return () => clearInterval(refreshInterval);
     } else {
       isMounted.current = true;
     }
-  }, [refreshPoolReserveAll, safePoolId]);
-
-  useEffect(() => {
-    if (isMounted.current && safePoolId != '') {
-      estimateToLatestLedger(
-        safePoolId,
-        'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K'
-      );
-      const estimationInterval = setInterval(() => {
-        estimateToLatestLedger(
-          safePoolId,
-          'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K'
-        );
-      }, 60 * 1000);
-
-      return () => clearInterval(estimationInterval);
-    }
-  }, [estimateToLatestLedger, safePoolId, reserves]);
-
-  useEffect(() => {
-    if (isMounted.current && safePoolId != '') {
-      refreshPoolBackstopData(
-        safePoolId,
-        'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K'
-      );
-      const backstopInterval = setInterval(() => {
-        refreshPoolBackstopData(
-          safePoolId,
-          'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K'
-        );
-      }, 90 * 1000);
-
-      return () => clearInterval(backstopInterval);
-    }
-  }, [refreshPoolBackstopData, safePoolId]);
+  }, [safePoolId, connected]);
 
   const handleLendClick = () => {
     if (!showLend) {

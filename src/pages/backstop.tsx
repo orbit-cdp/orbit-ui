@@ -17,10 +17,12 @@ import { TokenIcon } from '../components/common/TokenIcon';
 import { WalletWarning } from '../components/common/WalletWarning';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
 import { useSettings, ViewType } from '../contexts';
+import { useWallet } from '../contexts/wallet';
 import { useStore } from '../store/store';
 
 const Backstop: NextPage = () => {
   const { viewType } = useSettings();
+  const { connected, walletAddress } = useWallet();
   const theme = useTheme();
   const isMounted = useRef(false);
 
@@ -43,8 +45,8 @@ const Backstop: NextPage = () => {
   };
 
   useEffect(() => {
-    if (isMounted.current) {
-      refreshBackstopUserData('GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K');
+    if (isMounted.current && connected) {
+      refreshBackstopUserData(walletAddress);
     } else {
       isMounted.current = true;
     }

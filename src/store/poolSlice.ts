@@ -30,7 +30,7 @@ export interface PoolSlice {
   refreshPoolReserveData: (pool_id: string) => Promise<void>;
   refreshPoolUserData: (pool_id: string, user: string) => Promise<void>;
   refreshPrices: (pool_id: string) => Promise<void>;
-  refreshPoolReserveAll: (pool_id: string, user: string) => Promise<void>;
+  refreshPoolReserveAll: (pool_id: string, user?: string | undefined) => Promise<void>;
 }
 
 export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set, get) => ({
@@ -106,7 +106,7 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
       console.error('unable to refresh prices:', e);
     }
   },
-  refreshPoolReserveAll: async (pool_id: string, user: string) => {
+  refreshPoolReserveAll: async (pool_id: string, user?: string | undefined) => {
     try {
       const stellar = get().rpcServer();
       const network = get().passphrase;
@@ -118,24 +118,29 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
       }
       const prices = await loadOraclePrices(stellar, pool);
       const pool_reserves = await loadReservesForPool(stellar, network, pool);
-      const user_reserve_balances = await loadUserForPool(
-        stellar,
-        network,
-        pool_id,
-        pool_reserves,
-        user
-      );
+
       if (set_pool) {
         useStore.setState((prev) => ({
           poolPrices: new Map(prev.poolPrices).set(pool_id, prices),
           pools: new Map(prev.pools).set(pool_id, pool as Pool),
           reserves: new Map(prev.reserves).set(pool_id, pool_reserves),
-          resUserBalances: new Map(prev.resUserBalances).set(pool_id, user_reserve_balances),
         }));
       } else {
         useStore.setState((prev) => ({
           poolPrices: new Map(prev.poolPrices).set(pool_id, prices),
           reserves: new Map(prev.reserves).set(pool_id, pool_reserves),
+        }));
+      }
+
+      if (user) {
+        const user_reserve_balances = await loadUserForPool(
+          stellar,
+          network,
+          pool_id,
+          pool_reserves,
+          user
+        );
+        useStore.setState((prev) => ({
           resUserBalances: new Map(prev.resUserBalances).set(pool_id, user_reserve_balances),
         }));
       }
