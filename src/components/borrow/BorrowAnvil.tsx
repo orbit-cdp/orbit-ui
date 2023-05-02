@@ -2,8 +2,10 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useState } from 'react';
+import { Address, Contract, xdr } from 'soroban-client';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
+import { fromInputStringToScVal } from '../../utils/scval';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
@@ -13,6 +15,8 @@ import { ValueChange } from '../common/ValueChange';
 
 export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
+
+  const userId = '';
 
   const reserve = useStore((state) => state.reserves.get(poolId)?.get(assetId));
   const prices = useStore((state) => state.poolPrices.get(poolId));
@@ -61,6 +65,24 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     }
   };
 
+  const handleSubmitTransaction = () => {
+    // TODO: Revalidate?
+    if (toBorrow) {
+      let user_scval = new Address(
+        'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K'
+      ).toScVal();
+      console.log;
+      let borrow_op = new Contract(poolId).call(
+        'borrow',
+        user_scval,
+        xdr.ScVal.scvBytes(Buffer.from(assetId, 'hex')),
+        fromInputStringToScVal(toBorrow),
+        user_scval
+      );
+      console.log('borrow op xdr: ', borrow_op.toXDR().toString('base64'));
+    }
+  };
+
   return (
     <Row>
       <Section
@@ -98,6 +120,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
               sx={{ width: '100%' }}
             />
             <OpaqueButton
+              onClick={handleSubmitTransaction}
               palette={theme.palette.borrow}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
             >

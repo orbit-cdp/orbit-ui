@@ -2,8 +2,10 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useState } from 'react';
+import { Address, Contract, xdr } from 'soroban-client';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
+import { fromInputStringToScVal } from '../../utils/scval';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
@@ -53,6 +55,22 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
     }
   };
 
+  const handleSubmitTransaction = () => {
+    // TODO: Revalidate?
+    if (toLend) {
+      let user_scval = new Address(
+        'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K'
+      ).toScVal();
+      let supply_op = new Contract(poolId).call(
+        'supply',
+        user_scval,
+        xdr.ScVal.scvBytes(Buffer.from(assetId, 'hex')),
+        fromInputStringToScVal(toLend)
+      );
+      console.log('lend op xdr: ', supply_op.toXDR().toString('base64'));
+    }
+  };
+
   return (
     <Row>
       <Section
@@ -90,6 +108,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
               sx={{ width: '100%' }}
             />
             <OpaqueButton
+              onClick={handleSubmitTransaction}
               palette={theme.palette.lend}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
             >

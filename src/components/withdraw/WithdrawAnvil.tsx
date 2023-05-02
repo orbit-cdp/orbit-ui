@@ -2,8 +2,10 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useState } from 'react';
+import { Address, Contract, xdr } from 'soroban-client';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
+import { fromInputStringToScVal } from '../../utils/scval';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
@@ -21,7 +23,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
 
   const assetToBase = prices?.get(assetId) ?? 1;
 
-  const [toWithdraw, setToWithdraw] = useState<string>('0');
+  const [toWithdraw, setToWithdraw] = useState<string | undefined>(undefined);
   const [newEffectiveCollateral, setNewEffectiveCollateral] = useState<number>(
     user_est?.e_collateral_base ?? 0
   );
@@ -55,6 +57,23 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
       let to_bounded_hf = user_est.e_collateral_base - user_est.e_liabilities_base * 1.021;
       let to_wd = to_bounded_hf / (assetToBase * (Number(reserve?.config.c_factor) / 1e7));
       handleWithdrawAmountChange(to_wd.toFixed(7));
+    }
+  };
+
+  const handleSubmitTransaction = () => {
+    // TODO: Revalidate?
+    if (toWithdraw) {
+      let user_scval = new Address(
+        'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K'
+      ).toScVal();
+      let withdraw_op = new Contract(poolId).call(
+        'withdraw',
+        user_scval,
+        xdr.ScVal.scvBytes(Buffer.from(assetId, 'hex')),
+        fromInputStringToScVal(toWithdraw),
+        user_scval
+      );
+      console.log('withdraw op xdr: ', withdraw_op.toXDR().toString('base64'));
     }
   };
 
@@ -95,6 +114,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
               sx={{ width: '100%' }}
             />
             <OpaqueButton
+              onClick={handleSubmitTransaction}
               palette={theme.palette.lend}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
             >
