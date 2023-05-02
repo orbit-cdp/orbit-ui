@@ -24,33 +24,41 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const liability_factor = Number(reserve?.config.l_factor) / 1e7;
   const assetToBase = prices?.get(assetId) ?? 1;
   const baseToAsset = 1 / assetToBase;
-  const curBorrowCap = (user_est?.borrow_capacity_base ?? 0) * baseToAsset * liability_factor;
-  const curBorrowLimit = user_est
-    ? 1 - user_est.borrow_capacity_base / user_est.total_borrowed_base
-    : 0;
 
-  const [toBorrow, setToBorrow] = useState<string>('0');
-  const [newBorrowCap, setNewBorrowCap] = useState<number>(curBorrowCap);
-  const [newBorrowLimit, setNewBorrowLimit] = useState<number>(curBorrowLimit);
+  const [toBorrow, setToBorrow] = useState<string | undefined>(undefined);
+  const [newEffectiveLiabilities, setNewEffectiveLiabilities] = useState<number>(
+    user_est?.e_liabilities_base ?? 0
+  );
+
+  const oldBorrowCapAsset = user_est
+    ? (user_est.e_collateral_base - user_est.e_liabilities_base) * baseToAsset * liability_factor
+    : undefined;
+  const oldBorrowLimit = user_est
+    ? user_est.e_liabilities_base / user_est.e_collateral_base
+    : undefined;
+  const borrowCapAsset = user_est
+    ? (user_est.e_collateral_base - newEffectiveLiabilities) * baseToAsset * liability_factor
+    : undefined;
+  const borrowLimit = user_est ? newEffectiveLiabilities / user_est.e_collateral_base : undefined;
 
   const handleBorrowAmountChange = (borrowInput: string) => {
-    if (/^[0-9]*\.?[0-9]{0,7}$/.test(borrowInput)) {
+    if (/^[0-9]*\.?[0-9]{0,7}$/.test(borrowInput) && user_est) {
       let num_borrow = Number(borrowInput);
       let borrow_base = (num_borrow * assetToBase) / liability_factor;
-      let tempNewBorrowCap = curBorrowCap - num_borrow;
-      let tempNewBorrowLimit = user_est
-        ? 1 - (user_est.borrow_capacity_base - borrow_base) / user_est.total_borrowed_base
-        : 0;
-      if (tempNewBorrowCap > 0) {
+      let tempNewLiabilities = user_est.e_liabilities_base + borrow_base;
+      if (tempNewLiabilities * 1.02 < user_est.e_collateral_base) {
         setToBorrow(borrowInput);
-        setNewBorrowCap(tempNewBorrowCap);
-        setNewBorrowLimit(tempNewBorrowLimit);
+        setNewEffectiveLiabilities(tempNewLiabilities);
       }
     }
   };
 
   const handleBorrowMax = () => {
-    setToBorrow('999999999');
+    if (oldBorrowCapAsset && user_est) {
+      let to_bounded_hf = user_est.e_collateral_base - user_est.e_liabilities_base * 1.021;
+      let to_borrow = to_bounded_hf / ((1.02 * assetToBase * 1) / liability_factor);
+      handleBorrowAmountChange(to_borrow.toFixed(7));
+    }
   };
 
   return (
@@ -98,7 +106,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toBorrow) * assetToBase)}`}
+              {`$${toBalance(Number(toBorrow ?? 0) * assetToBase)}`}
             </Typography>
           </Box>
         </Box>
@@ -122,13 +130,13 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
         </Box>
         <ValueChange
           title="Borrow capacity"
-          curValue={`${toBalance(curBorrowCap)} ${reserve_symbol}`}
-          newValue={`${toBalance(newBorrowCap)} ${reserve_symbol}`}
+          curValue={`${toBalance(oldBorrowCapAsset)} ${reserve_symbol}`}
+          newValue={`${toBalance(borrowCapAsset)} ${reserve_symbol}`}
         />
         <ValueChange
           title="Borrow limit"
-          curValue={toPercentage(curBorrowLimit)}
-          newValue={toPercentage(newBorrowLimit)}
+          curValue={toPercentage(oldBorrowLimit)}
+          newValue={toPercentage(borrowLimit)}
         />
       </Section>
     </Row>

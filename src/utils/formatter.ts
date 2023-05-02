@@ -10,7 +10,11 @@ const POSTFIXES = ['', 'k', 'M', 'B', 'T', 'P', 'E', 'Z', 'Y'];
  * @param amount - The number being converted to a balance
  * @returns string in the form of a formatted balance. Does not include units.
  */
-export function toBalance(amount: number): string {
+export function toBalance(amount: number | undefined): string {
+  if (amount == undefined) {
+    return '';
+  }
+
   let decimals = 0;
   if (amount === 0) {
     decimals = 0;
@@ -47,7 +51,11 @@ export function toBalance(amount: number): string {
  * @param rate - The number expressed in decimal
  * @returns the number as a percentage
  */
-export function toPercentage(rate: number): string {
+export function toPercentage(rate: number | undefined): string {
+  if (rate == undefined) {
+    return '';
+  }
+
   const adjRate = rate * 100;
   const formattedStr = new Intl.NumberFormat('en-US', {
     maximumFractionDigits: 2,

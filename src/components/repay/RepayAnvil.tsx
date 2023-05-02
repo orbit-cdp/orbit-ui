@@ -23,31 +23,38 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
 
   const liability_factor = Number(reserve?.config.c_factor) / 1e7;
   const assetToBase = prices?.get(assetId) ?? 1;
-  const curBorrowCap = user_est?.borrow_capacity_base ?? 0;
-  const curBorrowLimit = user_est
-    ? 1 - user_est.borrow_capacity_base / user_est.total_borrowed_base
-    : 0;
 
-  const [toRepay, setToRepay] = useState<string>('0');
-  const [newBorrowCap, setNewBorrowCap] = useState<number>(curBorrowCap);
-  const [newBorrowLimit, setNewBorrowLimit] = useState<number>(curBorrowLimit);
+  const [toRepay, setToRepay] = useState<string | undefined>(undefined);
+  const [newEffectiveLiabilities, setNewEffectiveLiabilities] = useState<number>(
+    user_est?.e_liabilities_base ?? 0
+  );
+
+  const oldBorrowCap = user_est
+    ? user_est.e_collateral_base - user_est.e_liabilities_base
+    : undefined;
+  const oldBorrowLimit = user_est
+    ? user_est.e_liabilities_base / user_est.e_collateral_base
+    : undefined;
+  const borrowCap = user_est ? user_est.e_collateral_base - newEffectiveLiabilities : undefined;
+  const borrowLimit = user_est ? newEffectiveLiabilities / user_est.e_collateral_base : undefined;
 
   const handleRepayAmountChange = (repayInput: string) => {
-    if (/^[0-9]*\.?[0-9]{0,7}$/.test(repayInput)) {
+    if (/^[0-9]*\.?[0-9]{0,7}$/.test(repayInput) && user_est && user_bal_est) {
       let num_repay = Number(repayInput);
       let repay_base = (num_repay * assetToBase) / liability_factor;
-      let tempNewBorrowCap = curBorrowCap + repay_base;
-      let tempNewBorrowLimit = user_est ? 1 - tempNewBorrowCap / user_est.total_borrowed_base : 0;
-      if (num_repay <= (user_bal_est?.asset ?? 0)) {
+      let tempNewLiabilities = user_est.e_liabilities_base - repay_base;
+      if (num_repay <= user_bal_est.asset) {
         setToRepay(repayInput);
-        setNewBorrowCap(tempNewBorrowCap);
-        setNewBorrowLimit(tempNewBorrowLimit);
+        setNewEffectiveLiabilities(tempNewLiabilities);
       }
     }
   };
 
   const handleRepayMax = () => {
-    setToRepay('999999999');
+    if (user_bal_est) {
+      let maxRepay = Math.min(user_bal_est.asset, user_bal_est.borrowed);
+      handleRepayAmountChange(maxRepay.toFixed(7));
+    }
   };
 
   return (
@@ -95,7 +102,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toRepay) * assetToBase)}`}
+              {`$${toBalance(Number(toRepay ?? 0) * assetToBase)}`}
             </Typography>
           </Box>
         </Box>
@@ -119,13 +126,13 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
         </Box>
         <ValueChange
           title="Borrow capacity"
-          curValue={`$${toBalance(curBorrowCap)}`}
-          newValue={`$${toBalance(newBorrowCap)}`}
+          curValue={`$${toBalance(oldBorrowCap)}`}
+          newValue={`$${toBalance(borrowCap)}`}
         />
         <ValueChange
           title="Borrow limit"
-          curValue={toPercentage(curBorrowLimit)}
-          newValue={toPercentage(newBorrowLimit)}
+          curValue={toPercentage(oldBorrowLimit)}
+          newValue={toPercentage(borrowLimit)}
         />
       </Section>
     </Row>

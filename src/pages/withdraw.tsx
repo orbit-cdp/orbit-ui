@@ -3,12 +3,12 @@ import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect, useRef } from 'react';
 import { GoBackHeader } from '../components/common/GoBackHeader';
+import { ReserveDropdown } from '../components/common/ReserveDropdown';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
 import { WalletWarning } from '../components/common/WalletWarning';
 import { WithdrawAnvil } from '../components/withdraw/WithdrawAnvil';
-import { WithdrawDropdown } from '../components/withdraw/WithdrawDropdown';
 import { useStore } from '../store/store';
 import { toBalance, toPercentage } from '../utils/formatter';
 
@@ -58,7 +58,7 @@ const Withdraw: NextPage = () => {
       </Row>
       <Row>
         <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>
-          <WithdrawDropdown />
+          <ReserveDropdown action="withdraw" poolId={safePoolId} activeReserveId={safeAssetId} />
         </Section>
       </Row>
       <Row>
