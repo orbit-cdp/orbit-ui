@@ -27,28 +27,23 @@ const Borrow: NextPage = () => {
   const reserve_est = useStore((state) =>
     state.reserve_est.get(safePoolId)?.find((res) => res.id === safeAssetId)
   );
-  const user_est = useStore((state) => state.user_bal_est.get(safePoolId)?.get(safeAssetId));
+  const user_bal_est = useStore((state) => state.user_bal_est.get(safePoolId)?.get(safeAssetId));
 
   // load ledger data if the page was loaded directly
   useEffect(() => {
-    console.log('in borrow effect', safePoolId);
     if (isMounted.current && safePoolId != '' && reserve == undefined) {
-      console.log('ran_refresh');
       refreshPoolReserveAll(safePoolId, 'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K');
     }
   }, [refreshPoolReserveAll, safePoolId, reserve]);
 
   // always re-estimate values to most recent ledger
   useEffect(() => {
-    console.log('in est effect');
     if (isMounted.current && safePoolId != '' && reserve != undefined) {
-      console.log('ran est');
       estimateToLatestLedger(
         safePoolId,
         'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K'
       );
     } else {
-      console.log('is mounted');
       isMounted.current = true;
     }
   }, [estimateToLatestLedger, safePoolId, reserve]);
@@ -82,7 +77,7 @@ const Borrow: NextPage = () => {
                 Balance
               </Typography>
               <Typography variant="h4" sx={{ color: theme.palette.borrow.main }}>
-                {toBalance(user_est?.asset ?? 0)}
+                {toBalance(user_bal_est?.asset ?? 0)}
               </Typography>
             </Box>
             <Box>

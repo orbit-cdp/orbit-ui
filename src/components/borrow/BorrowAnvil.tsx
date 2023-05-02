@@ -21,11 +21,12 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
 
   const reserve_symbol = reserve?.symbol ?? '';
 
+  const liability_factor = Number(reserve?.config.l_factor) / 1e7;
   const assetToBase = prices?.get(assetId) ?? 1;
   const baseToAsset = 1 / assetToBase;
-  const curBorrowCap = (user_est?.borrow_capacity_base ?? 0) * baseToAsset;
+  const curBorrowCap = (user_est?.borrow_capacity_base ?? 0) * baseToAsset * liability_factor;
   const curBorrowLimit = user_est
-    ? user_est.borrow_capacity_base / user_est.total_borrowed_base
+    ? 1 - user_est.borrow_capacity_base / user_est.total_borrowed_base
     : 0;
 
   const [toBorrow, setToBorrow] = useState<string>('0');
@@ -35,10 +36,10 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const handleBorrowAmountChange = (borrowInput: string) => {
     if (/^[0-9]*\.?[0-9]{0,7}$/.test(borrowInput)) {
       let num_borrow = Number(borrowInput);
-      let borrow_base = num_borrow * assetToBase;
+      let borrow_base = (num_borrow * assetToBase) / liability_factor;
       let tempNewBorrowCap = curBorrowCap - num_borrow;
       let tempNewBorrowLimit = user_est
-        ? (user_est.borrow_capacity_base - borrow_base) / user_est.total_borrowed_base
+        ? 1 - (user_est.borrow_capacity_base - borrow_base) / user_est.total_borrowed_base
         : 0;
       if (tempNewBorrowCap > 0) {
         setToBorrow(borrowInput);
