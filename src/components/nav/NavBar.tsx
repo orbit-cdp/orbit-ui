@@ -1,6 +1,8 @@
 import { Box, IconButton } from '@mui/material';
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
 import { useSettings, ViewType } from '../../contexts';
+import { useStore } from '../../store/store';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
 import { SectionBase } from '../common/SectionBase';
@@ -9,7 +11,19 @@ import { NavMenu } from './NavMenu';
 import { WalletMenu } from './WalletMenu';
 
 export const NavBar = () => {
-  const { viewType } = useSettings();
+  const { viewType, lastPool } = useSettings();
+  const rz = useStore((state) => state.rewardZone);
+
+  const [poolId, setPoolId] = useState<string>(lastPool ?? '');
+
+  useEffect(() => {
+    if (lastPool) {
+      setPoolId(lastPool);
+    } else {
+      setPoolId(rz.length != 0 ? rz[0] : '');
+    }
+  }, [rz, lastPool]);
+
   return (
     <Row sx={{ height: '62px' }}>
       <SectionBase sx={{ width: '50px', margin: '6px' }}>
@@ -31,13 +45,13 @@ export const NavBar = () => {
         >
           <Section width={SectionSize.LARGE}>
             <NavItem
-              to={{ pathname: '/dashboard', query: { poolId: 'poolId' } }}
+              to={{ pathname: '/dashboard', query: { poolId: poolId } }}
               title="Dashboard"
               sx={{ width: '33%' }}
             />
             <NavItem to={{ pathname: '/' }} title="Markets" sx={{ width: '33%' }} />
             <NavItem
-              to={{ pathname: '/backstop', query: { poolId: 'poolId' } }}
+              to={{ pathname: '/backstop', query: { poolId: poolId } }}
               title="Backstop"
               sx={{ width: '33%' }}
             />

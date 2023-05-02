@@ -2,7 +2,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { BackstopPreviewBar } from '../components/backstop/BackstopPreviewBar';
 import { BorrowMarketList } from '../components/borrow/BorrowMarketList';
 import { BorrowPositions } from '../components/borrow/BorrowPositions';
@@ -17,10 +17,13 @@ import { PositionOverview } from '../components/dashboard/PositionOverview';
 import { LendMarketList } from '../components/lend/LendMarketList';
 import { LendPositions } from '../components/lend/LendPositions';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
+import { useSettings } from '../contexts';
 import { useStore } from '../store/store';
 import { toBalance } from '../utils/formatter';
 
 const Dashboard: NextPage = () => {
+  const { setLastPool, showLend, setShowLend } = useSettings();
+
   const isMounted = useRef(false);
   const router = useRouter();
   const { poolId } = router.query;
@@ -33,11 +36,10 @@ const Dashboard: NextPage = () => {
   const reserves = useStore((state) => state.reserves.get(safePoolId));
   const pool_est = useStore((state) => state.pool_est.get(safePoolId));
 
-  const [lend, setLend] = useState<boolean>(true);
-
   // TODO: Add long timer to refresh ledger data
   useEffect(() => {
     if (isMounted.current && safePoolId != '') {
+      setLastPool(safePoolId);
       refreshPoolReserveAll(safePoolId, 'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K');
     } else {
       isMounted.current = true;
@@ -79,14 +81,14 @@ const Dashboard: NextPage = () => {
   }, [refreshPoolBackstopData, safePoolId]);
 
   const handleLendClick = () => {
-    if (!lend) {
-      setLend(true);
+    if (!showLend) {
+      setShowLend(true);
     }
   };
 
   const handleBorrowClick = () => {
-    if (lend) {
-      setLend(false);
+    if (showLend) {
+      setShowLend(false);
     }
   };
 
@@ -119,7 +121,7 @@ const Dashboard: NextPage = () => {
       <Row>
         <Section width={SectionSize.FULL} sx={{ padding: '0px' }}>
           <ToggleButton
-            active={lend}
+            active={showLend}
             palette={theme.palette.primary}
             sx={{ width: '50%', padding: '12px' }}
             onClick={handleLendClick}
@@ -127,7 +129,7 @@ const Dashboard: NextPage = () => {
             Lend
           </ToggleButton>
           <ToggleButton
-            active={!lend}
+            active={!showLend}
             palette={theme.palette.primary}
             sx={{ width: '50%', padding: '12px' }}
             onClick={handleBorrowClick}
@@ -136,10 +138,10 @@ const Dashboard: NextPage = () => {
           </ToggleButton>
         </Section>
       </Row>
-      {lend ? <LendPositions poolId={safePoolId} /> : <BorrowPositions poolId={safePoolId} />}
+      {showLend ? <LendPositions poolId={safePoolId} /> : <BorrowPositions poolId={safePoolId} />}
       <Row sx={{ padding: '6px', justifyContent: 'space-between' }}>
         <Typography variant="body1" sx={{ margin: '6px' }}>{`Assets to ${
-          lend ? 'lend' : 'borrow'
+          showLend ? 'lend' : 'borrow'
         }`}</Typography>
         <Box
           sx={{
@@ -157,7 +159,7 @@ const Dashboard: NextPage = () => {
         </Box>
       </Row>
       <Divider />
-      {lend ? <LendMarketList poolId={safePoolId} /> : <BorrowMarketList poolId={safePoolId} />}
+      {showLend ? <LendMarketList poolId={safePoolId} /> : <BorrowMarketList poolId={safePoolId} />}
     </>
   );
 };

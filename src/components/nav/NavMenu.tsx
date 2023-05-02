@@ -1,12 +1,16 @@
 import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded';
 import { IconButton, Menu, MenuItem, useTheme } from '@mui/material';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSettings, ViewType } from '../../contexts';
+import { useStore } from '../../store/store';
 import { NavItem } from './NavItem';
 
 export const NavMenu = () => {
   const theme = useTheme();
-  const { viewType } = useSettings();
+  const { viewType, lastPool } = useSettings();
+  const rz = useStore((state) => state.rewardZone);
+
+  const [poolId, setPoolId] = useState<string>(lastPool ?? '');
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -17,6 +21,14 @@ export const NavMenu = () => {
   const handleClose = () => {
     setAnchorEl(null);
   };
+
+  useEffect(() => {
+    if (lastPool) {
+      setPoolId(lastPool);
+    } else {
+      setPoolId(rz.length != 0 ? rz[0] : '');
+    }
+  }, [rz, lastPool]);
 
   return (
     <>
@@ -62,19 +74,19 @@ export const NavMenu = () => {
         >
           <NavItem
             onClick={handleClose}
-            to={{ pathname: '/dashboard', query: { poolId: 'poolId' } }}
+            to={{ pathname: '/dashboard', query: { poolId: poolId } }}
             title="Dashboard"
             sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
           />
           <NavItem
             onClick={handleClose}
-            to={{ pathname: '/', query: { poolId: 'poolId' } }}
+            to={{ pathname: '/', query: { poolId: poolId } }}
             title="Markets"
             sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
           />
           <NavItem
             onClick={handleClose}
-            to={{ pathname: '/backstop', query: { poolId: 'poolId' } }}
+            to={{ pathname: '/backstop', query: { poolId: poolId } }}
             title="Backstop"
             sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
           />
