@@ -86,7 +86,12 @@ export const LendPositionList: React.FC<PoolComponentProps> = ({ poolId }) => {
           let user_bal = userReserves?.get(reserve.id);
           if (user_bal && user_bal.supplied !== 0) {
             return [
-              <LendPositionCard key={reserve.id} reserveData={reserve} userResData={user_bal} />,
+              <LendPositionCard
+                key={reserve.id}
+                poolId={poolId}
+                reserveData={reserve}
+                userResData={user_bal}
+              />,
             ];
           }
           return [];

@@ -1,19 +1,21 @@
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { Box, BoxProps, Typography, useTheme } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import { useSettings, ViewType } from '../../contexts';
 import { ReserveEstimates, UserReserveEstimates } from '../../store/estimationSlice';
 import * as formatter from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
 import { LinkBox } from '../common/LinkBox';
+import { PoolComponentProps } from '../common/PoolComponentProps';
 import { SectionBase } from '../common/SectionBase';
 import { TokenHeader } from '../common/TokenHeader';
 
-export interface BorrowPositionCardProps extends BoxProps {
+export interface BorrowPositionCardProps extends PoolComponentProps {
   reserveData: ReserveEstimates;
   userResData: UserReserveEstimates;
 }
 
 export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
+  poolId,
   reserveData,
   userResData,
   sx,
@@ -35,7 +37,10 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
       }}
       {...props}
     >
-      <LinkBox sx={{ width: '100%' }} to={{ pathname: '/repay', query: { poolId: 'poolId' } }}>
+      <LinkBox
+        sx={{ width: '100%' }}
+        to={{ pathname: '/repay', query: { poolId: poolId, assetId: reserveData.id } }}
+      >
         <CustomButton
           sx={{
             width: '100%',

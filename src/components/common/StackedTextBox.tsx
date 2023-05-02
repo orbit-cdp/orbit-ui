@@ -4,9 +4,10 @@ import { StackedText } from '../common/StackedText';
 
 export interface StackedTextBoxProps extends BoxProps {
   name: string;
+  text: string;
 }
 
-export const StackedTextBox: React.FC<StackedTextBoxProps> = ({ name, sx, ...props }) => {
+export const StackedTextBox: React.FC<StackedTextBoxProps> = ({ name, text, sx, ...props }) => {
   return (
     <Box
       sx={{
@@ -20,11 +21,7 @@ export const StackedTextBox: React.FC<StackedTextBoxProps> = ({ name, sx, ...pro
       }}
       {...props}
     >
-      <StackedText
-        title={`${name}`}
-        text="888.888M"
-        sx={{ width: '100%', padding: '6px' }}
-      ></StackedText>
+      <StackedText title={name} text={text} sx={{ width: '100%', padding: '6px' }}></StackedText>
     </Box>
   );
 };

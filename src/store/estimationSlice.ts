@@ -29,7 +29,8 @@ export type UserEstimates = {
   borrow_apy: number;
   total_supplied_base: number;
   total_borrowed_base: number;
-  borrow_capacity_base: number;
+  e_collateral_base: number;
+  e_liabilities_base: number;
 };
 
 export type UserReserveEstimates = {
@@ -96,7 +97,8 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
           borrow_apy: 0,
           total_supplied_base: 0,
           total_borrowed_base: 0,
-          borrow_capacity_base: 0,
+          e_collateral_base: 0,
+          e_liabilities_base: 0,
         };
         let user_bal_est = new Map<string, UserReserveEstimates>();
         for (const res_est of res_estimations) {
@@ -108,8 +110,8 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
             let res_borrowed_base = user_res_est.borrowed * price;
             user_est.total_supplied_base += res_supplied_base;
             user_est.total_borrowed_base += res_borrowed_base;
-            user_est.borrow_capacity_base +=
-              res_supplied_base * res_est.c_factor - res_borrowed_base / res_est.l_factor;
+            user_est.e_collateral_base += res_supplied_base * res_est.c_factor;
+            user_est.e_liabilities_base += res_borrowed_base / res_est.l_factor;
             user_est.supply_apy += res_supplied_base * res_est.supply_apy;
             user_est.borrow_apy += res_borrowed_base * res_est.apy;
             user_est.net_apy +=

@@ -2,10 +2,22 @@ import { Box, BoxProps, Input, PaletteColor, Typography, useTheme } from '@mui/m
 import { CustomButton } from './CustomButton';
 
 export interface InputBarProps extends BoxProps {
+  symbol: string;
+  value: string | undefined;
+  onValueChange: (new_value: string) => void;
+  onSetMax: () => void;
   palette: PaletteColor;
 }
 
-export const InputBar: React.FC<InputBarProps> = ({ palette, sx, ...props }) => {
+export const InputBar: React.FC<InputBarProps> = ({
+  symbol,
+  value,
+  onValueChange,
+  onSetMax,
+  palette,
+  sx,
+  ...props
+}) => {
   const theme = useTheme();
 
   return (
@@ -22,13 +34,20 @@ export const InputBar: React.FC<InputBarProps> = ({ palette, sx, ...props }) => 
       }}
       {...props}
     >
-      <Input placeholder="0" disableUnderline={true} sx={{ marginLeft: '12px', width: '100%' }} />
+      <Input
+        value={value}
+        onChange={(event) => onValueChange(event.target.value)}
+        placeholder="0"
+        disableUnderline={true}
+        sx={{ marginLeft: '12px', width: '100%' }}
+      />
       <Box sx={{ marginLeft: '12px' }}>
         <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-          USDC
+          {symbol}
         </Typography>
       </Box>
       <CustomButton
+        onClick={onSetMax}
         sx={{
           color: palette.main,
           backgroundColor: palette.opaque,

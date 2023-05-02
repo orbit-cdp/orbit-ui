@@ -100,7 +100,9 @@ export const BorrowMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
         <Box sx={{ width: headerWidth }} />
       </Box>
       {poolReserves ? (
-        poolReserves.map((reserve) => <BorrowMarketCard key={reserve.id} reserveData={reserve} />)
+        poolReserves.map((reserve) => (
+          <BorrowMarketCard key={reserve.id} reserveData={reserve} poolId={poolId} />
+        ))
       ) : (
         <></>
       )}

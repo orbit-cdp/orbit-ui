@@ -11,10 +11,12 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
 
   const user_estimates = useStore((state) => state.user_est.get(poolId));
 
-  const borrow_capacity_fill =
-    user_estimates == undefined
-      ? 100
-      : (1 - user_estimates.borrow_capacity_base / user_estimates.total_borrowed_base) * 100;
+  const borrow_capacity = user_estimates
+    ? user_estimates.e_collateral_base - user_estimates.e_liabilities_base
+    : 0;
+  const borrow_capacity_fill = user_estimates
+    ? (user_estimates.e_liabilities_base / user_estimates.e_collateral_base) * 100
+    : 100;
 
   return (
     <Row>
@@ -59,7 +61,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
           <StackedText
             title="Borrow Capacity"
             titleColor="inherit"
-            text={`$${toBalance(user_estimates?.borrow_capacity_base ?? 0)}`}
+            text={`$${toBalance(borrow_capacity)}`}
             textColor="inherit"
             type="large"
           />

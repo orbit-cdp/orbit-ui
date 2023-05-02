@@ -1,6 +1,8 @@
 import { Box, Typography } from '@mui/material';
 import { useSettings, ViewType } from '../../contexts';
-import { MarketsTable } from './MarketsTable';
+import { useStore } from '../../store/store';
+import { PoolComponentProps } from '../common/PoolComponentProps';
+import { MarketsListItem } from './MarketsListItem';
 
 export interface MarketsAssetData {
   address: string;
@@ -50,10 +52,12 @@ const tempMarketsData: MarketsAssetData[] = [
   },
 ];
 
-export const MarketsList = () => {
+export const MarketsList: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
 
-  const headerNum = 6;
+  const poolReserves = useStore((state) => state.reserve_est.get(poolId));
+
+  const headerNum = viewType == ViewType.REGULAR ? 6 : 3;
   const headerWidth = `${(100 / headerNum).toFixed(2)}%`;
   return (
     <Box
@@ -66,101 +70,73 @@ export const MarketsList = () => {
         marginTop: '12px',
       }}
     >
-      {viewType === ViewType.REGULAR && (
-        <Box
-          sx={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '6px',
-            type: 'alt',
-          }}
+      <Box
+        sx={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '6px',
+          type: 'alt',
+        }}
+      >
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ width: headerWidth, marginRight: '12px' }}
         >
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ width: headerWidth, marginRight: '12px' }}
-          >
-            Asset
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            sx={{ width: headerWidth }}
-          >
-            Total Lent
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            sx={{ width: headerWidth }}
-          >
-            Total Borrowed
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            sx={{ width: headerWidth }}
-          >
-            Collateral Factor
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            sx={{ width: headerWidth }}
-          >
-            Liability Factor
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            sx={{ width: headerWidth }}
-          >
-            APR
-          </Typography>
-        </Box>
-      )}
-      {viewType !== ViewType.REGULAR && (
-        <Box
-          sx={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '6px',
-            type: 'alt',
-          }}
+          Asset
+        </Typography>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          align="center"
+          sx={{ width: headerWidth }}
         >
-          <Typography variant="body2" color="text.secondary" sx={{ width: '33.33%' }}>
-            Asset
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            sx={{ width: 'headerWidth + (headerWidth*(headerNum/2))' }}
-          >
-            Total Lent
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            sx={{ width: 'headerWidth + (headerWidth*(headerNum/2))' }}
-          >
-            Total Borrowed
-          </Typography>
-        </Box>
+          Total Lent
+        </Typography>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          align="center"
+          sx={{ width: headerWidth }}
+        >
+          Total Borrowed
+        </Typography>
+        {headerNum >= 6 && (
+          <>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              align="center"
+              sx={{ width: headerWidth }}
+            >
+              Collateral Factor
+            </Typography>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              align="center"
+              sx={{ width: headerWidth }}
+            >
+              Liability Factor
+            </Typography>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              align="center"
+              sx={{ width: headerWidth }}
+            >
+              APR
+            </Typography>
+          </>
+        )}
+      </Box>
+      {poolReserves ? (
+        poolReserves.map((reserve) => <MarketsListItem key={reserve.id} reserveData={reserve} />)
+      ) : (
+        <></>
       )}
-      {tempMarketsData.map((AssetData) => (
-        <MarketsTable assetData={AssetData} key={AssetData.address} />
-      ))}
     </Box>
   );
 };
