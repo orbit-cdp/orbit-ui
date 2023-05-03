@@ -90,7 +90,7 @@ const Backstop: NextPage = () => {
       <Row>
         <WalletWarning />
       </Row>
-      <PoolExploreBar />
+      <PoolExploreBar poolId={safePoolId} />
       <Row>
         <SectionBase type="alt" sx={{ margin: '6px', padding: '6px' }}>
           Backstop Manager

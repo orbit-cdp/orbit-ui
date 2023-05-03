@@ -76,7 +76,7 @@ const Dashboard: NextPage = () => {
       <Row>
         <WalletWarning />
       </Row>
-      <PoolExploreBar />
+      <PoolExploreBar poolId={safePoolId} />
       <PositionOverview poolId={safePoolId} />
       <Row sx={{ padding: '6px' }}>
         <LinkBox

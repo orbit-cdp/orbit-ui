@@ -54,7 +54,7 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
   }, [poolEst]);
 
   return (
-    <Section width={SectionSize.FULL} sx={{ flexDirection: 'column', marginBottom: '12px' }}>
+    <Section width={SectionSize.FULL} sx={{ flexDirection: 'column', marginBottom: '12px', ...sx }}>
       <Box
         onClick={() => {
           setExpand(!expand);
@@ -69,7 +69,7 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
         }}
       >
         <Row>
-          <PoolHeader name={pool?.name ?? 'blend'} sx={{ margin: '6px', padding: '6px' }} />
+          <PoolHeader poolId={poolId} sx={{ margin: '6px', padding: '6px' }} />
           <Box
             sx={{
               margin: '6px',
@@ -133,7 +133,7 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
               {pool ? (
                 pool.reserves.map((reserveId) => {
                   const code = TOKEN_META[reserveId as keyof typeof TOKEN_META]?.code ?? 'unknown';
-                  return <TokenIcon symbol={code} sx={{ marginRight: '6px' }} />;
+                  return <TokenIcon key={reserveId} symbol={code} sx={{ marginRight: '6px' }} />;
                 })
               ) : (
                 <></>

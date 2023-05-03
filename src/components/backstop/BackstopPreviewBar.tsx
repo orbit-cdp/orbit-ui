@@ -33,17 +33,14 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
     ? Number(backstopPoolBalance.tokens) / Number(backstopPoolBalance.shares)
     : 1;
   const userBalance = userBackstopBalance
-    ? (Number(userBackstopBalance) / 1e7) * shareRate
+    ? (Number(userBackstopBalance) / 1e7) * shareRate * tokenToBase
     : undefined;
 
   return (
     <Row>
       {viewType === ViewType.REGULAR && (
         <Section width={SectionSize.FULL} sx={{ display: 'flex', flexWrap: 'wrap' }}>
-          <LinkBox
-            sx={{ width: '40%' }}
-            to={{ pathname: '/backstop-q4w', query: { poolId: 'poolId' } }}
-          >
+          <LinkBox sx={{ width: '40%' }} to={{ pathname: '/backstop', query: { poolId: poolId } }}>
             <CustomButton
               sx={{
                 width: '100%',
@@ -65,7 +62,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                 <StackedText
                   title="Balance"
                   titleColor="inherit"
-                  text={`$${toBalance(userBalance)}`}
+                  text={userBalance ? `$${toBalance(userBalance)}` : '--'}
                   textColor="inherit"
                   type="large"
                 />
