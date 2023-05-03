@@ -2,7 +2,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { BackstopEarnings } from '../components/backstop/BackstopEarnings';
 import { BackstopQueue } from '../components/backstop/BackstopQueue';
 import { CustomButton } from '../components/common/CustomButton';
@@ -19,38 +19,71 @@ import { PoolExploreBar } from '../components/pool/PoolExploreBar';
 import { useSettings, ViewType } from '../contexts';
 import { useWallet } from '../contexts/wallet';
 import { useStore } from '../store/store';
+import { toBalance, toPercentage } from '../utils/formatter';
 
 const Backstop: NextPage = () => {
-  const { viewType } = useSettings();
+  const { viewType, setLastPool, showDeposit, setShowDeposit } = useSettings();
   const { connected, walletAddress } = useWallet();
   const theme = useTheme();
   const isMounted = useRef(false);
 
   const router = useRouter();
   const { poolId } = router.query;
-  const refreshBackstopUserData = useStore((state) => state.refreshBackstopUserData);
+  const safePoolId = typeof poolId == 'string' && /^[0-9a-f]{64}$/.test(poolId) ? poolId : '';
 
-  const [deposit, setDeposit] = useState<boolean>(true);
+  const refreshPoolReserveAll = useStore((state) => state.refreshPoolReserveAll);
+  const refreshPoolBackstopData = useStore((state) => state.refreshPoolBackstopData);
+  const estimateToLatestLedger = useStore((state) => state.estimateToLatestLedger);
+  const poolEst = useStore((state) => state.pool_est.get(safePoolId));
+  const backstopTokenToBase = useStore((state) => state.backstopTokenPrice);
+  const backstopPoolBalance = useStore((state) => state.poolBackstopBalance.get(safePoolId));
+
+  const tokenToBase = Number(backstopTokenToBase) / 1e7;
+  const estBackstopSize = backstopPoolBalance
+    ? (Number(backstopPoolBalance.tokens) / 1e7) * tokenToBase
+    : undefined;
+  const estBackstopApy =
+    poolEst && estBackstopSize ? poolEst.total_backstop_take_base / estBackstopSize : undefined;
+  const poolQ4W = backstopPoolBalance
+    ? Number(backstopPoolBalance.q4w) / Number(backstopPoolBalance.shares)
+    : undefined;
+  const shareRate = backstopPoolBalance
+    ? Number(backstopPoolBalance.tokens) / Number(backstopPoolBalance.shares)
+    : 1;
 
   const handleDepositClick = () => {
-    if (!deposit) {
-      setDeposit(true);
+    if (!showDeposit) {
+      setShowDeposit(true);
     }
   };
 
   const handleWithdrawClick = () => {
-    if (deposit) {
-      setDeposit(false);
+    if (showDeposit) {
+      setShowDeposit(false);
     }
   };
 
   useEffect(() => {
-    if (isMounted.current && connected) {
-      refreshBackstopUserData(walletAddress);
+    const updateBackstop = async () => {
+      if (safePoolId != '') {
+        await refreshPoolReserveAll(safePoolId, connected ? walletAddress : undefined);
+        if (connected) {
+          await refreshPoolBackstopData(safePoolId, walletAddress);
+        }
+        await estimateToLatestLedger(safePoolId, connected ? walletAddress : undefined);
+      }
+    };
+    if (isMounted.current) {
+      setLastPool(safePoolId);
+      updateBackstop();
+      const refreshInterval = setInterval(() => {
+        updateBackstop();
+      }, 60 * 1000);
+      return () => clearInterval(refreshInterval);
     } else {
       isMounted.current = true;
     }
-  }, [refreshBackstopUserData]);
+  }, [safePoolId, connected]);
 
   return (
     <>
@@ -67,22 +100,22 @@ const Backstop: NextPage = () => {
       <Row>
         <Section width={SectionSize.THIRD}>
           <StackedText
-            title="Backstop APR"
-            text="28.888%"
+            title="Backstop APY"
+            text={toPercentage(estBackstopApy)}
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>
         </Section>
         <Section width={SectionSize.THIRD}>
           <StackedText
             title="Q4W"
-            text="28.888%"
+            text={toPercentage(poolQ4W)}
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>
         </Section>
         <Section width={SectionSize.THIRD}>
           <StackedText
             title="Total deposited"
-            text="88.888M"
+            text={`$${toBalance(estBackstopSize)}`}
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>
         </Section>
@@ -90,7 +123,7 @@ const Backstop: NextPage = () => {
       <Row>
         <Section width={SectionSize.FULL} sx={{ padding: '0px' }}>
           <ToggleButton
-            active={deposit}
+            active={showDeposit}
             palette={theme.palette.backstop}
             sx={{
               width: '50%',
@@ -104,7 +137,7 @@ const Backstop: NextPage = () => {
             Deposit
           </ToggleButton>
           <ToggleButton
-            active={!deposit}
+            active={!showDeposit}
             palette={theme.palette.backstop}
             sx={{
               width: '50%',
@@ -122,7 +155,7 @@ const Backstop: NextPage = () => {
       <Row>
         <Section width={SectionSize.FULL} sx={{ flexDirection: 'column', paddingTop: '12px' }}>
           <Typography variant="body2" sx={{ margin: '6px' }}>{`Available to ${
-            deposit ? 'deposit' : 'withdraw'
+            showDeposit ? 'deposit' : 'withdraw'
           }`}</Typography>
           <Row>
             <LinkBox

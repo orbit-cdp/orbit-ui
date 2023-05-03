@@ -15,18 +15,26 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
   const { viewType } = useSettings();
   const theme = useTheme();
 
-  const poolBackstopBalance = useStore((state) => state.poolBackstopBalance.get(poolId));
+  const poolEst = useStore((state) => state.pool_est.get(poolId));
+  const backstopTokenToBase = useStore((state) => state.backstopTokenPrice);
+  const backstopPoolBalance = useStore((state) => state.poolBackstopBalance.get(poolId));
   const userBackstopBalance = useStore((state) => state.shares.get(poolId));
 
-  let decimalSize = Number(poolBackstopBalance?.tokens ?? 0) / 1e7;
-  let decimalQ4WRatio = poolBackstopBalance
-    ? Number(poolBackstopBalance.q4w) / Number(poolBackstopBalance.shares)
-    : 0;
-  let decimalUserBalance =
-    poolBackstopBalance && userBackstopBalance
-      ? (Number(userBackstopBalance) / 1e7) *
-        (Number(poolBackstopBalance.tokens) / Number(poolBackstopBalance.shares))
-      : 0;
+  const tokenToBase = Number(backstopTokenToBase) / 1e7;
+  const estBackstopSize = backstopPoolBalance
+    ? (Number(backstopPoolBalance.tokens) / 1e7) * tokenToBase
+    : undefined;
+  const estBackstopApy =
+    poolEst && estBackstopSize ? poolEst.total_backstop_take_base / estBackstopSize : undefined;
+  const poolQ4W = backstopPoolBalance
+    ? Number(backstopPoolBalance.q4w) / Number(backstopPoolBalance.shares)
+    : undefined;
+  const shareRate = backstopPoolBalance
+    ? Number(backstopPoolBalance.tokens) / Number(backstopPoolBalance.shares)
+    : 1;
+  const userBalance = userBackstopBalance
+    ? (Number(userBackstopBalance) / 1e7) * shareRate
+    : undefined;
 
   return (
     <Row>
@@ -57,7 +65,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                 <StackedText
                   title="Balance"
                   titleColor="inherit"
-                  text={toBalance(decimalUserBalance)}
+                  text={`$${toBalance(userBalance)}`}
                   textColor="inherit"
                   type="large"
                 />
@@ -84,7 +92,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
               <StackedText
                 title="Backstop Size"
                 titleColor="inherit"
-                text={toBalance(decimalSize)}
+                text={`$${toBalance(estBackstopSize)}`}
                 textColor="inherit"
                 type="large"
               />
@@ -104,7 +112,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
               <StackedText
                 title="Backstop Q4W"
                 titleColor="inherit"
-                text={toPercentage(decimalQ4WRatio)}
+                text={toPercentage(estBackstopApy)}
                 textColor="inherit"
                 type="large"
               />

@@ -21,12 +21,18 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
 
   const [expand, setExpand] = useState(false);
 
-  const pool = useStore((state) => state.pools.get(poolId));
-  const poolEst = useStore((state) => state.pool_est.get(poolId));
-  const poolBackstopBal = useStore((state) => state.poolBackstopBalance.get(poolId));
-  const refreshPoolReserveData = useStore((state) => state.refreshPoolReserveData);
+  const refreshPoolReserveAll = useStore((state) => state.refreshPoolReserveAll);
   const refreshPrices = useStore((state) => state.refreshPrices);
   const estimateToLatestLedger = useStore((state) => state.estimateToLatestLedger);
+  const pool = useStore((state) => state.pools.get(poolId));
+  const poolEst = useStore((state) => state.pool_est.get(poolId));
+  const backstopTokenToBase = useStore((state) => state.backstopTokenPrice);
+  const backstopPoolBalance = useStore((state) => state.poolBackstopBalance.get(poolId));
+
+  const tokenToBase = Number(backstopTokenToBase) / 1e7;
+  const estBackstopSize = backstopPoolBalance
+    ? (Number(backstopPoolBalance.tokens) / 1e7) * tokenToBase
+    : undefined;
 
   const [rotateArrow, setRotateArrow] = useState(false);
   const rotate = rotateArrow ? 'rotate(180deg)' : 'rotate(0)';
@@ -34,7 +40,7 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
   useEffect(() => {
     const refreshAndEstimate = async () => {
       if (poolEst == undefined) {
-        await refreshPoolReserveData(poolId);
+        await refreshPoolReserveAll(poolId);
         await refreshPrices(poolId);
         await estimateToLatestLedger(poolId);
       }
@@ -102,7 +108,7 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
           ></StackedTextHLBox>
           <StackedTextHLBox
             name="Backstop"
-            text={poolBackstopBal ? toBalance(Number(poolBackstopBal.tokens) / 1e7) : '--'}
+            text={`$${toBalance(estBackstopSize)}`}
             palette={theme.palette.backstop}
             sx={{ width: '33.33%' }}
           ></StackedTextHLBox>
