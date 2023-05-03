@@ -11,7 +11,7 @@ export interface TokenHeaderProps extends BoxProps {
 export const TokenHeader: React.FC<TokenHeaderProps> = ({ id, sx, ...props }) => {
   // TODO: Find a better way to do this
   const code = TOKEN_META[id as keyof typeof TOKEN_META]?.code ?? 'unknown';
-  const issuer = TOKEN_META[id as keyof typeof TOKEN_META]?.issuer ?? 'unknown';
+  const issuer = TOKEN_META[id as keyof typeof TOKEN_META]?.issuer ?? '';
   return (
     <Box
       sx={{

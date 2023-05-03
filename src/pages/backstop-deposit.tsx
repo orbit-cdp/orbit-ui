@@ -16,7 +16,7 @@ const BackstopDeposit: NextPage = () => {
         <WalletWarning />
       </Row>
       <Row>
-        <GoBackHeader />
+        <GoBackHeader poolId="" />
       </Row>
       <Row>
         <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>

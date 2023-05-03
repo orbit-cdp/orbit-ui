@@ -1,5 +1,17 @@
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { Alert, Button, Menu, MenuItem, Snackbar, Typography, useTheme } from '@mui/material';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import {
+  Alert,
+  Button,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Snackbar,
+  Typography,
+  useTheme,
+} from '@mui/material';
 import copy from 'copy-to-clipboard';
 import React from 'react';
 import { useWallet } from '../../contexts/wallet';
@@ -84,6 +96,7 @@ export const WalletMenu = () => {
         onClose={handleClose}
         MenuListProps={{
           'aria-labelledby': 'wallet-dropdown-button',
+          sx: { width: anchorElDropdown && anchorElDropdown.offsetWidth },
         }}
         PaperProps={{
           // @ts-ignore - TODO: Figure out why typing is broken
@@ -96,7 +109,10 @@ export const WalletMenu = () => {
             handleCopyAddress();
           }}
         >
-          Copy address
+          <ListItemText>Copy address</ListItemText>
+          <ListItemIcon>
+            <ContentCopyIcon />
+          </ListItemIcon>
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -105,7 +121,10 @@ export const WalletMenu = () => {
           }}
           sx={{ color: '#E7424C' }}
         >
-          Disconnect
+          <ListItemText>Disconnect</ListItemText>
+          <ListItemIcon>
+            <DeleteOutlineIcon sx={{ color: '#E7424C' }} />
+          </ListItemIcon>
         </MenuItem>
       </Menu>
       <Menu
@@ -115,6 +134,7 @@ export const WalletMenu = () => {
         onClose={handleClose}
         MenuListProps={{
           'aria-labelledby': 'connect-wallet-dropdown-button',
+          sx: { width: anchorElConnect && anchorElConnect.offsetWidth },
         }}
         PaperProps={{
           // @ts-ignore - TODO: Figure out why typing is broken
@@ -128,10 +148,14 @@ export const WalletMenu = () => {
             setOpenCon(true);
           }}
         >
-          <WalletIcon name={'Freighter'} />
-          <Typography variant="h3" color={theme.palette.text.primary} sx={{ marginLeft: '6px' }}>
-            Freighter
-          </Typography>
+          <ListItemIcon>
+            <WalletIcon name={'Freighter'} />
+          </ListItemIcon>
+          <ListItemText>
+            <Typography variant="h3" color={theme.palette.text.primary} sx={{ marginLeft: '6px' }}>
+              Freighter
+            </Typography>
+          </ListItemText>
         </MenuItem>
       </Menu>
 

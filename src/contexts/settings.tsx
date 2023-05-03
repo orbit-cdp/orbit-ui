@@ -13,6 +13,8 @@ export interface ISettingsContext {
   setLastPool: (lastPool: string) => void;
   showLend: boolean;
   setShowLend: (showLend: boolean) => void;
+  showDeposit: boolean;
+  setShowDeposit: (showDeposit: boolean) => void;
 }
 
 const SettingsContext = React.createContext<ISettingsContext | undefined>(undefined);
@@ -24,6 +26,7 @@ export const SettingsProvider = ({ children = null as any }) => {
 
   const [lastPool, setLastPool] = useLocalStorageState('lastPool', undefined);
   const [showLend, setShowLend] = useState<boolean>(true);
+  const [showDeposit, setShowDeposit] = useState<boolean>(true);
 
   let viewType: ViewType;
   if (mobile) viewType = ViewType.MOBILE;
@@ -31,7 +34,17 @@ export const SettingsProvider = ({ children = null as any }) => {
   else viewType = ViewType.REGULAR;
 
   return (
-    <SettingsContext.Provider value={{ viewType, lastPool, setLastPool, showLend, setShowLend }}>
+    <SettingsContext.Provider
+      value={{
+        viewType,
+        lastPool,
+        setLastPool,
+        showLend,
+        setShowLend,
+        showDeposit,
+        setShowDeposit,
+      }}
+    >
       {children}
     </SettingsContext.Provider>
   );

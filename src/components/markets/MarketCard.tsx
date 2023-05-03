@@ -21,12 +21,18 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
 
   const [expand, setExpand] = useState(false);
 
-  const pool = useStore((state) => state.pools.get(poolId));
-  const poolEst = useStore((state) => state.pool_est.get(poolId));
-  const poolBackstopBal = useStore((state) => state.poolBackstopBalance.get(poolId));
-  const refreshPoolReserveData = useStore((state) => state.refreshPoolReserveData);
+  const refreshPoolReserveAll = useStore((state) => state.refreshPoolReserveAll);
   const refreshPrices = useStore((state) => state.refreshPrices);
   const estimateToLatestLedger = useStore((state) => state.estimateToLatestLedger);
+  const pool = useStore((state) => state.pools.get(poolId));
+  const poolEst = useStore((state) => state.pool_est.get(poolId));
+  const backstopTokenToBase = useStore((state) => state.backstopTokenPrice);
+  const backstopPoolBalance = useStore((state) => state.poolBackstopBalance.get(poolId));
+
+  const tokenToBase = Number(backstopTokenToBase) / 1e7;
+  const estBackstopSize = backstopPoolBalance
+    ? (Number(backstopPoolBalance.tokens) / 1e7) * tokenToBase
+    : undefined;
 
   const [rotateArrow, setRotateArrow] = useState(false);
   const rotate = rotateArrow ? 'rotate(180deg)' : 'rotate(0)';
@@ -34,7 +40,7 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
   useEffect(() => {
     const refreshAndEstimate = async () => {
       if (poolEst == undefined) {
-        await refreshPoolReserveData(poolId);
+        await refreshPoolReserveAll(poolId);
         await refreshPrices(poolId);
         await estimateToLatestLedger(poolId);
       }
@@ -48,7 +54,7 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
   }, [poolEst]);
 
   return (
-    <Section width={SectionSize.FULL} sx={{ flexDirection: 'column', marginBottom: '12px' }}>
+    <Section width={SectionSize.FULL} sx={{ flexDirection: 'column', marginBottom: '12px', ...sx }}>
       <Box
         onClick={() => {
           setExpand(!expand);
@@ -63,7 +69,7 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
         }}
       >
         <Row>
-          <PoolHeader name={pool?.name ?? 'blend'} sx={{ margin: '6px', padding: '6px' }} />
+          <PoolHeader poolId={poolId} sx={{ margin: '6px', padding: '6px' }} />
           <Box
             sx={{
               margin: '6px',
@@ -102,7 +108,7 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
           ></StackedTextHLBox>
           <StackedTextHLBox
             name="Backstop"
-            text={poolBackstopBal ? toBalance(Number(poolBackstopBal.tokens) / 1e7) : '--'}
+            text={`$${toBalance(estBackstopSize)}`}
             palette={theme.palette.backstop}
             sx={{ width: '33.33%' }}
           ></StackedTextHLBox>
@@ -127,7 +133,7 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
               {pool ? (
                 pool.reserves.map((reserveId) => {
                   const code = TOKEN_META[reserveId as keyof typeof TOKEN_META]?.code ?? 'unknown';
-                  return <TokenIcon symbol={code} sx={{ marginRight: '6px' }} />;
+                  return <TokenIcon key={reserveId} symbol={code} sx={{ marginRight: '6px' }} />;
                 })
               ) : (
                 <></>
