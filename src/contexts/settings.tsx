@@ -1,5 +1,6 @@
 import { useMediaQuery, useTheme } from '@mui/material';
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
+import { useLocalStorageState } from '../hooks';
 
 export enum ViewType {
   MOBILE,
@@ -8,6 +9,10 @@ export enum ViewType {
 }
 export interface ISettingsContext {
   viewType: ViewType;
+  lastPool: string | undefined;
+  setLastPool: (lastPool: string) => void;
+  showLend: boolean;
+  setShowLend: (showLend: boolean) => void;
 }
 
 const SettingsContext = React.createContext<ISettingsContext | undefined>(undefined);
@@ -17,12 +22,19 @@ export const SettingsProvider = ({ children = null as any }) => {
   const compact = useMediaQuery(theme.breakpoints.down('lg')); // hook causes refresh on change
   const mobile = useMediaQuery(theme.breakpoints.down('sm')); // hook causes refresh on change
 
+  const [lastPool, setLastPool] = useLocalStorageState('lastPool', undefined);
+  const [showLend, setShowLend] = useState<boolean>(true);
+
   let viewType: ViewType;
   if (mobile) viewType = ViewType.MOBILE;
   else if (compact) viewType = ViewType.COMPACT;
   else viewType = ViewType.REGULAR;
 
-  return <SettingsContext.Provider value={{ viewType }}>{children}</SettingsContext.Provider>;
+  return (
+    <SettingsContext.Provider value={{ viewType, lastPool, setLastPool, showLend, setShowLend }}>
+      {children}
+    </SettingsContext.Provider>
+  );
 };
 
 export const useSettings = () => {

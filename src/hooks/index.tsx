@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 
 export const useLocalStorageState = (
   key: string,
-  defaultState: string
-): [string, (newState: string) => void] => {
-  const [state, setState] = useState<string>(defaultState);
+  defaultState: string | undefined
+): [string | undefined, (newState: string) => void] => {
+  const [state, setState] = useState<string | undefined>(defaultState);
 
   useEffect(() => {
     const stored = localStorage.getItem(key);

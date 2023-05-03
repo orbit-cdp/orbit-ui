@@ -1,7 +1,7 @@
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Collapse, useTheme } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
 import { TOKEN_META } from '../../utils/token_display';
@@ -17,14 +17,35 @@ import { MarketCardCollapse } from './MarketCardCollapse';
 
 export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
   const theme = useTheme();
+  const isMounted = useRef(false);
+
   const [expand, setExpand] = useState(false);
 
   const pool = useStore((state) => state.pools.get(poolId));
   const poolEst = useStore((state) => state.pool_est.get(poolId));
   const poolBackstopBal = useStore((state) => state.poolBackstopBalance.get(poolId));
+  const refreshPoolReserveData = useStore((state) => state.refreshPoolReserveData);
+  const refreshPrices = useStore((state) => state.refreshPrices);
+  const estimateToLatestLedger = useStore((state) => state.estimateToLatestLedger);
 
   const [rotateArrow, setRotateArrow] = useState(false);
   const rotate = rotateArrow ? 'rotate(180deg)' : 'rotate(0)';
+
+  useEffect(() => {
+    const refreshAndEstimate = async () => {
+      if (poolEst == undefined) {
+        await refreshPoolReserveData(poolId);
+        await refreshPrices(poolId);
+        await estimateToLatestLedger(poolId);
+      }
+    };
+
+    if (isMounted.current) {
+      refreshAndEstimate();
+    } else {
+      isMounted.current = true;
+    }
+  }, [poolEst]);
 
   return (
     <Section width={SectionSize.FULL} sx={{ flexDirection: 'column', marginBottom: '12px' }}>
