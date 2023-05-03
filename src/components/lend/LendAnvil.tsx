@@ -3,6 +3,7 @@ import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useState } from 'react';
 import { Address, Contract, xdr } from 'soroban-client';
+import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { fromInputStringToScVal } from '../../utils/scval';
@@ -15,6 +16,7 @@ import { ValueChange } from '../common/ValueChange';
 
 export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
+  const { submitTransaction } = useWallet();
 
   const reserve = useStore((state) => state.reserves.get(poolId)?.get(assetId));
   const prices = useStore((state) => state.poolPrices.get(poolId));
@@ -68,6 +70,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
         fromInputStringToScVal(toLend)
       );
       console.log('lend op xdr: ', supply_op.toXDR().toString('base64'));
+      submitTransaction();
     }
   };
 
@@ -104,7 +107,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
               value={toLend}
               onValueChange={handleLendAmountChange}
               onSetMax={handleLendMax}
-              palette={theme.palette.borrow}
+              palette={theme.palette.lend}
               sx={{ width: '100%' }}
             />
             <OpaqueButton

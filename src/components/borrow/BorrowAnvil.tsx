@@ -3,6 +3,7 @@ import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useState } from 'react';
 import { Address, Contract, xdr } from 'soroban-client';
+import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { fromInputStringToScVal } from '../../utils/scval';
@@ -15,6 +16,7 @@ import { ValueChange } from '../common/ValueChange';
 
 export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
+  const { submitTransaction } = useWallet();
 
   const userId = '';
 
@@ -80,6 +82,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
         user_scval
       );
       console.log('borrow op xdr: ', borrow_op.toXDR().toString('base64'));
+      submitTransaction();
     }
   };
 
