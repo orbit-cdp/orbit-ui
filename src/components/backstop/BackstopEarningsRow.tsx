@@ -32,7 +32,7 @@ export const BackstopEarningsRow: React.FC<BackstopEarningsRowProps> = ({
       }}
       {...props}
     >
-      <TokenHeader id={'temp'} sx={{ width: tableWidth, marginRight: '12px' }} />
+      <TokenHeader id={assetData.id} sx={{ width: tableWidth, marginRight: '12px' }} />
       <Box
         sx={{
           width: tableWidth,

@@ -14,6 +14,8 @@ export type PoolBackstopBalance = {
  */
 export interface BackstopSlice {
   backstopContract: BackstopContract;
+  backstopToken: string;
+  backstopTokenPrice: bigint;
   rewardZone: string[];
   poolBackstopBalance: Map<string, PoolBackstopBalance>;
   shares: Map<string, BigInt>;
@@ -27,6 +29,8 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
   backstopContract: new BackstopContract(
     '00a387e057e2542ce4fe2610c33e0ef7a41cd8d6a25b78fd8ae2517e81e5daa3'
   ),
+  backstopToken: '0924da0b090d2fdbae614f17b2bbbf4f981624eff4e743ca390ab1fccaeb0efc',
+  backstopTokenPrice: BigInt(0.05e7), // TODO: Calculate fair value from LP
   rewardZone: [],
   poolBackstopBalance: new Map<string, PoolBackstopBalance>(),
   shares: new Map<string, BigInt>(),
@@ -45,7 +49,6 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
       for (const rz_pool of rz) {
         poolBackstopBalMap.set(rz_pool, await loadPoolBackstopBalance(stellar, contract, rz_pool));
       }
-      console.log(Array.from(poolBackstopBalMap.entries()));
       set({ rewardZone: rz, poolBackstopBalance: poolBackstopBalMap });
     } catch (e) {
       console.error('unable to refresh backstop data:', e);

@@ -14,10 +14,19 @@ export const MarketCardCollapse: React.FC<PoolComponentProps> = ({ poolId, sx, .
   const theme = useTheme();
 
   const pool = useStore((state) => state.pools.get(poolId));
-  const poolBackstopBalance = useStore((state) => state.poolBackstopBalance.get(poolId));
-  let decimalQ4WRatio = poolBackstopBalance
-    ? Number(poolBackstopBalance.q4w) / Number(poolBackstopBalance.shares)
-    : 0;
+  const poolEst = useStore((state) => state.pool_est.get(poolId));
+  const backstopTokenToBase = useStore((state) => state.backstopTokenPrice);
+  const backstopPoolBalance = useStore((state) => state.poolBackstopBalance.get(poolId));
+
+  const tokenToBase = Number(backstopTokenToBase) / 1e7;
+  const estBackstopSize = backstopPoolBalance
+    ? (Number(backstopPoolBalance.tokens) / 1e7) * tokenToBase
+    : undefined;
+  const estBackstopApy =
+    poolEst && estBackstopSize ? poolEst.total_backstop_take_base / estBackstopSize : undefined;
+  const poolQ4W = backstopPoolBalance
+    ? Number(backstopPoolBalance.q4w) / Number(backstopPoolBalance.shares)
+    : undefined;
 
   return (
     <Box
@@ -55,7 +64,7 @@ export const MarketCardCollapse: React.FC<PoolComponentProps> = ({ poolId, sx, .
       <Row>
         <LinkBox
           sx={{ width: '100%', marginRight: '12px' }}
-          to={{ pathname: '/backstop', query: { poolId: 'poolId' } }}
+          to={{ pathname: '/backstop', query: { poolId: poolId } }}
         >
           <OpaqueButton
             palette={theme.palette.backstop}
@@ -106,12 +115,12 @@ export const MarketCardCollapse: React.FC<PoolComponentProps> = ({ poolId, sx, .
               <Row>
                 <StackedTextBox
                   name="Backstop APR"
-                  text={toPercentage(0.1234)}
+                  text={toPercentage(estBackstopApy)}
                   sx={{ width: '50%' }}
                 />
                 <StackedTextBox
                   name="Q4W"
-                  text={toPercentage(decimalQ4WRatio)}
+                  text={toPercentage(poolQ4W)}
                   sx={{ width: '50%', color: theme.palette.backstop.main }}
                 />
               </Row>

@@ -16,7 +16,7 @@ import { ValueChange } from '../common/ValueChange';
 
 export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
-  const { submitTransaction } = useWallet();
+  const { connected, walletAddress, submitTransaction } = useWallet();
 
   const reserve = useStore((state) => state.reserves.get(poolId)?.get(assetId));
   const prices = useStore((state) => state.poolPrices.get(poolId));
@@ -59,10 +59,8 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
 
   const handleSubmitTransaction = () => {
     // TODO: Revalidate?
-    if (toLend) {
-      let user_scval = new Address(
-        'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K'
-      ).toScVal();
+    if (toLend && connected) {
+      let user_scval = new Address(walletAddress).toScVal();
       let supply_op = new Contract(poolId).call(
         'supply',
         user_scval,

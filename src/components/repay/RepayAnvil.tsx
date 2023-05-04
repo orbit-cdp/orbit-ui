@@ -16,14 +16,12 @@ import { ValueChange } from '../common/ValueChange';
 
 export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
-  const { submitTransaction } = useWallet();
+  const { connected, walletAddress, submitTransaction } = useWallet();
 
   const reserve = useStore((state) => state.reserves.get(poolId)?.get(assetId));
   const prices = useStore((state) => state.poolPrices.get(poolId));
   const user_est = useStore((state) => state.user_est.get(poolId));
   const user_bal_est = useStore((state) => state.user_bal_est.get(poolId)?.get(assetId));
-
-  const reserve_symbol = reserve?.symbol ?? '';
 
   const liability_factor = Number(reserve?.config.c_factor) / 1e7;
   const assetToBase = prices?.get(assetId) ?? 1;
@@ -63,10 +61,8 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
 
   const handleSubmitTransaction = () => {
     // TODO: Revalidate?
-    if (toRepay) {
-      let user_scval = new Address(
-        'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K'
-      ).toScVal();
+    if (toRepay && connected) {
+      let user_scval = new Address(walletAddress).toScVal();
       let repay_op = new Contract(poolId).call(
         'repay',
         user_scval,

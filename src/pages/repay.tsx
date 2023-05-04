@@ -10,12 +10,14 @@ import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
 import { WalletWarning } from '../components/common/WalletWarning';
 import { RepayAnvil } from '../components/repay/RepayAnvil';
+import { useWallet } from '../contexts/wallet';
 import { useStore } from '../store/store';
 import { toBalance, toPercentage } from '../utils/formatter';
 
 const Repay: NextPage = () => {
   const theme = useTheme();
   const isMounted = useRef(false);
+  const { connected, walletAddress } = useWallet();
 
   const router = useRouter();
   const { poolId, assetId } = router.query;
@@ -33,17 +35,14 @@ const Repay: NextPage = () => {
   // load ledger data if the page was loaded directly
   useEffect(() => {
     if (isMounted.current && safePoolId != '' && reserve == undefined) {
-      refreshPoolReserveAll(safePoolId, 'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K');
+      refreshPoolReserveAll(safePoolId, connected ? walletAddress : undefined);
     }
   }, [refreshPoolReserveAll, safePoolId, reserve]);
 
   // always re-estimate values to most recent ledger
   useEffect(() => {
     if (isMounted.current && safePoolId != '' && reserve != undefined) {
-      estimateToLatestLedger(
-        safePoolId,
-        'GA5XD47THVXOJFNSQTOYBIO42EVGY5NF62YUAZJNHOQFWZZ2EEITVI5K'
-      );
+      estimateToLatestLedger(safePoolId, connected ? walletAddress : undefined);
     } else {
       isMounted.current = true;
     }

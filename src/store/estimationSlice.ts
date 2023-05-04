@@ -4,6 +4,7 @@ import { Pool, ReserveBalance } from './poolSlice';
 import { DataStore, useStore } from './store';
 
 export type PoolEstimates = {
+  total_backstop_take_base: number;
   total_supply_base: number;
   total_liabilities_base: number;
   latest_ledger: number;
@@ -76,10 +77,12 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
         return;
       }
 
+      let backstop_take_rate = pool.config.bstop_rate / 1e9;
       let res_estimations: ReserveEstimates[] = [];
       let pool_est: PoolEstimates = {
         total_supply_base: 0,
         total_liabilities_base: 0,
+        total_backstop_take_base: 0,
         latest_ledger: latest_ledger,
       };
       for (const res of Array.from(reserves.values())) {
@@ -87,6 +90,8 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
         let price = prices.get(res.asset_id) ?? 1;
         pool_est.total_supply_base += reserve_est.supplied * price;
         pool_est.total_liabilities_base += reserve_est.borrowed * price;
+        pool_est.total_backstop_take_base +=
+          reserve_est.supplied * price * reserve_est.supply_apy * backstop_take_rate;
         res_estimations.push(reserve_est);
       }
 
