@@ -114,7 +114,7 @@ export const MarketCardCollapse: React.FC<PoolComponentProps> = ({ poolId, sx, .
               </Row>
               <Row>
                 <StackedTextBox
-                  name="Backstop APR"
+                  name="Backstop APY"
                   text={toPercentage(estBackstopApy)}
                   sx={{ width: '50%' }}
                 />
