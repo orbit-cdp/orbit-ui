@@ -1,14 +1,11 @@
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, Typography, useTheme } from '@mui/material';
-import { TxStatus, useWallet } from '../../contexts/wallet';
-import { LinkBox } from './LinkBox';
 import { OpaqueButton } from './OpaqueButton';
-import { PoolComponentProps } from './PoolComponentProps';
+import { CloseableOverlayProps } from './OverlayModal';
 
-export const OverlayModalSuccess: React.FC<PoolComponentProps> = ({ poolId }) => {
+export const OverlayModalSuccess: React.FC<CloseableOverlayProps> = ({ handleCloseOverlay }) => {
   const theme = useTheme();
-  const { txStatus } = useWallet();
 
   return (
     <Box
@@ -41,25 +38,23 @@ export const OverlayModalSuccess: React.FC<PoolComponentProps> = ({ poolId }) =>
           Transaction submitted successfully!
         </Typography>
         <Typography variant="h5">View the transaction details.</Typography>
-        <LinkBox to={{ pathname: '/dashboard', query: { poolId: poolId } }} sx={{ margin: '12px' }}>
-          <OpaqueButton
-            onClick={() => (txStatus = TxStatus.NONE)}
-            palette={theme.palette.primary}
-            sx={{
-              margin: '6px',
-              padding: '6px',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <Box sx={{ padding: '6px', display: 'flex', flexDirection: 'row', height: '30px' }}>
-              <Box sx={{ paddingRight: '12px', lineHeight: '100%' }}>Return to dashboard</Box>
-              <Box>
-                <ArrowForwardIcon fontSize="inherit" />
-              </Box>
+        <OpaqueButton
+          onClick={handleCloseOverlay}
+          palette={theme.palette.primary}
+          sx={{
+            margin: '6px',
+            padding: '6px',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Box sx={{ padding: '6px', display: 'flex', flexDirection: 'row', height: '30px' }}>
+            <Box sx={{ paddingRight: '12px', lineHeight: '100%' }}>Return to dashboard</Box>
+            <Box>
+              <ArrowForwardIcon fontSize="inherit" />
             </Box>
-          </OpaqueButton>
-        </LinkBox>
+          </Box>
+        </OpaqueButton>
       </Box>
     </Box>
   );

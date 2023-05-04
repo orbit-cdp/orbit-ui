@@ -12,6 +12,7 @@ import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
+import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
 export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
@@ -23,6 +24,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   const user_est = useStore((state) => state.user_est.get(poolId));
   const user_bal_est = useStore((state) => state.user_bal_est.get(poolId)?.get(assetId));
 
+  const symbol = reserve?.symbol ?? '';
   const liability_factor = Number(reserve?.config.c_factor) / 1e7;
   const assetToBase = prices?.get(assetId) ?? 1;
 
@@ -70,8 +72,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
         fromInputStringToScVal(toRepay),
         user_scval
       );
-      console.log('repay op xdr: ', repay_op.toXDR().toString('base64'));
-      submitTransaction();
+      submitTransaction(repay_op);
     }
   };
 
@@ -104,7 +105,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
             }}
           >
             <InputBar
-              symbol={reserve?.symbol ?? ''}
+              symbol={symbol}
               value={toRepay}
               onValueChange={handleRepayAmountChange}
               onSetMax={handleRepayMax}
@@ -127,32 +128,57 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
         </Box>
         <Box
           sx={{
-            marginLeft: '24px',
-            marginBottom: '12px',
+            width: '100%',
             display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
+            flexDirection: 'column',
+            backgroundColor: theme.palette.background.paper,
+            zIndex: 12,
           }}
         >
-          <LocalGasStationIcon
-            fontSize="inherit"
-            sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}
-          />
-          <Typography variant="h5" sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}>
-            $1.88
+          <Typography
+            variant="h5"
+            sx={{ marginLeft: '12px', marginBottom: '12px', marginTop: '12px' }}
+          >
+            Transaction Overview
           </Typography>
-          <HelpOutlineIcon fontSize="inherit" sx={{ color: theme.palette.text.secondary }} />
+          <Box
+            sx={{
+              marginLeft: '24px',
+              marginBottom: '12px',
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
+          >
+            <LocalGasStationIcon
+              fontSize="inherit"
+              sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}
+            />
+            <Typography
+              variant="h5"
+              sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}
+            >
+              $1.88
+            </Typography>
+            <HelpOutlineIcon fontSize="inherit" sx={{ color: theme.palette.text.secondary }} />
+          </Box>
+          <Value title="Amount to repay" value={toRepay ?? '0'} />
+          <ValueChange
+            title="Your total borrowed"
+            curValue={`${toBalance(user_bal_est?.borrowed)} ${symbol}`}
+            newValue={`${toBalance((user_bal_est?.borrowed ?? 0) - Number(toRepay))} ${symbol}`}
+          />
+          <ValueChange
+            title="Borrow capacity"
+            curValue={`$${toBalance(oldBorrowCap)}`}
+            newValue={`$${toBalance(borrowCap)}`}
+          />
+          <ValueChange
+            title="Borrow limit"
+            curValue={toPercentage(oldBorrowLimit)}
+            newValue={toPercentage(borrowLimit)}
+          />
         </Box>
-        <ValueChange
-          title="Borrow capacity"
-          curValue={`$${toBalance(oldBorrowCap)}`}
-          newValue={`$${toBalance(borrowCap)}`}
-        />
-        <ValueChange
-          title="Borrow limit"
-          curValue={toPercentage(oldBorrowLimit)}
-          newValue={toPercentage(borrowLimit)}
-        />
       </Section>
     </Row>
   );

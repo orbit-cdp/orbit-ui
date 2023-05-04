@@ -1,4 +1,5 @@
 import { Box } from '@mui/material';
+import { useRouter } from 'next/router';
 import { TxStatus, useWallet } from '../../contexts/wallet';
 import { OverlayModalFail } from './OverlayModalFail';
 import { OverlayModalSign } from './OverlayModalSign';
@@ -6,9 +7,20 @@ import { OverlayModalSubmit } from './OverlayModalSubmit';
 import { OverlayModalSuccess } from './OverlayModalSuccess';
 import { PoolComponentProps } from './PoolComponentProps';
 
+export interface CloseableOverlayProps {
+  handleCloseOverlay: () => void;
+}
+
 export const OverlayModal: React.FC<PoolComponentProps> = ({ poolId }) => {
-  const { txStatus } = useWallet();
+  const router = useRouter();
+  const { txStatus, setTxStatus } = useWallet();
+
   const display = txStatus !== TxStatus.NONE ? 'flex' : 'none';
+
+  const handleReturnToDashboard = () => {
+    setTxStatus(TxStatus.NONE);
+    router.push({ pathname: '/dashboard', query: { poolId: poolId } });
+  };
 
   return (
     <Box
@@ -29,8 +41,12 @@ export const OverlayModal: React.FC<PoolComponentProps> = ({ poolId }) => {
     >
       {txStatus === TxStatus.SIGNING && <OverlayModalSign />}
       {txStatus === TxStatus.SUBMITTING && <OverlayModalSubmit />}
-      {txStatus === TxStatus.SUCCESS && <OverlayModalSuccess poolId={poolId} />}
-      {txStatus === TxStatus.FAIL && <OverlayModalFail />}
+      {txStatus === TxStatus.SUCCESS && (
+        <OverlayModalSuccess handleCloseOverlay={handleReturnToDashboard} />
+      )}
+      {txStatus === TxStatus.FAIL && (
+        <OverlayModalFail handleCloseOverlay={handleReturnToDashboard} />
+      )}
     </Box>
   );
 };

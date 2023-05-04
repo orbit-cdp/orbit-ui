@@ -111,9 +111,7 @@ const Lend: NextPage = () => {
           ></StackedText>
         </Section>
       </Row>
-      <Row>
-        <LendAnvil poolId={safePoolId} assetId={safeAssetId} />
-      </Row>
+      <LendAnvil poolId={safePoolId} assetId={safeAssetId} />
 
       <OverlayModal poolId={safePoolId} />
     </>
