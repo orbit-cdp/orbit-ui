@@ -172,7 +172,9 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           <ValueChange
             title="Your total borrowed"
             curValue={`${toBalance(user_bal_est?.borrowed)} ${symbol}`}
-            newValue={`${toBalance((user_bal_est?.borrowed ?? 0) + Number(toBorrow))} ${symbol}`}
+            newValue={`${toBalance(
+              (user_bal_est?.borrowed ?? 0) + Number(toBorrow ?? 0)
+            )} ${symbol}`}
           />
           <ValueChange
             title="Borrow capacity"

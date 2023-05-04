@@ -247,8 +247,13 @@ async function loadUserForPool(
       xdr.ScVal.scvSymbol('UserConfig'),
       user_address.toScVal(),
     ]);
-    let user_config_entry = await stellar.getContractData(pool_id, config_datakey);
-    let user_config = data_entry_converter.toBigInt(user_config_entry.xdr);
+    let user_config = BigInt(0);
+    try {
+      let user_config_entry = await stellar.getContractData(pool_id, config_datakey);
+      user_config = data_entry_converter.toBigInt(user_config_entry.xdr);
+    } catch {
+      // user has not touched pool yet
+    }
 
     for (const res_entry of Array.from(reserves.entries())) {
       try {

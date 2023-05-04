@@ -17,6 +17,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   const borrow_capacity_fill = user_estimates
     ? (user_estimates.e_liabilities_base / user_estimates.e_collateral_base) * 100
     : 100;
+  const net_apy = Number.isFinite(user_estimates?.net_apy) ? user_estimates?.net_apy : 0;
 
   return (
     <Row>
@@ -39,7 +40,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
           <StackedText
             title="Net APY"
             titleColor="inherit"
-            text={toPercentage(user_estimates?.net_apy ?? 0)}
+            text={toPercentage(net_apy)}
             textColor="inherit"
             type="large"
           />
