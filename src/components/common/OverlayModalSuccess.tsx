@@ -10,12 +10,6 @@ export const OverlayModalSuccess: React.FC<PoolComponentProps> = ({ poolId }) =>
   const theme = useTheme();
   const { txStatus } = useWallet();
 
-  const handleTxStatus = (txStatus: TxStatus) => {
-    if (txStatus !== TxStatus.NONE) {
-      txStatus = TxStatus.NONE;
-    }
-  };
-
   return (
     <Box
       sx={{
@@ -49,7 +43,7 @@ export const OverlayModalSuccess: React.FC<PoolComponentProps> = ({ poolId }) =>
         <Typography variant="h5">View the transaction details.</Typography>
         <LinkBox to={{ pathname: '/dashboard', query: { poolId: poolId } }} sx={{ margin: '12px' }}>
           <OpaqueButton
-            onClick={() => handleTxStatus(txStatus)}
+            onClick={() => (txStatus = TxStatus.NONE)}
             palette={theme.palette.primary}
             sx={{
               margin: '6px',
