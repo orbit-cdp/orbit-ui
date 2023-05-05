@@ -24,8 +24,6 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
   const estBackstopSize = backstopPoolBalance
     ? (Number(backstopPoolBalance.tokens) / 1e7) * tokenToBase
     : undefined;
-  const estBackstopApy =
-    poolEst && estBackstopSize ? poolEst.total_backstop_take_base / estBackstopSize : undefined;
   const poolQ4W = backstopPoolBalance
     ? Number(backstopPoolBalance.q4w) / Number(backstopPoolBalance.shares)
     : undefined;
@@ -109,7 +107,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
               <StackedText
                 title="Backstop Q4W"
                 titleColor="inherit"
-                text={toPercentage(estBackstopApy)}
+                text={toPercentage(poolQ4W)}
                 textColor="inherit"
                 type="large"
               />

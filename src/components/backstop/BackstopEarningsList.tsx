@@ -11,7 +11,7 @@ export interface EarningsAssetData {
 
 const tempEarningsData: EarningsAssetData[] = [
   {
-    id: '28f6d51e7cd7c140b489b6b0312617c23d6768f0b816d593616f4856ba48bcd6',
+    id: '3e42f27739b773cdc1db839ff1a86877e29d32cb49614303587bd864855794e6',
     code: 'BLND',
     issuer: '',
     amount: 32.7876123,

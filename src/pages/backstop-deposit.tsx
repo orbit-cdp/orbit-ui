@@ -53,7 +53,7 @@ const BackstopDeposit: NextPage = () => {
       <Row>
         <Section width={SectionSize.THIRD}>
           <StackedText
-            title="Backstop APR"
+            title="Backstop APY"
             text="28.888%"
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>

@@ -3,6 +3,7 @@ import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect, useRef } from 'react';
 import { GoBackHeader } from '../components/common/GoBackHeader';
+import { OverlayModal } from '../components/common/OverlayModal';
 import { ReserveDropdown } from '../components/common/ReserveDropdown';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
@@ -113,6 +114,8 @@ const Repay: NextPage = () => {
       <Row>
         <RepayAnvil poolId={safePoolId} assetId={safeAssetId} />
       </Row>
+
+      <OverlayModal poolId={safePoolId} />
     </>
   );
 };

@@ -70,7 +70,9 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
               alignItems: 'center',
             }}
           >
-            <Typography variant="body1">{formatter.toPercentage(reserveData.apy)}</Typography>
+            <Typography variant="body1">
+              {formatter.toPercentage(reserveData.supply_apy)}
+            </Typography>
           </Box>
           {tableNum >= 5 && <Box sx={{ width: tableWidth }} />}
           <Box

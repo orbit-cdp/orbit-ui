@@ -212,6 +212,8 @@ async function loadReservesForPool(
       let symbol: string;
       if (asset_id === 'e87136999e4edffc8f00b3e1583892c9db49520bbfc5e1923c50fd1b4671c842') {
         symbol = 'XLM';
+      } else if (asset_id === '20dc9381238b384537f611263e642796771c8ab36587ae8e413d3ef714a368c5') {
+        symbol = 'USDC';
       } else {
         let name_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('Symbol')]);
         let name_entry = await stellar.getContractData(asset_id, name_datakey);
@@ -245,8 +247,13 @@ async function loadUserForPool(
       xdr.ScVal.scvSymbol('UserConfig'),
       user_address.toScVal(),
     ]);
-    let user_config_entry = await stellar.getContractData(pool_id, config_datakey);
-    let user_config = data_entry_converter.toBigInt(user_config_entry.xdr);
+    let user_config = BigInt(0);
+    try {
+      let user_config_entry = await stellar.getContractData(pool_id, config_datakey);
+      user_config = data_entry_converter.toBigInt(user_config_entry.xdr);
+    } catch {
+      // user has not touched pool yet
+    }
 
     for (const res_entry of Array.from(reserves.entries())) {
       try {

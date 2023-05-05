@@ -4,34 +4,6 @@ import { useStore } from '../../store/store';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { BorrowPositionCard } from './BorrowPositionCard';
 
-export interface BorrowPositionAssetData {
-  address: string;
-  code: string;
-  issuer: string;
-  balance: number;
-  apr: number;
-  collateralFactor: number;
-}
-
-const tempBorrowPositionData: BorrowPositionAssetData[] = [
-  {
-    address: 'GBMOG6BSWQSBSASRMHHGR2NZCKXTCGH7W3CDCBJW5REBSKW5ZX5FERHI',
-    code: 'USDC',
-    issuer: 'circle.io',
-    balance: 888_880,
-    apr: 0.2888,
-    collateralFactor: 0.85,
-  },
-  {
-    address: 'GDYW2WXGVCHTPPY34D72CJBAUCHJTS4LRDAGERO72Z6MAHWXOZB3ZY47',
-    code: 'ETH',
-    issuer: 'starbridge.org',
-    balance: 888_880,
-    apr: 0.2888,
-    collateralFactor: 0.75,
-  },
-];
-
 export const BorrowPositionList: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
   const poolReserves = useStore((state) => state.reserve_est.get(poolId));
