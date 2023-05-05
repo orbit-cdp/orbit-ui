@@ -28,7 +28,7 @@ export const OverlayModalFail: React.FC<CloseableOverlayProps> = ({ handleCloseO
           display: 'flex',
           flexWrap: 'wrap',
           flexDirection: 'column',
-          marginTop: '25vh',
+          marginTop: '23vh',
           alignItems: 'center',
           justifyContent: 'center',
         }}
