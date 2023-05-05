@@ -25,7 +25,7 @@ export const OverlayModalSign: React.FC = () => {
           display: 'flex',
           flexWrap: 'wrap',
           flexDirection: 'column',
-          marginTop: '25vh',
+          marginTop: '23vh',
           alignItems: 'center',
           justifyContent: 'center',
         }}
