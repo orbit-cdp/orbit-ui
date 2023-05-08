@@ -159,7 +159,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
             </Typography>
             <HelpOutlineIcon fontSize="inherit" sx={{ color: theme.palette.text.secondary }} />
           </Box>
-          <Value title="Amount to lend" value={toLend ?? '0'} />
+          <Value title="Amount to lend" value={`${toLend ?? '0'} ${symbol}`} />
           <ValueChange
             title="Your total lent"
             curValue={`${toBalance(user_bal_est?.supplied)} ${symbol}`}
@@ -174,8 +174,8 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
           />
           <ValueChange
             title="Borrow limit"
-            curValue={toPercentage(oldBorrowLimit)}
-            newValue={toPercentage(borrowLimit)}
+            curValue={toPercentage(Number.isFinite(oldBorrowLimit) ? oldBorrowLimit : 0)}
+            newValue={toPercentage(Number.isFinite(borrowLimit) ? borrowLimit : 0)}
           />
         </Box>
       </Section>

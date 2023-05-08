@@ -11,6 +11,12 @@ export const BorrowPositions: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
   const user_est = useStore((state) => state.user_est.get(poolId));
 
+  const hasPositions = user_est ? user_est.total_borrowed_base != 0 : false;
+
+  if (!hasPositions) {
+    return <></>;
+  }
+
   return (
     <Row>
       <Section width={SectionSize.FULL} sx={{ flexDirection: 'column', paddingTop: '12px' }}>

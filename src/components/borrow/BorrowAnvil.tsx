@@ -136,6 +136,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           sx={{
             width: '100%',
             display: 'flex',
+            borderRadius: '5px',
             flexDirection: 'column',
             backgroundColor: theme.palette.background.paper,
             zIndex: 12,
@@ -143,7 +144,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
         >
           <Typography
             variant="h5"
-            sx={{ marginLeft: '12px', marginBottom: '12px', marginTop: '12px' }}
+            sx={{ marginLeft: '24px', marginBottom: '12px', marginTop: '12px' }}
           >
             Transaction Overview
           </Typography>
@@ -168,7 +169,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
             </Typography>
             <HelpOutlineIcon fontSize="inherit" sx={{ color: theme.palette.text.secondary }} />
           </Box>
-          <Value title="Amount to borrow" value={toBorrow ?? '0'} />
+          <Value title="Amount to borrow" value={`${toBorrow ?? '0'} ${symbol}`} />
           <ValueChange
             title="Your total borrowed"
             curValue={`${toBalance(user_bal_est?.borrowed)} ${symbol}`}
@@ -183,8 +184,8 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           />
           <ValueChange
             title="Borrow limit"
-            curValue={toPercentage(oldBorrowLimit)}
-            newValue={toPercentage(borrowLimit)}
+            curValue={toPercentage(Number.isFinite(oldBorrowLimit) ? oldBorrowLimit : 0)}
+            newValue={toPercentage(Number.isFinite(borrowLimit) ? borrowLimit : 0)}
           />
         </Box>
       </Section>
