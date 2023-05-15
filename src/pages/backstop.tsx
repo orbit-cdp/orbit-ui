@@ -3,16 +3,16 @@ import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect, useRef } from 'react';
-import { BackstopEarnings } from '../components/backstop/BackstopEarnings';
-import { BackstopQueue } from '../components/backstop/BackstopQueue';
+import { BackstopDepositBalanceCard } from '../components/backstop/BackstopDepositBalanceCard';
+import { BackstopQueueMod } from '../components/backstop/BackstopQueueMod';
+import { BackstopWalletBalanceCard } from '../components/backstop/BackstopWalletBalanceCard';
 import { CustomButton } from '../components/common/CustomButton';
 import { Divider } from '../components/common/Divider';
-import { LinkBox } from '../components/common/LinkBox';
+import { FaucetBanner } from '../components/common/FaucetBanner';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { SectionBase } from '../components/common/SectionBase';
 import { StackedText } from '../components/common/StackedText';
-import { ToggleButton } from '../components/common/ToggleButton';
 import { TokenIcon } from '../components/common/TokenIcon';
 import { WalletWarning } from '../components/common/WalletWarning';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
@@ -90,6 +90,9 @@ const Backstop: NextPage = () => {
       <Row>
         <WalletWarning />
       </Row>
+      <Row>
+        <FaucetBanner />
+      </Row>
       <PoolExploreBar poolId={safePoolId} />
       <Row>
         <SectionBase type="alt" sx={{ margin: '6px', padding: '6px' }}>
@@ -121,118 +124,58 @@ const Backstop: NextPage = () => {
         </Section>
       </Row>
       <Row>
-        <Section width={SectionSize.FULL} sx={{ padding: '0px' }}>
-          <ToggleButton
-            active={showDeposit}
-            palette={theme.palette.backstop}
-            sx={{
-              width: '50%',
-              padding: '12px',
-              '&:hover': {
-                background: '#E16BFF15',
-              },
-            }}
-            onClick={handleDepositClick}
-          >
-            Deposit
-          </ToggleButton>
-          <ToggleButton
-            active={!showDeposit}
-            palette={theme.palette.backstop}
-            sx={{
-              width: '50%',
-              padding: '12px',
-              '&:hover': {
-                background: '#E16BFF15',
-              },
-            }}
-            onClick={handleWithdrawClick}
-          >
-            Withdraw
-          </ToggleButton>
+        <Section
+          width={SectionSize.FULL}
+          sx={{
+            flexDirection: 'column',
+            paddingTop: '12px',
+            backgroundColor: theme.palette.backstop.opaque,
+          }}
+        >
+          <Typography variant="body2" sx={{ margin: '6px' }}>
+            Emissions to claim
+          </Typography>
+          <Row>
+            <CustomButton
+              sx={{
+                width: '100%',
+                margin: '6px',
+                padding: '12px',
+                color: theme.palette.text.primary,
+                backgroundColor: theme.palette.background.default,
+                '&:hover': {
+                  color: theme.palette.backstop.main,
+                },
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+                <TokenIcon symbol="blnd" sx={{ marginRight: '12px' }}></TokenIcon>
+                <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                  <Typography variant="h4" sx={{ marginRight: '6px' }}>
+                    688.666k
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                    BLND
+                  </Typography>
+                </Box>
+              </Box>
+              <ArrowForwardIcon fontSize="inherit" />
+            </CustomButton>
+          </Row>
         </Section>
       </Row>
       <Row>
-        <Section width={SectionSize.FULL} sx={{ flexDirection: 'column', paddingTop: '12px' }}>
-          <Typography variant="body2" sx={{ margin: '6px' }}>{`Available to ${
-            showDeposit ? 'deposit' : 'withdraw'
-          }`}</Typography>
-          <Row>
-            <LinkBox
-              sx={{ width: '100%', marginRight: '12px' }}
-              to={{ pathname: '/backstop-deposit', query: { poolId: 'poolId' } }}
-            >
-              <CustomButton
-                sx={{
-                  width: '100%',
-                  margin: '6px',
-                  padding: '12px',
-                  color: theme.palette.text.primary,
-                  backgroundColor: theme.palette.background.default,
-                  '&:hover': {
-                    color: theme.palette.backstop.main,
-                  },
-                }}
-              >
-                <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                  <TokenIcon symbol="blnd" sx={{ marginRight: '12px' }}></TokenIcon>
-                  <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-                    <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                      688.666k
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                      BLND
-                    </Typography>
-                  </Box>
-                </Box>
-                <ArrowForwardIcon fontSize="inherit" />
-              </CustomButton>
-            </LinkBox>
-          </Row>
-          <Row>
-            <LinkBox
-              sx={{ width: '100%', marginRight: '12px' }}
-              to={{ pathname: '/backstop-deposit', query: { poolId: 'poolId' } }}
-            >
-              <CustomButton
-                sx={{
-                  width: '100%',
-                  margin: '6px',
-                  padding: '12px',
-                  color: theme.palette.text.primary,
-                  backgroundColor: theme.palette.background.default,
-                  '&:hover': {
-                    color: theme.palette.backstop.main,
-                  },
-                }}
-              >
-                <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                  <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
-                  <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-                    <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                      668.886k
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                      BLND-USDC LP
-                    </Typography>
-                  </Box>
-                </Box>
-                <ArrowForwardIcon fontSize="inherit" />
-              </CustomButton>
-            </LinkBox>
-          </Row>
-        </Section>
+        <BackstopDepositBalanceCard />
+        <BackstopWalletBalanceCard />
       </Row>
       {viewType === ViewType.REGULAR && (
         <Row sx={{ marginBottom: '12px' }}>
-          <BackstopEarnings />
-          <BackstopQueue />
+          <BackstopQueueMod />
         </Row>
       )}
       {viewType !== ViewType.REGULAR && (
         <Row sx={{ marginBottom: '12px', flexWrap: 'wrap' }}>
-          <BackstopEarnings />
-          <BackstopQueue />
+          <BackstopQueueMod />
         </Row>
       )}
     </>

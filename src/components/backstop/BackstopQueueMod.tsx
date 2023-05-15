@@ -4,6 +4,7 @@ import { OpaqueButton } from '../common/OpaqueButton';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
 import { TokenIcon } from '../common/TokenIcon';
+import { BackstopQueueTimer } from './BackstopQueueTimer';
 
 export const BackstopQueueMod = () => {
   const theme = useTheme();
@@ -26,7 +27,7 @@ export const BackstopQueueMod = () => {
               borderRadius: '5px',
             }}
           >
-            <Typography sx={{ padding: '6px' }}>Queued for withdrawal</Typography>
+            <Typography sx={{ padding: '6px' }}>Queued for withdrawal (Q4W)</Typography>
           </Box>
         </Row>
         <Row>
@@ -45,7 +46,7 @@ export const BackstopQueueMod = () => {
             </Box>
           </Box>
           <OpaqueButton
-            palette={theme.palette.positive}
+            palette={theme.palette.primary}
             sx={{ height: '35px', width: '108px', margin: '12px', padding: '6px' }}
           >
             Withdraw
@@ -54,25 +55,31 @@ export const BackstopQueueMod = () => {
         <Row>
           <Box sx={{ margin: '6px', padding: '6px', display: 'flex', alignItems: 'center' }}>
             <CircularProgress
-              sx={{ color: theme.palette.backstop.main, marginRight: '12px' }}
+              sx={{ color: theme.palette.backstop.main, marginLeft: '6px', marginRight: '12px' }}
               size="30px"
               thickness={4.5}
               variant="determinate"
               value={75}
             />
-            <TokenIcon symbol="blnd" sx={{ marginRight: '12px' }}></TokenIcon>
+            <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
             <Box>
               <Box sx={{ display: 'flex', flexDirection: 'row' }}>
                 <Typography variant="h4" sx={{ marginRight: '6px' }}>
                   688.666k
                 </Typography>
                 <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                  BLND
+                  BLND-USDC LP
                 </Typography>
               </Box>
-              <Typography variant="body2">21d 23h 58m 55s</Typography>
+              <BackstopQueueTimer />
             </Box>
           </Box>
+          <OpaqueButton
+            palette={theme.palette.positive}
+            sx={{ height: '35px', width: '108px', margin: '12px', padding: '6px' }}
+          >
+            Unqueue
+          </OpaqueButton>
         </Row>
       </Section>
     </Row>
