@@ -1,6 +1,6 @@
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import LogoutIcon from '@mui/icons-material/Logout';
 import {
   Alert,
   Button,
@@ -123,7 +123,7 @@ export const WalletMenu = () => {
         >
           <ListItemText>Disconnect</ListItemText>
           <ListItemIcon>
-            <DeleteOutlineIcon sx={{ color: '#E7424C' }} />
+            <LogoutIcon sx={{ color: '#E7424C' }} />
           </ListItemIcon>
         </MenuItem>
       </Menu>

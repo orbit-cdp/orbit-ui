@@ -8,6 +8,7 @@ import { BorrowMarketList } from '../components/borrow/BorrowMarketList';
 import { BorrowPositions } from '../components/borrow/BorrowPositions';
 import { CustomButton } from '../components/common/CustomButton';
 import { Divider } from '../components/common/Divider';
+import { FaucetBanner } from '../components/common/FaucetBanner';
 import { LinkBox } from '../components/common/LinkBox';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
@@ -75,6 +76,9 @@ const Dashboard: NextPage = () => {
     <>
       <Row>
         <WalletWarning />
+      </Row>
+      <Row>
+        <FaucetBanner />
       </Row>
       <PoolExploreBar poolId={safePoolId} />
       <PositionOverview poolId={safePoolId} />
