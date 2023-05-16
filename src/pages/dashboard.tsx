@@ -105,15 +105,15 @@ const Dashboard: NextPage = () => {
         <Section width={SectionSize.FULL} sx={{ padding: '0px' }}>
           <ToggleButton
             active={showLend}
-            palette={theme.palette.primary}
+            palette={theme.palette.lend}
             sx={{ width: '50%', padding: '12px' }}
             onClick={handleLendClick}
           >
-            Lend
+            Supply
           </ToggleButton>
           <ToggleButton
             active={!showLend}
-            palette={theme.palette.primary}
+            palette={theme.palette.borrow}
             sx={{ width: '50%', padding: '12px' }}
             onClick={handleBorrowClick}
           >
@@ -124,7 +124,7 @@ const Dashboard: NextPage = () => {
       {showLend ? <LendPositions poolId={safePoolId} /> : <BorrowPositions poolId={safePoolId} />}
       <Row sx={{ padding: '6px', justifyContent: 'space-between' }}>
         <Typography variant="body1" sx={{ margin: '6px' }}>{`Assets to ${
-          showLend ? 'lend' : 'borrow'
+          showLend ? 'supply' : 'borrow'
         }`}</Typography>
         <Box
           sx={{

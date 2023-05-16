@@ -29,7 +29,7 @@ export const StackedApr: React.FC<StackedAprProps> = ({ aprLend, aprBorrow, sx, 
         }}
       >
         <Typography variant="body2">{`${aprLend}`}</Typography>
-        <Typography variant="body2">L</Typography>
+        <Typography variant="body2">S</Typography>
       </Box>
       <Box
         sx={{

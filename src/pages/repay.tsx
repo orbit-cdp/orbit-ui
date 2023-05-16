@@ -76,7 +76,7 @@ const Repay: NextPage = () => {
               <Typography variant="h5" sx={{ marginRight: '6px' }}>
                 Debt
               </Typography>
-              <Typography variant="h4" sx={{ color: theme.palette.lend.main }}>
+              <Typography variant="h4" sx={{ color: theme.palette.borrow.main }}>
                 {toBalance(user_bal_est?.borrowed ?? 0)}
               </Typography>
             </Box>

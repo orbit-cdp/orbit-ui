@@ -133,11 +133,12 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
             flexDirection: 'column',
             backgroundColor: theme.palette.background.paper,
             zIndex: 12,
+            borderRadius: '5px',
           }}
         >
           <Typography
             variant="h5"
-            sx={{ marginLeft: '12px', marginBottom: '12px', marginTop: '12px' }}
+            sx={{ marginLeft: '24px', marginBottom: '12px', marginTop: '12px' }}
           >
             Transaction Overview
           </Typography>

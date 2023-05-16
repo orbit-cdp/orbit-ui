@@ -91,7 +91,7 @@ const Withdraw: NextPage = () => {
       <Row>
         <Section width={SectionSize.THIRD}>
           <StackedText
-            title="Lend APY"
+            title="Supply APY"
             text={reserve_est ? toPercentage(reserve_est.supply_apy) : ''}
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>
@@ -105,7 +105,7 @@ const Withdraw: NextPage = () => {
         </Section>
         <Section width={SectionSize.THIRD}>
           <StackedText
-            title="Total lent"
+            title="Total supplied"
             text={reserve_est ? toBalance(reserve_est.supplied) : ''}
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>

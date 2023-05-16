@@ -90,7 +90,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
           }}
         >
           <Typography variant="body2" sx={{ marginLeft: '12px', marginBottom: '12px' }}>
-            Amount to lend
+            Amount to supply
           </Typography>
           <Box
             sx={{
@@ -114,7 +114,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
               palette={theme.palette.lend}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
             >
-              Lend
+              Supply
             </OpaqueButton>
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
@@ -130,11 +130,12 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
             flexDirection: 'column',
             backgroundColor: theme.palette.background.paper,
             zIndex: 12,
+            borderRadius: '5px',
           }}
         >
           <Typography
             variant="h5"
-            sx={{ marginLeft: '12px', marginBottom: '12px', marginTop: '12px' }}
+            sx={{ marginLeft: '24px', marginBottom: '12px', marginTop: '12px' }}
           >
             Transaction Overview
           </Typography>
@@ -159,9 +160,9 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
             </Typography>
             <HelpOutlineIcon fontSize="inherit" sx={{ color: theme.palette.text.secondary }} />
           </Box>
-          <Value title="Amount to lend" value={`${toLend ?? '0'} ${symbol}`} />
+          <Value title="Amount to supply" value={`${toLend ?? '0'} ${symbol}`} />
           <ValueChange
-            title="Your total lent"
+            title="Your total supplied"
             curValue={`${toBalance(user_bal_est?.supplied)} ${symbol}`}
             newValue={`${toBalance(
               (user_bal_est?.supplied ?? 0) + Number(toLend ?? '0')

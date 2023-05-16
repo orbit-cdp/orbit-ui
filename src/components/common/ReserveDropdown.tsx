@@ -72,7 +72,7 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
         onClose={handleClose}
         MenuListProps={{
           'aria-labelledby': 'borrow-dropdown-button',
-          sx: { width: '100%' },
+          sx: { width: anchorEl && anchorEl.offsetWidth },
         }}
       >
         {Array.from(reserves?.values() ?? []).map((reserve) => (

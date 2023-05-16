@@ -14,7 +14,7 @@ import { useWallet } from '../contexts/wallet';
 import { useStore } from '../store/store';
 import { toBalance, toPercentage } from '../utils/formatter';
 
-const Lend: NextPage = () => {
+const Supply: NextPage = () => {
   const theme = useTheme();
   const isMounted = useRef(false);
   const { connected, walletAddress } = useWallet();
@@ -58,7 +58,7 @@ const Lend: NextPage = () => {
       </Row>
       <Row>
         <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>
-          <ReserveDropdown action="lend" poolId={safePoolId} activeReserveId={safeAssetId} />
+          <ReserveDropdown action="Supply" poolId={safePoolId} activeReserveId={safeAssetId} />
         </Section>
       </Row>
       <Row>
@@ -91,7 +91,7 @@ const Lend: NextPage = () => {
       <Row>
         <Section width={SectionSize.THIRD}>
           <StackedText
-            title="Lend APY"
+            title="Supply APY"
             text={reserve_est ? toPercentage(reserve_est.supply_apy) : ''}
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>
@@ -105,7 +105,7 @@ const Lend: NextPage = () => {
         </Section>
         <Section width={SectionSize.THIRD}>
           <StackedText
-            title="Total lent"
+            title="Total supplied"
             text={reserve_est ? toBalance(reserve_est.supplied) : ''}
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>
@@ -118,4 +118,4 @@ const Lend: NextPage = () => {
   );
 };
 
-export default Lend;
+export default Supply;

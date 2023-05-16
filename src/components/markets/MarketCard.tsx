@@ -95,7 +95,7 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
         </Row>
         <Row>
           <StackedTextHLBox
-            name="Lent"
+            name="Supplied"
             text={poolEst ? `$${toBalance(poolEst.total_supply_base)}` : '--'}
             palette={theme.palette.lend}
             sx={{ width: '33.33%' }}

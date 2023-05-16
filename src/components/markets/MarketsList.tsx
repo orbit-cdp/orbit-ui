@@ -45,7 +45,7 @@ export const MarketsList: React.FC<PoolComponentProps> = ({ poolId }) => {
           align="center"
           sx={{ width: headerWidth }}
         >
-          Total Lent
+          Total Supplied
         </Typography>
         <Typography
           variant="body2"
