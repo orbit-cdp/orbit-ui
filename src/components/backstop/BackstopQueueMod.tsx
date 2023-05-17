@@ -51,12 +51,22 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
         xdr.ScVal.scvBytes(Buffer.from(poolId, 'hex')),
         fromBigIntToScVal(amount)
       );
-      console.log(dequeue_op.toXDR().toString('base64'));
       submitTransaction(dequeue_op);
     }
   };
 
-  const handleClickWithdrawal = (amount: bigint) => {};
+  const handleClickWithdrawal = (amount: bigint) => {
+    if (connected) {
+      let user_scval = new Address(walletAddress).toScVal();
+      let withdraw_op = new Contract(backstopContract._contract.contractId()).call(
+        'withdraw',
+        user_scval,
+        xdr.ScVal.scvBytes(Buffer.from(poolId, 'hex')),
+        fromBigIntToScVal(amount)
+      );
+      submitTransaction(withdraw_op);
+    }
+  };
 
   return (
     <Row>
