@@ -5,7 +5,7 @@ import { OpaqueButton } from '../common/OpaqueButton';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
 import { TokenIcon } from '../common/TokenIcon';
-import { BackstopQueueTimer } from './BackstopQueueTimer';
+import { BackstopQueueTimer } from './BackstopQueueItem';
 
 export const BackstopQueue = () => {
   const theme = useTheme();
