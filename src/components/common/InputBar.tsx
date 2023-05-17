@@ -42,7 +42,7 @@ export const InputBar: React.FC<InputBarProps> = ({
         sx={{ marginLeft: '12px', width: '100%' }}
       />
       <Box sx={{ marginLeft: '12px' }}>
-        <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
+        <Typography variant="h5" sx={{ width: '113px', color: theme.palette.text.secondary }}>
           {symbol}
         </Typography>
       </Box>
