@@ -11,3 +11,7 @@ export function fromInputStringToScVal(input: string): xdr.ScVal {
   }
   return xdr.ScVal.fromXDR(scval_converter.bigintToI128(BigInt(scaled_input)).toXDR());
 }
+
+export function fromBigIntToScVal(input: bigint): xdr.ScVal {
+  return xdr.ScVal.fromXDR(scval_converter.bigintToI128(input).toXDR());
+}

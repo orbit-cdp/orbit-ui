@@ -3,12 +3,12 @@ import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect, useRef } from 'react';
-import { BackstopDepositBalanceCard } from '../components/backstop/BackstopDepositBalanceCard';
+import { BackstopBalanceCard } from '../components/backstop/BackstopBalanceCard';
 import { BackstopQueueMod } from '../components/backstop/BackstopQueueMod';
-import { BackstopWalletBalanceCard } from '../components/backstop/BackstopWalletBalanceCard';
 import { CustomButton } from '../components/common/CustomButton';
 import { Divider } from '../components/common/Divider';
 import { FaucetBanner } from '../components/common/FaucetBanner';
+import { OverlayModal } from '../components/common/OverlayModal';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { SectionBase } from '../components/common/SectionBase';
@@ -16,7 +16,7 @@ import { StackedText } from '../components/common/StackedText';
 import { TokenIcon } from '../components/common/TokenIcon';
 import { WalletWarning } from '../components/common/WalletWarning';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
-import { useSettings, ViewType } from '../contexts';
+import { useSettings } from '../contexts';
 import { useWallet } from '../contexts/wallet';
 import { useStore } from '../store/store';
 import { toBalance, toPercentage } from '../utils/formatter';
@@ -47,21 +47,6 @@ const Backstop: NextPage = () => {
   const poolQ4W = backstopPoolBalance
     ? Number(backstopPoolBalance.q4w) / Number(backstopPoolBalance.shares)
     : undefined;
-  const shareRate = backstopPoolBalance
-    ? Number(backstopPoolBalance.tokens) / Number(backstopPoolBalance.shares)
-    : 1;
-
-  const handleDepositClick = () => {
-    if (!showDeposit) {
-      setShowDeposit(true);
-    }
-  };
-
-  const handleWithdrawClick = () => {
-    if (showDeposit) {
-      setShowDeposit(false);
-    }
-  };
 
   useEffect(() => {
     const updateBackstop = async () => {
@@ -165,19 +150,11 @@ const Backstop: NextPage = () => {
         </Section>
       </Row>
       <Row>
-        <BackstopDepositBalanceCard />
-        <BackstopWalletBalanceCard />
+        <BackstopBalanceCard type="deposit" poolId={safePoolId} />
+        <BackstopBalanceCard type="wallet" poolId={safePoolId} />
       </Row>
-      {viewType === ViewType.REGULAR && (
-        <Row sx={{ marginBottom: '12px' }}>
-          <BackstopQueueMod />
-        </Row>
-      )}
-      {viewType !== ViewType.REGULAR && (
-        <Row sx={{ marginBottom: '12px', flexWrap: 'wrap' }}>
-          <BackstopQueueMod />
-        </Row>
-      )}
+      <BackstopQueueMod poolId={safePoolId} />
+      <OverlayModal poolId={safePoolId} type="backstop" />
     </>
   );
 };

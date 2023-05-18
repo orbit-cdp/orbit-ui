@@ -115,7 +115,7 @@ const Withdraw: NextPage = () => {
         <WithdrawAnvil poolId={safePoolId} assetId={safeAssetId} />
       </Row>
 
-      <OverlayModal poolId={safePoolId} />
+      <OverlayModal poolId={safePoolId} type="dashboard" />
     </>
   );
 };
