@@ -40,7 +40,7 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
     >
       <LinkBox
         sx={{ width: '100%' }}
-        to={{ pathname: '/lend', query: { poolId: poolId, assetId: reserveData.id } }}
+        to={{ pathname: '/supply', query: { poolId: poolId, assetId: reserveData.id } }}
       >
         <CustomButton
           sx={{

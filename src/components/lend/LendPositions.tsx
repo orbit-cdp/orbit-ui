@@ -21,7 +21,7 @@ export const LendPositions: React.FC<PoolComponentProps> = ({ poolId }) => {
     <Row>
       <Section width={SectionSize.FULL} sx={{ flexDirection: 'column', paddingTop: '12px' }}>
         <Typography variant="body2" sx={{ margin: '6px' }}>
-          Your lent positions
+          Your supplied positions
         </Typography>
         <Row>
           <Section width={SectionSize.TILE} sx={{ background: theme.palette.lend.opaque }}>
