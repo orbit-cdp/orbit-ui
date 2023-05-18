@@ -1,7 +1,6 @@
 import type { NextPage } from 'next';
 import { useEffect, useRef } from 'react';
 import { Divider } from '../components/common/Divider';
-import { FaucetBanner } from '../components/common/FaucetBanner';
 import { Row } from '../components/common/Row';
 import { SectionBase } from '../components/common/SectionBase';
 import { WalletWarning } from '../components/common/WalletWarning';
@@ -11,7 +10,9 @@ import { useStore } from '../store/store';
 const Markets: NextPage = () => {
   const isMounted = useRef(false);
   const refreshBackstopData = useStore((state) => state.refreshBackstopData);
-  const refreshPoolData = useStore((state) => state.refreshPoolData);
+  const refreshPoolReserveAll = useStore((state) => state.refreshPoolReserveAll);
+  const estimateToLatestLedger = useStore((state) => state.estimateToLatestLedger);
+
   const rewardZone = useStore((state) => state.rewardZone);
 
   useEffect(() => {
@@ -23,9 +24,13 @@ const Markets: NextPage = () => {
   }, [refreshBackstopData]);
 
   useEffect(() => {
+    const loadPoolReserveInfo = async (poolId: string) => {
+      await refreshPoolReserveAll(poolId);
+      await estimateToLatestLedger(poolId);
+    };
     if (isMounted.current && rewardZone.length != 0) {
       rewardZone.forEach((poolId) => {
-        refreshPoolData(poolId);
+        loadPoolReserveInfo(poolId);
       });
     }
   }, [rewardZone]);
@@ -34,9 +39,6 @@ const Markets: NextPage = () => {
     <>
       <Row>
         <WalletWarning />
-      </Row>
-      <Row>
-        <FaucetBanner />
       </Row>
       <Row>
         <SectionBase type="alt" sx={{ margin: '6px', padding: '6px' }}>

@@ -210,9 +210,9 @@ async function loadReservesForPool(
 
       // TODO: Find a better way to do this...
       let symbol: string;
-      if (asset_id === 'e87136999e4edffc8f00b3e1583892c9db49520bbfc5e1923c50fd1b4671c842') {
+      if (asset_id === 'd93f5c7bb0ebc4a9c8f727c5cebc4e41194d38257e1d0d910356b43bfc528813') {
         symbol = 'XLM';
-      } else if (asset_id === '20dc9381238b384537f611263e642796771c8ab36587ae8e413d3ef714a368c5') {
+      } else if (asset_id === '244043d1e1ea7615151d33c9304f3979633babc56c8a2d133a2b85ec4d642284') {
         symbol = 'USDC';
       } else {
         let name_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('Symbol')]);
