@@ -28,9 +28,9 @@ export interface BackstopSlice {
 
 export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice> = (set, get) => ({
   backstopContract: new BackstopContract(
-    'fd82541a9497030f1b145fe59087333e0d15dc02a9d72a95f4d3648d070a76b3'
+    'e0e06d48d6555a9f02ae31ffa877f252116adc362e50cfa8afd688b479de8466'
   ),
-  backstopToken: 'f62c92946499d72d33db8d033487cec9d42859f92586a5ad39b45144837408a8',
+  backstopToken: '6b5124549db1a90a81413961f8d6f44cbc0c50f957c9e1afd464016bf927d27e',
   backstopTokenPrice: BigInt(0.05e7), // TODO: Calculate fair value from LP,
   backstopTokenBalance: BigInt(0),
   rewardZone: [],

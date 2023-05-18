@@ -1,19 +1,15 @@
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { Box, Typography, useTheme } from '@mui/material';
+import { useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect, useRef } from 'react';
 import { BackstopBalanceCard } from '../components/backstop/BackstopBalanceCard';
 import { BackstopQueueMod } from '../components/backstop/BackstopQueueMod';
-import { CustomButton } from '../components/common/CustomButton';
 import { Divider } from '../components/common/Divider';
-import { FaucetBanner } from '../components/common/FaucetBanner';
 import { OverlayModal } from '../components/common/OverlayModal';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { SectionBase } from '../components/common/SectionBase';
 import { StackedText } from '../components/common/StackedText';
-import { TokenIcon } from '../components/common/TokenIcon';
 import { WalletWarning } from '../components/common/WalletWarning';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
 import { useSettings } from '../contexts';
@@ -75,9 +71,6 @@ const Backstop: NextPage = () => {
       <Row>
         <WalletWarning />
       </Row>
-      <Row>
-        <FaucetBanner />
-      </Row>
       <PoolExploreBar poolId={safePoolId} />
       <Row>
         <SectionBase type="alt" sx={{ margin: '6px', padding: '6px' }}>
@@ -108,6 +101,7 @@ const Backstop: NextPage = () => {
           ></StackedText>
         </Section>
       </Row>
+      {/*
       <Row>
         <Section
           width={SectionSize.FULL}
@@ -147,8 +141,10 @@ const Backstop: NextPage = () => {
               <ArrowForwardIcon fontSize="inherit" />
             </CustomButton>
           </Row>
+            
         </Section>
       </Row>
+      */}
       <Row>
         <BackstopBalanceCard type="deposit" poolId={safePoolId} />
         <BackstopBalanceCard type="wallet" poolId={safePoolId} />

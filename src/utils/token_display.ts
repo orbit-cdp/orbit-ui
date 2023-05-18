@@ -3,7 +3,7 @@ export const TOKEN_META = {
     code: 'USDC',
     issuer: 'circle.io',
   },
-  '3e42f27739b773cdc1db839ff1a86877e29d32cb49614303587bd864855794e6': {
+  '7e4a22abf9dc3260592415810582e3d5d42c63180bee54cfad0ecbc134120943': {
     code: 'BLND',
     issuer: undefined,
   },
@@ -11,11 +11,11 @@ export const TOKEN_META = {
     code: 'XLM',
     issuer: 'native',
   },
-  '1bdc7efbbe5d6a88d153871a2807df69ed0d347318a597b98531a0d9ba938953': {
+  f22f9c331d7507fdab51f6161be284673b92328d158cff56007ec685edff300e: {
     code: 'wETH',
     issuer: 'starbridge.io',
   },
-  '49d58ca95b350f5661b09846e2d9ec9b030e2b15d14c5190d5fde6ee5123f783': {
+  '86086c2aa183480ea531dd7e861ed4e1ab135a1bb16de70d11ef80bf76d7d6e5': {
     code: 'wBTC',
     issuer: 'starbridge.io',
   },
