@@ -1,6 +1,7 @@
 import { BackstopContract, data_entry_converter, Q4W } from 'blend-sdk';
 import { Address, Server, xdr } from 'soroban-client';
 import { StateCreator } from 'zustand';
+import { getTokenBalance } from '../utils/stellar_rpc';
 import { DataStore, useStore } from './store';
 
 export type PoolBackstopBalance = {
@@ -16,21 +17,22 @@ export interface BackstopSlice {
   backstopContract: BackstopContract;
   backstopToken: string;
   backstopTokenPrice: bigint;
+  backstopTokenBalance: bigint;
   rewardZone: string[];
   poolBackstopBalance: Map<string, PoolBackstopBalance>;
   shares: Map<string, BigInt>;
   q4w: Map<string, Q4W[]>;
   refreshBackstopData: () => Promise<void>;
   refreshPoolBackstopData: (pool_id: string, user_id: string) => Promise<void>;
-  refreshBackstopUserData: (user_id: string) => Promise<void>;
 }
 
 export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice> = (set, get) => ({
   backstopContract: new BackstopContract(
-    'fd82541a9497030f1b145fe59087333e0d15dc02a9d72a95f4d3648d070a76b3'
+    'e0e06d48d6555a9f02ae31ffa877f252116adc362e50cfa8afd688b479de8466'
   ),
-  backstopToken: 'f62c92946499d72d33db8d033487cec9d42859f92586a5ad39b45144837408a8',
-  backstopTokenPrice: BigInt(0.05e7), // TODO: Calculate fair value from LP
+  backstopToken: '6b5124549db1a90a81413961f8d6f44cbc0c50f957c9e1afd464016bf927d27e',
+  backstopTokenPrice: BigInt(0.05e7), // TODO: Calculate fair value from LP,
+  backstopTokenBalance: BigInt(0),
   rewardZone: [],
   poolBackstopBalance: new Map<string, PoolBackstopBalance>(),
   shares: new Map<string, BigInt>(),
@@ -58,32 +60,19 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
     try {
       const contract = get().backstopContract;
       const stellar = get().rpcServer();
+      const network = get().passphrase;
+      const token_id = get().backstopToken;
       let pool_backstop_data = await loadPoolBackstopBalance(stellar, contract, pool_id);
       let shares = await loadShares(stellar, contract, pool_id, user_id);
       let q4w = await loadQ4W(stellar, contract, pool_id, user_id);
+      let token_balance = await getTokenBalance(stellar, network, token_id, new Address(user_id));
       useStore.setState((prev) => ({
         poolBackstopBalance: new Map(prev.poolBackstopBalance).set(pool_id, pool_backstop_data),
+        backstopTokenBalance: token_balance,
         shares: new Map(prev.shares).set(pool_id, shares),
         q4w: new Map(prev.q4w).set(pool_id, q4w),
       }));
       console.log('refreshed pool backstop data for:', user_id);
-    } catch (e) {
-      console.error('unable to refresh backstop data:', e);
-    }
-  },
-  refreshBackstopUserData: async (user_id: string) => {
-    try {
-      const contract = get().backstopContract;
-      const stellar = get().rpcServer();
-      const rz = get().rewardZone;
-      const shares_map = new Map<string, BigInt>();
-      const q4w_map = new Map<string, Q4W[]>();
-      for (const rz_pool of rz) {
-        shares_map.set(rz_pool, await loadShares(stellar, contract, rz_pool, user_id));
-        q4w_map.set(rz_pool, await loadQ4W(stellar, contract, rz_pool, user_id));
-      }
-      set({ shares: shares_map, q4w: q4w_map });
-      console.log('refreshed backstop user data for:', user_id);
     } catch (e) {
       console.error('unable to refresh backstop data:', e);
     }

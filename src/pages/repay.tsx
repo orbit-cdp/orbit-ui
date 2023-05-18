@@ -115,7 +115,7 @@ const Repay: NextPage = () => {
         <RepayAnvil poolId={safePoolId} assetId={safeAssetId} />
       </Row>
 
-      <OverlayModal poolId={safePoolId} />
+      <OverlayModal poolId={safePoolId} type="dashboard" />
     </>
   );
 };

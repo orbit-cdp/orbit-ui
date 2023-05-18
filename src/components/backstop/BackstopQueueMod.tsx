@@ -1,17 +1,72 @@
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
+import { Q4W } from 'blend-sdk';
+import { Address, Contract, xdr } from 'soroban-client';
+import { useWallet } from '../../contexts/wallet';
+import { useStore } from '../../store/store';
+import { toBalance } from '../../utils/formatter';
+import { fromBigIntToScVal } from '../../utils/scval';
 import { OpaqueButton } from '../common/OpaqueButton';
+import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
 import { TokenIcon } from '../common/TokenIcon';
-import { BackstopQueueTimer } from './BackstopQueueTimer';
+import { BackstopQueueItem } from './BackstopQueueItem';
 
-export const BackstopQueueMod = () => {
+export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
+  const { connected, walletAddress, submitTransaction } = useWallet();
 
-  const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
-  const NOW_IN_MS = new Date().getTime();
-  const dateTimeAfterThirtyDays = NOW_IN_MS + THIRTY_DAYS_IN_MS;
+  const backstopContract = useStore((state) => state.backstopContract);
+  const backstopPoolBalance = useStore((state) => state.poolBackstopBalance.get(poolId));
+  const backstopShares = useStore((state) => state.shares.get(poolId));
+  const backstopQ4W = useStore((state) => state.q4w.get(poolId)) ?? [];
+  const shareRate = backstopPoolBalance
+    ? Number(backstopPoolBalance.tokens) / Number(backstopPoolBalance.shares)
+    : 1;
+
+  const NOW_SECONDS = Math.floor(Date.now() / 1000);
+
+  let unlockedAmount = BigInt(0);
+  let lockedList: Q4W[] = [];
+  for (const q4w of backstopQ4W) {
+    if (q4w.exp < NOW_SECONDS) {
+      // unlocked, only display a single unlocked entry
+      unlockedAmount += q4w.amount;
+    } else {
+      lockedList.push(q4w);
+    }
+  }
+
+  if (unlockedAmount == BigInt(0) && lockedList.length == 0) {
+    return <></>;
+  }
+
+  const handleClickUnqueue = (amount: bigint) => {
+    if (connected) {
+      let user_scval = new Address(walletAddress).toScVal();
+      let dequeue_op = new Contract(backstopContract._contract.contractId()).call(
+        'dequeue_wd',
+        user_scval,
+        xdr.ScVal.scvBytes(Buffer.from(poolId, 'hex')),
+        fromBigIntToScVal(amount)
+      );
+      submitTransaction(dequeue_op);
+    }
+  };
+
+  const handleClickWithdrawal = (amount: bigint) => {
+    if (connected) {
+      let user_scval = new Address(walletAddress).toScVal();
+      let withdraw_op = new Contract(backstopContract._contract.contractId()).call(
+        'withdraw',
+        user_scval,
+        xdr.ScVal.scvBytes(Buffer.from(poolId, 'hex')),
+        fromBigIntToScVal(amount)
+      );
+      submitTransaction(withdraw_op);
+    }
+  };
 
   return (
     <Row>
@@ -30,57 +85,42 @@ export const BackstopQueueMod = () => {
             <Typography sx={{ padding: '6px' }}>Queued for withdrawal (Q4W)</Typography>
           </Box>
         </Row>
-        <Row>
-          <Box sx={{ margin: '6px', padding: '6px', display: 'flex', alignItems: 'center' }}>
-            <CheckCircleOutlineIcon
-              sx={{ color: theme.palette.primary.main, marginRight: '12px', fontSize: '35px' }}
-            />
-            <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
-            <Box sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
-              <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                668.886k
-              </Typography>
-              <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                BLND-USDC LP
-              </Typography>
-            </Box>
-          </Box>
-          <OpaqueButton
-            palette={theme.palette.primary}
-            sx={{ height: '35px', width: '108px', margin: '12px', padding: '6px' }}
-          >
-            Withdraw
-          </OpaqueButton>
-        </Row>
-        <Row>
-          <Box sx={{ margin: '6px', padding: '6px', display: 'flex', alignItems: 'center' }}>
-            <CircularProgress
-              sx={{ color: theme.palette.backstop.main, marginLeft: '6px', marginRight: '12px' }}
-              size="30px"
-              thickness={4.5}
-              variant="determinate"
-              value={75}
-            />
-            <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
-            <Box>
-              <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+        {unlockedAmount != BigInt(0) && (
+          <Row>
+            <Box sx={{ margin: '6px', padding: '6px', display: 'flex', alignItems: 'center' }}>
+              <CheckCircleOutlineIcon
+                sx={{ color: theme.palette.primary.main, marginRight: '12px', fontSize: '35px' }}
+              />
+              <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
+              <Box sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
                 <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                  688.666k
+                  {toBalance((Number(unlockedAmount) / 1e7) * shareRate)}
                 </Typography>
                 <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
                   BLND-USDC LP
                 </Typography>
               </Box>
-              <BackstopQueueTimer />
             </Box>
-          </Box>
-          <OpaqueButton
-            palette={theme.palette.positive}
-            sx={{ height: '35px', width: '108px', margin: '12px', padding: '6px' }}
-          >
-            Unqueue
-          </OpaqueButton>
-        </Row>
+            <OpaqueButton
+              onClick={() => handleClickWithdrawal(unlockedAmount)}
+              palette={theme.palette.primary}
+              sx={{ height: '35px', width: '108px', margin: '12px', padding: '6px' }}
+            >
+              Withdraw
+            </OpaqueButton>
+          </Row>
+        )}
+        {lockedList
+          .sort((a, b) => Number(b.amount) - Number(a.amount))
+          .map((q4w) => (
+            <BackstopQueueItem
+              key={q4w.exp}
+              poolId={poolId}
+              q4w={q4w}
+              amount={(Number(q4w.amount) / 1e7) * shareRate}
+              handleClickUnqueue={handleClickUnqueue}
+            />
+          ))}
       </Section>
     </Row>
   );

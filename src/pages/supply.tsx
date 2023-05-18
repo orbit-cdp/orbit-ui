@@ -113,7 +113,7 @@ const Supply: NextPage = () => {
       </Row>
       <LendAnvil poolId={safePoolId} assetId={safeAssetId} />
 
-      <OverlayModal poolId={safePoolId} />
+      <OverlayModal poolId={safePoolId} type="dashboard" />
     </>
   );
 };
