@@ -2,7 +2,7 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useState } from 'react';
-import { Address, Contract, xdr } from 'soroban-client';
+import { Address, Contract } from 'soroban-client';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
@@ -74,7 +74,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
       let borrow_op = new Contract(poolId).call(
         'borrow',
         user_scval,
-        xdr.ScVal.scvBytes(Buffer.from(assetId, 'hex')),
+        Address.contract(Buffer.from(assetId, 'hex')).toScVal(),
         fromInputStringToScVal(toBorrow),
         user_scval
       );

@@ -28,9 +28,9 @@ export interface BackstopSlice {
 
 export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice> = (set, get) => ({
   backstopContract: new BackstopContract(
-    'fadd25e2382e3cb9e698c82b710ca7f2594d42e5465ff5a197071052fb5122e3'
+    'faef57e09cdce335fbe47d444bb577f46cb936899a57f03c549521869ef5c5cd'
   ),
-  backstopToken: '6682c991219243137f70ccb03b45707d85a7a459435d3e028baebc087cd0fc57',
+  backstopToken: '1667192bbec948fa71316c682723fa003c4961564c31c9d7436d677fa2da7fc6',
   backstopTokenPrice: BigInt(0.05e7), // TODO: Calculate fair value from LP,
   backstopTokenBalance: BigInt(0),
   rewardZone: [],
@@ -45,7 +45,7 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
         contract.datakey_RewardZone().toXDR().toString('base64'),
         'base64'
       );
-      let rz_dataEntry = await stellar.getContractData(contract._contract.contractId(), rz_datakey);
+      let rz_dataEntry = await stellar.getContractData(contract._contract.contractId("hex"), rz_datakey);
       const rz = data_entry_converter.toStringArray(rz_dataEntry.xdr, 'hex');
       const poolBackstopBalMap = new Map<string, PoolBackstopBalance>();
       for (const rz_pool of rz) {
@@ -94,7 +94,7 @@ async function loadShares(
       xdr.ScVal.scvMap([
         new xdr.ScMapEntry({
           key: xdr.ScVal.scvSymbol('pool'),
-          val: xdr.ScVal.scvBytes(Buffer.from(pool_id, 'hex')),
+          val: Address.contract(Buffer.from(pool_id, 'hex')).toScVal(),
         }),
         new xdr.ScMapEntry({
           key: xdr.ScVal.scvSymbol('user'),
@@ -103,7 +103,7 @@ async function loadShares(
       ]),
     ]);
     let shares_dataEntry = await stellar.getContractData(
-      contract._contract.contractId(),
+      contract._contract.contractId("hex"),
       shares_datakey
     );
     return data_entry_converter.toBigInt(shares_dataEntry.xdr);
@@ -130,7 +130,7 @@ async function loadQ4W(
       xdr.ScVal.scvMap([
         new xdr.ScMapEntry({
           key: xdr.ScVal.scvSymbol('pool'),
-          val: xdr.ScVal.scvBytes(Buffer.from(pool_id, 'hex')),
+          val: Address.contract(Buffer.from(pool_id, 'hex')).toScVal(),
         }),
         new xdr.ScMapEntry({
           key: xdr.ScVal.scvSymbol('user'),
@@ -138,7 +138,7 @@ async function loadQ4W(
         }),
       ]),
     ]);
-    let q4w_dataEntry = await stellar.getContractData(contract._contract.contractId(), q4w_datakey);
+    let q4w_dataEntry = await stellar.getContractData(contract._contract.contractId("hex"), q4w_datakey);
     return Q4W.fromContractDataXDR(q4w_dataEntry.xdr);
   } catch (e: any) {
     if (e?.message?.includes('not found') === false) {
@@ -156,25 +156,25 @@ async function loadPoolBackstopBalance(
   pool_id: string
 ): Promise<PoolBackstopBalance> {
   try {
-    let scval_pool = xdr.ScVal.scvBytes(Buffer.from(pool_id, 'hex'));
+    let scval_pool = Address.contract(Buffer.from(pool_id, 'hex')).toScVal();
     let tokens = BigInt(0);
     let shares = BigInt(0);
     let q4w = BigInt(0);
     let tokens_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('PoolTkn'), scval_pool]);
     tokens = await stellar
-      .getContractData(contract._contract.contractId(), tokens_datakey)
+      .getContractData(contract._contract.contractId("hex"), tokens_datakey)
       .then((response) => data_entry_converter.toBigInt(response.xdr))
       .catch(() => BigInt(0));
 
     let shares_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('PoolShares'), scval_pool]);
     shares = await stellar
-      .getContractData(contract._contract.contractId(), shares_datakey)
+      .getContractData(contract._contract.contractId("hex"), shares_datakey)
       .then((response) => data_entry_converter.toBigInt(response.xdr))
       .catch(() => BigInt(0));
 
     let q4w_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('PoolQ4W'), scval_pool]);
     q4w = await stellar
-      .getContractData(contract._contract.contractId(), q4w_datakey)
+      .getContractData(contract._contract.contractId("hex"), q4w_datakey)
       .then((response) => data_entry_converter.toBigInt(response.xdr))
       .catch(() => BigInt(0));
 

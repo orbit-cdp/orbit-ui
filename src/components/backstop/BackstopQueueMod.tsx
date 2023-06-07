@@ -1,7 +1,7 @@
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, Typography, useTheme } from '@mui/material';
 import { Q4W } from 'blend-sdk';
-import { Address, Contract, xdr } from 'soroban-client';
+import { Address, Contract } from 'soroban-client';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
@@ -45,10 +45,10 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
   const handleClickUnqueue = (amount: bigint) => {
     if (connected) {
       let user_scval = new Address(walletAddress).toScVal();
-      let dequeue_op = new Contract(backstopContract._contract.contractId()).call(
-        'dequeue_wd',
+      let dequeue_op = new Contract(backstopContract._contract.contractId("hex")).call(
+        'dequeue_withdrawal',
         user_scval,
-        xdr.ScVal.scvBytes(Buffer.from(poolId, 'hex')),
+        Address.contract(Buffer.from(poolId, 'hex')).toScVal(),
         fromBigIntToScVal(amount)
       );
       submitTransaction(dequeue_op);
@@ -58,10 +58,10 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
   const handleClickWithdrawal = (amount: bigint) => {
     if (connected) {
       let user_scval = new Address(walletAddress).toScVal();
-      let withdraw_op = new Contract(backstopContract._contract.contractId()).call(
+      let withdraw_op = new Contract(backstopContract._contract.contractId("hex")).call(
         'withdraw',
         user_scval,
-        xdr.ScVal.scvBytes(Buffer.from(poolId, 'hex')),
+        Address.contract(Buffer.from(poolId, 'hex')).toScVal(),
         fromBigIntToScVal(amount)
       );
       submitTransaction(withdraw_op);

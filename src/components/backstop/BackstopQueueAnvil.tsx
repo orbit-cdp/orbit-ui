@@ -2,7 +2,7 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useState } from 'react';
-import { Address, Contract, xdr } from 'soroban-client';
+import { Address, Contract } from 'soroban-client';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
@@ -55,13 +55,14 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
     // TODO: Revalidate?
     if (toQueue && connected) {
       let user_scval = new Address(walletAddress).toScVal();
-      let queue_op = new Contract(backstopContract._contract.contractId()).call(
-        'q_withdraw',
+      let queue_op = new Contract(backstopContract._contract.contractId("hex")).call(
+        'queue_withdrawal',
         user_scval,
-        xdr.ScVal.scvBytes(Buffer.from(poolId, 'hex')),
+        Address.contract(Buffer.from(poolId, 'hex')).toScVal(),
         fromInputStringToScVal(toQueue)
       );
-      // console.log('queue op: ', queue_op.toXDR().toString('base64'));
+      console.log(fromInputStringToScVal(toQueue).toXDR().toString())
+      console.log('queue op: ', queue_op.toXDR().toString('base64'));
       submitTransaction(queue_op);
     }
   };

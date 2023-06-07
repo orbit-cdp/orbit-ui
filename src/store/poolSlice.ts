@@ -188,18 +188,16 @@ async function loadReservesForPool(
   let reserve_map = new Map<string, Reserve>();
   for (const asset_id of pool.reserves) {
     try {
-      let asset_id_scval = xdr.ScVal.scvBytes(Buffer.from(asset_id, 'hex'));
+      let asset_id_scval = Address.contract(Buffer.from(asset_id, 'hex')).toScVal();
 
       // load config
       let config_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('ResConfig'), asset_id_scval]);
       let config_entry = await stellar.getContractData(pool.id, config_datakey);
       let reserve_config = ReserveConfig.fromContractDataXDR(config_entry.xdr);
-
       // load data
       let data_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('ResData'), asset_id_scval]);
       let data_entry = await stellar.getContractData(pool.id, data_datakey);
       let reserve_data = ReserveData.fromContractDataXDR(data_entry.xdr);
-
       // load token information
       let pool_balance = await getTokenBalance(
         stellar,
@@ -210,14 +208,16 @@ async function loadReservesForPool(
 
       // TODO: Find a better way to do this...
       let symbol: string;
-      if (asset_id === 'd93f5c7bb0ebc4a9c8f727c5cebc4e41194d38257e1d0d910356b43bfc528813') {
+      if (asset_id === 'e87136999e4edffc8f00b3e1583892c9db49520bbfc5e1923c50fd1b4671c842') {
         symbol = 'XLM';
-      } else if (asset_id === '244043d1e1ea7615151d33c9304f3979633babc56c8a2d133a2b85ec4d642284') {
+      } else if (asset_id === '20dc9381238b384537f611263e642796771c8ab36587ae8e413d3ef714a368c5') {
         symbol = 'USDC';
       } else {
-        let name_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('Symbol')]);
+        let name_datakey = xdr.ScVal.scvSymbol('METADATA');
         let name_entry = await stellar.getContractData(asset_id, name_datakey);
-        symbol = data_entry_converter.toString(name_entry.xdr, 'utf-8');
+        let token_metadata = xdr.LedgerEntryData.fromXDR(name_entry.xdr, "base64").contractData().val().map();
+        let token_symbol = token_metadata?.find((token_metadata) => token_metadata?.key()?.sym()?.toString() == "name")?.val()?.bytes()?.toString();
+        symbol = token_symbol ?? "unknown";
       }
 
       // add reserve object to map
@@ -308,7 +308,7 @@ async function loadOraclePrices(stellar: Server, pool: Pool): Promise<Map<string
     try {
       let price_datakey = xdr.ScVal.scvVec([
         xdr.ScVal.scvSymbol('Prices'),
-        xdr.ScVal.scvBytes(Buffer.from(asset_id, 'hex')),
+        Address.contract(Buffer.from(asset_id, "hex")).toScVal(),
       ]);
       let price_entry = await stellar.getContractData(pool.config.oracle, price_datakey);
       let price = data_entry_converter.toNumber(price_entry.xdr);

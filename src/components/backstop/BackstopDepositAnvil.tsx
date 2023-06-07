@@ -2,7 +2,7 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useState } from 'react';
-import { Address, Contract, xdr } from 'soroban-client';
+import { Address, Contract } from 'soroban-client';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
@@ -53,10 +53,10 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
     // TODO: Revalidate?
     if (toDeposit && connected) {
       let user_scval = new Address(walletAddress).toScVal();
-      let deposit_op = new Contract(backstopContract._contract.contractId()).call(
+      let deposit_op = new Contract(backstopContract._contract.contractId("hex")).call(
         'deposit',
         user_scval,
-        xdr.ScVal.scvBytes(Buffer.from(poolId, 'hex')),
+        Address.contract(Buffer.from(poolId, 'hex')).toScVal(),
         fromInputStringToScVal(toDeposit)
       );
       submitTransaction(deposit_op);
