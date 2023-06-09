@@ -1,7 +1,7 @@
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, Typography, useTheme } from '@mui/material';
-import { Q4W } from 'blend-sdk';
-import { Address, Contract } from 'soroban-client';
+import { Backstop } from 'blend-sdk';
+import { Address, Contract, xdr } from 'soroban-client';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
@@ -28,7 +28,7 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
   const NOW_SECONDS = Math.floor(Date.now() / 1000);
 
   let unlockedAmount = BigInt(0);
-  let lockedList: Q4W[] = [];
+  let lockedList: Backstop.Q4W[] = [];
   for (const q4w of backstopQ4W) {
     if (q4w.exp < NOW_SECONDS) {
       // unlocked, only display a single unlocked entry
@@ -44,13 +44,7 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
 
   const handleClickUnqueue = (amount: bigint) => {
     if (connected) {
-      let user_scval = new Address(walletAddress).toScVal();
-      let dequeue_op = new Contract(backstopContract._contract.contractId("hex")).call(
-        'dequeue_withdrawal',
-        user_scval,
-        Address.contract(Buffer.from(poolId, 'hex')).toScVal(),
-        fromBigIntToScVal(amount)
-      );
+      let dequeue_op = xdr.Operation.fromXDR(backstopContract.dequeue_withdrawal({from: walletAddress, pool_address: poolId, amount: BigInt(amount)}), "base64");
       submitTransaction(dequeue_op);
     }
   };

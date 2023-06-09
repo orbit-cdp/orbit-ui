@@ -2,11 +2,11 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useState } from 'react';
-import { Address, Contract } from 'soroban-client';
+import { xdr } from 'soroban-client';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
-import { fromInputStringToScVal } from '../../utils/scval';
+import { scaleInputToBigInt } from '../../utils/scval';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
@@ -54,15 +54,15 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const handleSubmitTransaction = () => {
     // TODO: Revalidate?
     if (toQueue && connected) {
-      let user_scval = new Address(walletAddress).toScVal();
-      let queue_op = new Contract(backstopContract._contract.contractId("hex")).call(
-        'queue_withdrawal',
-        user_scval,
-        Address.contract(Buffer.from(poolId, 'hex')).toScVal(),
-        fromInputStringToScVal(toQueue)
-      );
-      console.log(fromInputStringToScVal(toQueue).toXDR().toString())
-      console.log('queue op: ', queue_op.toXDR().toString('base64'));
+      // let user_scval = new Address(walletAddress).toScVal();
+      // let queue_op = new Contract(backstopContract._contract.contractId("hex")).call(
+      //   'queue_withdrawal',
+      //   user_scval,
+      //   Address.contract(Buffer.from(poolId, 'hex')).toScVal(),
+        // fromInputStringToScVal(toQueue)
+      // );
+      
+      let queue_op = xdr.Operation.fromXDR(backstopContract.queue_withdrawal({from: walletAddress, pool_address: poolId, amount: scaleInputToBigInt(toQueue)}), "base64");
       submitTransaction(queue_op);
     }
   };

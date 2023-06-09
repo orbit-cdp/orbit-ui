@@ -1,9 +1,8 @@
-import { BackstopContract, data_entry_converter, Q4W } from 'blend-sdk';
+import { Backstop, data_entry_converter } from 'blend-sdk';
 import { Address, Server, xdr } from 'soroban-client';
 import { StateCreator } from 'zustand';
 import { getTokenBalance } from '../utils/stellar_rpc';
 import { DataStore, useStore } from './store';
-
 export type PoolBackstopBalance = {
   tokens: bigint;
   shares: bigint;
@@ -14,20 +13,20 @@ export type PoolBackstopBalance = {
  * Ledger state for the backstop
  */
 export interface BackstopSlice {
-  backstopContract: BackstopContract;
+  backstopContract: Backstop.BackstopOpBuilder;
   backstopToken: string;
   backstopTokenPrice: bigint;
   backstopTokenBalance: bigint;
   rewardZone: string[];
   poolBackstopBalance: Map<string, PoolBackstopBalance>;
   shares: Map<string, BigInt>;
-  q4w: Map<string, Q4W[]>;
+  q4w: Map<string, Backstop.Q4W[]>;
   refreshBackstopData: () => Promise<void>;
   refreshPoolBackstopData: (pool_id: string, user_id: string) => Promise<void>;
 }
 
 export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice> = (set, get) => ({
-  backstopContract: new BackstopContract(
+  backstopContract: new Backstop.BackstopOpBuilder(
     'faef57e09cdce335fbe47d444bb577f46cb936899a57f03c549521869ef5c5cd'
   ),
   backstopToken: '1667192bbec948fa71316c682723fa003c4961564c31c9d7436d677fa2da7fc6',
@@ -36,17 +35,17 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
   rewardZone: [],
   poolBackstopBalance: new Map<string, PoolBackstopBalance>(),
   shares: new Map<string, BigInt>(),
-  q4w: new Map<string, Q4W[]>(),
+  q4w: new Map<string, Backstop.Q4W[]>(),
   refreshBackstopData: async () => {
     try {
+      
       const contract = get().backstopContract;
       const stellar = get().rpcServer();
-      let rz_datakey = xdr.ScVal.fromXDR(
-        contract.datakey_RewardZone().toXDR().toString('base64'),
-        'base64'
-      );
-      let rz_dataEntry = await stellar.getContractData(contract._contract.contractId("hex"), rz_datakey);
+      let rz_datakey = Backstop.BackstopDataKeyToXDR({ tag: "RewardZone"});
+      rz_datakey = xdr.ScVal.fromXDR(rz_datakey.toXDR());
+      let rz_dataEntry = await stellar.getContractData(contract._contract.contractId('hex'), rz_datakey);
       const rz = data_entry_converter.toStringArray(rz_dataEntry.xdr, 'hex');
+      console.log(rz)
       const poolBackstopBalMap = new Map<string, PoolBackstopBalance>();
       for (const rz_pool of rz) {
         poolBackstopBalMap.set(rz_pool, await loadPoolBackstopBalance(stellar, contract, rz_pool));
@@ -65,7 +64,7 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
       let pool_backstop_data = await loadPoolBackstopBalance(stellar, contract, pool_id);
       let shares = await loadShares(stellar, contract, pool_id, user_id);
       let q4w = await loadQ4W(stellar, contract, pool_id, user_id);
-      let token_balance = await getTokenBalance(stellar, network, token_id, new Address(user_id));
+      let token_balance = await getTokenBalance(stellar, network, token_id,  Address.fromString(user_id));
       useStore.setState((prev) => ({
         poolBackstopBalance: new Map(prev.poolBackstopBalance).set(pool_id, pool_backstop_data),
         backstopTokenBalance: token_balance,
@@ -83,27 +82,15 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
 
 async function loadShares(
   stellar: Server,
-  contract: BackstopContract,
+  contract: Backstop.BackstopOpBuilder,
   pool_id: string,
   user_id: string
 ): Promise<BigInt> {
   try {
-    let user_addr = new Address(user_id);
-    let shares_datakey = xdr.ScVal.scvVec([
-      xdr.ScVal.scvSymbol('Shares'),
-      xdr.ScVal.scvMap([
-        new xdr.ScMapEntry({
-          key: xdr.ScVal.scvSymbol('pool'),
-          val: Address.contract(Buffer.from(pool_id, 'hex')).toScVal(),
-        }),
-        new xdr.ScMapEntry({
-          key: xdr.ScVal.scvSymbol('user'),
-          val: user_addr.toScVal(),
-        }),
-      ]),
-    ]);
+    let shares_datakey = Backstop.BackstopDataKeyToXDR({tag: "Shares", values: [{pool: pool_id, user: user_id}]})
+    shares_datakey = xdr.ScVal.fromXDR(shares_datakey.toXDR());
     let shares_dataEntry = await stellar.getContractData(
-      contract._contract.contractId("hex"),
+      contract._contract.contractId(),
       shares_datakey
     );
     return data_entry_converter.toBigInt(shares_dataEntry.xdr);
@@ -119,27 +106,15 @@ async function loadShares(
 
 async function loadQ4W(
   stellar: Server,
-  contract: BackstopContract,
+  contract: Backstop.BackstopOpBuilder,
   pool_id: string,
   user_id: string
-): Promise<Q4W[]> {
+): Promise<Backstop.Q4W[]> {
   try {
-    let user_addr = new Address(user_id);
-    let q4w_datakey = xdr.ScVal.scvVec([
-      xdr.ScVal.scvSymbol('Q4W'),
-      xdr.ScVal.scvMap([
-        new xdr.ScMapEntry({
-          key: xdr.ScVal.scvSymbol('pool'),
-          val: Address.contract(Buffer.from(pool_id, 'hex')).toScVal(),
-        }),
-        new xdr.ScMapEntry({
-          key: xdr.ScVal.scvSymbol('user'),
-          val: user_addr.toScVal(),
-        }),
-      ]),
-    ]);
-    let q4w_dataEntry = await stellar.getContractData(contract._contract.contractId("hex"), q4w_datakey);
-    return Q4W.fromContractDataXDR(q4w_dataEntry.xdr);
+    let q4w_datakey = Backstop.BackstopDataKeyToXDR({tag: "Q4W", values: [{pool: pool_id, user: user_id}]});
+    q4w_datakey = xdr.ScVal.fromXDR(q4w_datakey.toXDR());
+    let q4w_dataEntry = await stellar.getContractData(contract._contract.contractId(), q4w_datakey);
+    return Backstop.Q4W.fromContractDataXDR(q4w_dataEntry.xdr);
   } catch (e: any) {
     if (e?.message?.includes('not found') === false) {
       console.error('unable to fetch q4w for: ', pool_id);
@@ -152,27 +127,29 @@ async function loadQ4W(
 
 async function loadPoolBackstopBalance(
   stellar: Server,
-  contract: BackstopContract,
+  contract: Backstop.BackstopOpBuilder,
   pool_id: string
 ): Promise<PoolBackstopBalance> {
   try {
-    let scval_pool = Address.contract(Buffer.from(pool_id, 'hex')).toScVal();
     let tokens = BigInt(0);
     let shares = BigInt(0);
     let q4w = BigInt(0);
-    let tokens_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('PoolTkn'), scval_pool]);
+    let tokens_datakey = Backstop.BackstopDataKeyToXDR({tag: "PoolTkn", values: [pool_id]});
+    tokens_datakey = xdr.ScVal.fromXDR(tokens_datakey.toXDR());
     tokens = await stellar
       .getContractData(contract._contract.contractId("hex"), tokens_datakey)
       .then((response) => data_entry_converter.toBigInt(response.xdr))
       .catch(() => BigInt(0));
 
-    let shares_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('PoolShares'), scval_pool]);
+    let shares_datakey = Backstop.BackstopDataKeyToXDR({tag: "PoolShares", values: [pool_id]});
+    shares_datakey = xdr.ScVal.fromXDR(shares_datakey.toXDR())
     shares = await stellar
       .getContractData(contract._contract.contractId("hex"), shares_datakey)
       .then((response) => data_entry_converter.toBigInt(response.xdr))
       .catch(() => BigInt(0));
 
-    let q4w_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('PoolQ4W'), scval_pool]);
+    let q4w_datakey = Backstop.BackstopDataKeyToXDR({tag: "PoolQ4W", values: [pool_id]});
+    q4w_datakey = xdr.ScVal.fromXDR(q4w_datakey.toXDR())
     q4w = await stellar
       .getContractData(contract._contract.contractId("hex"), q4w_datakey)
       .then((response) => data_entry_converter.toBigInt(response.xdr))

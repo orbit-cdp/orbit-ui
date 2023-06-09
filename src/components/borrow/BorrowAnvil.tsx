@@ -1,12 +1,13 @@
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
+import { Pool } from 'blend-sdk';
 import { useState } from 'react';
-import { Address, Contract } from 'soroban-client';
+import { xdr } from 'soroban-client';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
-import { fromInputStringToScVal } from '../../utils/scval';
+import { scaleInputToBigInt } from '../../utils/scval';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
@@ -69,15 +70,8 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const handleSubmitTransaction = () => {
     // TODO: Revalidate?
     if (toBorrow && connected) {
-      let user_scval = new Address(walletAddress).toScVal();
-      console.log;
-      let borrow_op = new Contract(poolId).call(
-        'borrow',
-        user_scval,
-        Address.contract(Buffer.from(assetId, 'hex')).toScVal(),
-        fromInputStringToScVal(toBorrow),
-        user_scval
-      );
+      let pool = new Pool.PoolOpBuilder(poolId);
+      let borrow_op = xdr.Operation.fromXDR(pool.borrow({from: walletAddress, asset: assetId, amount: scaleInputToBigInt(toBorrow), to: walletAddress}), "base64");
       submitTransaction(borrow_op);
     }
   };
