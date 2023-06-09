@@ -54,14 +54,6 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const handleSubmitTransaction = () => {
     // TODO: Revalidate?
     if (toQueue && connected) {
-      // let user_scval = new Address(walletAddress).toScVal();
-      // let queue_op = new Contract(backstopContract._contract.contractId("hex")).call(
-      //   'queue_withdrawal',
-      //   user_scval,
-      //   Address.contract(Buffer.from(poolId, 'hex')).toScVal(),
-        // fromInputStringToScVal(toQueue)
-      // );
-      
       let queue_op = xdr.Operation.fromXDR(backstopContract.queue_withdrawal({from: walletAddress, pool_address: poolId, amount: scaleInputToBigInt(toQueue)}), "base64");
       submitTransaction(queue_op);
     }
