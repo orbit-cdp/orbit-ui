@@ -1,21 +1,21 @@
 export const TOKEN_META = {
-  '20dc9381238b384537f611263e642796771c8ab36587ae8e413d3ef714a368c5': {
+  '244043d1e1ea7615151d33c9304f3979633babc56c8a2d133a2b85ec4d642284': {
     code: 'USDC',
     issuer: 'circle.io',
   },
-  '3e42f27739b773cdc1db839ff1a86877e29d32cb49614303587bd864855794e6': {
+  afc23edded16758921587eeb389602f515ea51a3535c1d0c846d0002a63d2012: {
     code: 'BLND',
     issuer: undefined,
   },
-  e87136999e4edffc8f00b3e1583892c9db49520bbfc5e1923c50fd1b4671c842: {
+  d93f5c7bb0ebc4a9c8f727c5cebc4e41194d38257e1d0d910356b43bfc528813: {
     code: 'XLM',
     issuer: 'native',
   },
-  '1bdc7efbbe5d6a88d153871a2807df69ed0d347318a597b98531a0d9ba938953': {
+  c102d345a3c33fe32922d845cfaee566ec70f7e2fabe6238d23a5ccfe2224596: {
     code: 'wETH',
     issuer: 'starbridge.io',
   },
-  '49d58ca95b350f5661b09846e2d9ec9b030e2b15d14c5190d5fde6ee5123f783': {
+  '1310aa87fd8cb0fcc44bdee00072349d3f07284bd1ce1dc121d752d8a232e076': {
     code: 'wBTC',
     issuer: 'starbridge.io',
   },

@@ -66,6 +66,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
         '0000000000000000000000000000000000000000000000000000000000000000'
       ); // TODO: File issue/pr to add getLatestLedger endpoint
       let latest_ledger = tx_response.latestLedger;
+      let latest_ledger_close = tx_response.latestLedgerCloseTime;
 
       const pool = get().pools.get(pool_id);
       const reserves = get().reserves.get(pool_id);
@@ -86,7 +87,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
         latest_ledger: latest_ledger,
       };
       for (const res of Array.from(reserves.values())) {
-        let reserve_est = buildReserveEstimate(pool, res, latest_ledger);
+        let reserve_est = buildReserveEstimate(pool, res, latest_ledger_close);
         let price = prices.get(res.asset_id) ?? 1;
         pool_est.total_supply_base += reserve_est.supplied * price;
         pool_est.total_liabilities_base += reserve_est.borrowed * price;
@@ -129,10 +130,6 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
         user_est.net_apy =
           user_est.net_apy / (user_est.total_supplied_base + user_est.total_borrowed_base);
 
-        // console.log('pool_est', JSON.stringify(pool_est));
-        // console.log('reserve_est', JSON.stringify(res_estimations));
-        // console.log('user_est', JSON.stringify(user_est));
-        // console.log('user_res_bal_est', JSON.stringify(Array.from(user_bal_est.entries())));
         useStore.setState((prev) => ({
           pool_est: new Map(prev.pool_est).set(pool_id, pool_est),
           reserve_est: new Map(prev.reserve_est).set(pool_id, res_estimations),

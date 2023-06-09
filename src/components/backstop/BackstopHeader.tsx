@@ -1,11 +1,13 @@
 import { Box, BoxProps, Typography } from '@mui/material';
 import { TokenIcon } from '../common/TokenIcon';
 
-export interface BackstopQHeaderProps extends BoxProps {
-  name: string;
+export interface BackstopHeaderProps extends BoxProps {
+  type: 'deposit' | 'q4w';
 }
 
-export const BackstopQueueHeader: React.FC<BackstopQHeaderProps> = ({ name, sx, ...props }) => {
+export const BackstopHeader: React.FC<BackstopHeaderProps> = ({ type, sx, ...props }) => {
+  const headerText =
+    type === 'deposit' ? `Deposit BLND-USDC LP` : `Queue BLND-USDC LP for Withdrawal`;
   return (
     <Box
       sx={{
@@ -19,9 +21,9 @@ export const BackstopQueueHeader: React.FC<BackstopQHeaderProps> = ({ name, sx, 
       }}
       {...props}
     >
-      <TokenIcon symbol={name} sx={{ height: '30px', width: '30px' }} />
+      <TokenIcon symbol={'blndusdclp'} sx={{ height: '30px', width: '30px' }} />
       <Typography variant="h3" sx={{ marginLeft: '12px' }}>
-        {`Queue ${name} withdrawal`}
+        {headerText}
       </Typography>
     </Box>
   );

@@ -49,7 +49,7 @@ export const OverlayModalSuccess: React.FC<CloseableOverlayProps> = ({ handleClo
           }}
         >
           <Box sx={{ padding: '6px', display: 'flex', flexDirection: 'row', height: '30px' }}>
-            <Box sx={{ paddingRight: '12px', lineHeight: '100%' }}>Return to dashboard</Box>
+            <Box sx={{ paddingRight: '12px', lineHeight: '100%' }}>Return</Box>
             <Box>
               <ArrowForwardIcon fontSize="inherit" />
             </Box>

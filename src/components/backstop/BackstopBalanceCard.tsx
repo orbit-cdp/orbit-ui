@@ -1,12 +1,35 @@
 import { Box, Typography, useTheme } from '@mui/material';
+import { useStore } from '../../store/store';
+import { toBalance } from '../../utils/formatter';
 import { LinkBox } from '../common/LinkBox';
 import { OpaqueButton } from '../common/OpaqueButton';
+import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
 import { TokenIcon } from '../common/TokenIcon';
 
-export const BackstopDepositBalanceCard = () => {
+export interface BackstopBalanceCard extends PoolComponentProps {
+  type: 'deposit' | 'wallet';
+}
+
+export const BackstopBalanceCard: React.FC<BackstopBalanceCard> = ({ type, poolId, sx }) => {
   const theme = useTheme();
+
+  const backstopPoolBalance = useStore((state) => state.poolBackstopBalance.get(poolId));
+  const backstopDeposit = useStore((state) => state.shares.get(poolId));
+  const backstopWalletBalance = useStore((state) => state.backstopTokenBalance);
+  const shareRate = backstopPoolBalance
+    ? Number(backstopPoolBalance.tokens) / Number(backstopPoolBalance.shares)
+    : 1;
+  const depositBalance = (Number(backstopDeposit ?? 0) / 1e7) * shareRate;
+  const walletBalance = Number(backstopWalletBalance) / 1e7;
+
+  const headerText = type == 'deposit' ? 'Backstop deposit balance' : 'Wallet balance';
+  const linkText = type == 'deposit' ? 'Queue for withdrawal' : 'Deposit';
+  const linkPathname = type == 'deposit' ? '/backstop-q4w' : '/backstop-deposit';
+  const linkPalette = type == 'deposit' ? theme.palette.primary : theme.palette.backstop;
+
+  const balance = type == 'deposit' ? depositBalance : walletBalance;
 
   return (
     <Section
@@ -15,10 +38,11 @@ export const BackstopDepositBalanceCard = () => {
         flexDirection: 'column',
         paddingTop: '12px',
         backgroundColor: theme.palette.background.paper,
+        ...sx,
       }}
     >
       <Typography variant="body2" sx={{ margin: '6px' }}>
-        Backstop deposit balance
+        {headerText}
       </Typography>
       <Row>
         <Box
@@ -35,7 +59,7 @@ export const BackstopDepositBalanceCard = () => {
             <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
             <Box sx={{ display: 'flex', flexDirection: 'row' }}>
               <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                688.666k
+                {toBalance(balance)}
               </Typography>
               <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
                 BLND-USDC LP
@@ -46,13 +70,10 @@ export const BackstopDepositBalanceCard = () => {
       </Row>
       <LinkBox
         sx={{ width: '100%', paddingRight: '12px' }}
-        to={{ pathname: '/backstop-q4w', query: { poolId: 'poolId' } }}
+        to={{ pathname: linkPathname, query: { poolId: poolId } }}
       >
-        <OpaqueButton
-          palette={theme.palette.primary}
-          sx={{ width: '100%', margin: '6px', padding: '6px' }}
-        >
-          Queue for withdrawal
+        <OpaqueButton palette={linkPalette} sx={{ width: '100%', margin: '6px', padding: '6px' }}>
+          {linkText}
         </OpaqueButton>
       </LinkBox>
     </Section>

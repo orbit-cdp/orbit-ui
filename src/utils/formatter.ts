@@ -75,3 +75,22 @@ export function toCompactAddress(address: string | undefined): string {
 
   return `${address.substring(0, 4)}...${address.substring(address.length - 4, address.length)}`;
 }
+
+/**
+ * Format a time span in seconds into a readable string
+ */
+export function toTimeSpan(secondsLeft: number): string {
+  let d = Math.floor(secondsLeft / (3600 * 24));
+  secondsLeft -= d * 3600 * 24;
+  let h = Math.floor(secondsLeft / 3600);
+  secondsLeft -= h * 3600;
+  let m = Math.floor(secondsLeft / 60);
+  secondsLeft -= m * 60;
+
+  const tmp = [];
+  d && tmp.push(d + 'd');
+  (d || h) && tmp.push(h + 'h');
+  (d || h || m) && tmp.push(m + 'm');
+  !d && tmp.push(secondsLeft + 's');
+  return tmp.join(' ');
+}
