@@ -1,4 +1,4 @@
-import { data_entry_converter, PoolConfig, Reserve, ReserveConfig, ReserveData } from 'blend-sdk';
+import { data_entry_converter, Pool } from 'blend-sdk';
 import { Address, Server, xdr } from 'soroban-client';
 import { StateCreator } from 'zustand';
 import { getTokenBalance } from '../utils/stellar_rpc';
@@ -14,7 +14,7 @@ export type Pool = {
   id: string;
   name: string;
   admin: string;
-  config: PoolConfig;
+  config: Pool.PoolConfig;
   reserves: string[];
 };
 
@@ -23,7 +23,7 @@ export type Pool = {
  */
 export interface PoolSlice {
   pools: Map<string, Pool>;
-  reserves: Map<string, Map<string, Reserve>>;
+  reserves: Map<string, Map<string, Pool.Reserve>>;
   resUserBalances: Map<string, Map<string, ReserveBalance>>;
   poolPrices: Map<string, Map<string, number>>;
   refreshPoolData: (pool_id: string) => Promise<void>;
@@ -35,7 +35,7 @@ export interface PoolSlice {
 
 export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set, get) => ({
   pools: new Map<string, Pool>(),
-  reserves: new Map<string, Map<string, Reserve>>(),
+  reserves: new Map<string, Map<string, Pool.Reserve>>(),
   resUserBalances: new Map<string, Map<string, ReserveBalance>>(),
   poolPrices: new Map<string, Map<string, number>>(),
   refreshPoolData: async (pool_id: string) => {
@@ -156,18 +156,22 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
 
 async function loadPool(stellar: Server, pool_id: string): Promise<Pool> {
   let config_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('PoolConfig')]);
+  config_datakey = xdr.ScVal.fromXDR(config_datakey.toXDR());
   let config_entry = await stellar.getContractData(pool_id, config_datakey);
-  let pool_config = PoolConfig.fromContractDataXDR(config_entry.xdr);
+  let pool_config = Pool.PoolConfig.fromContractDataXDR(config_entry.xdr);
 
   let admin_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('Admin')]);
+  admin_datakey = xdr.ScVal.fromXDR(admin_datakey.toXDR());
   let admin_entry = await stellar.getContractData(pool_id, admin_datakey);
   let admin = data_entry_converter.toString(admin_entry.xdr);
 
   let res_list_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('ResList')]);
+  res_list_datakey = xdr.ScVal.fromXDR(res_list_datakey.toXDR());
   let res_list_entry = await stellar.getContractData(pool_id, res_list_datakey);
   let res_list = data_entry_converter.toStringArray(res_list_entry.xdr, 'hex');
 
   let name_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('Name')]);
+  name_datakey = xdr.ScVal.fromXDR(name_datakey.toXDR());
   let name_entry = await stellar.getContractData(pool_id, name_datakey);
   let name = data_entry_converter.toString(name_entry.xdr, 'utf-8');
 
@@ -184,22 +188,20 @@ async function loadReservesForPool(
   stellar: Server,
   network: string,
   pool: Pool
-): Promise<Map<string, Reserve>> {
-  let reserve_map = new Map<string, Reserve>();
+): Promise<Map<string, Pool.Reserve>> {
+  let reserve_map = new Map<string, Pool.Reserve>();
   for (const asset_id of pool.reserves) {
     try {
-      let asset_id_scval = xdr.ScVal.scvBytes(Buffer.from(asset_id, 'hex'));
-
       // load config
-      let config_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('ResConfig'), asset_id_scval]);
+      let config_datakey = Pool.PoolDataKeyToXDR({tag: "ResConfig", values: [asset_id]});
+      config_datakey = xdr.ScVal.fromXDR(config_datakey.toXDR());
       let config_entry = await stellar.getContractData(pool.id, config_datakey);
-      let reserve_config = ReserveConfig.fromContractDataXDR(config_entry.xdr);
-
+      let reserve_config = Pool.ReserveConfig.fromContractDataXDR(config_entry.xdr);
       // load data
-      let data_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('ResData'), asset_id_scval]);
+      let data_datakey = Pool.PoolDataKeyToXDR({tag: "ResData", values: [asset_id]});
+      data_datakey = xdr.ScVal.fromXDR(data_datakey.toXDR())
       let data_entry = await stellar.getContractData(pool.id, data_datakey);
-      let reserve_data = ReserveData.fromContractDataXDR(data_entry.xdr);
-
+      let reserve_data = Pool.ReserveData.fromContractDataXDR(data_entry.xdr);
       // load token information
       let pool_balance = await getTokenBalance(
         stellar,
@@ -212,18 +214,20 @@ async function loadReservesForPool(
       let symbol: string;
       if (asset_id === 'd93f5c7bb0ebc4a9c8f727c5cebc4e41194d38257e1d0d910356b43bfc528813') {
         symbol = 'XLM';
-      } else if (asset_id === '244043d1e1ea7615151d33c9304f3979633babc56c8a2d133a2b85ec4d642284') {
+      } else if (asset_id === '20dc9381238b384537f611263e642796771c8ab36587ae8e413d3ef714a368c5') {
         symbol = 'USDC';
       } else {
-        let name_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('Symbol')]);
+        let name_datakey = xdr.ScVal.scvSymbol('METADATA');
         let name_entry = await stellar.getContractData(asset_id, name_datakey);
-        symbol = data_entry_converter.toString(name_entry.xdr, 'utf-8');
+        let token_metadata = xdr.LedgerEntryData.fromXDR(name_entry.xdr, "base64").contractData().val().map();
+        let token_symbol = token_metadata?.find((token_metadata) => token_metadata?.key()?.sym()?.toString() == "name")?.val()?.bytes()?.toString();
+        symbol = token_symbol ?? "unknown";
       }
 
       // add reserve object to map
       reserve_map.set(
         asset_id,
-        new Reserve(asset_id, symbol, pool_balance, reserve_config, reserve_data)
+        new Pool.Reserve(asset_id, symbol, pool_balance, reserve_config, reserve_data)
       );
     } catch (e) {
       console.error(`failed to update ${asset_id}: `, e);
@@ -237,16 +241,14 @@ async function loadUserForPool(
   stellar: Server,
   network: string,
   pool_id: string,
-  reserves: Map<string, Reserve>,
+  reserves: Map<string, Pool.Reserve>,
   user_id: string
 ): Promise<Map<string, ReserveBalance>> {
   let user_balance_map = new Map<string, ReserveBalance>();
   try {
     let user_address = new Address(user_id);
-    let config_datakey = xdr.ScVal.scvVec([
-      xdr.ScVal.scvSymbol('UserConfig'),
-      user_address.toScVal(),
-    ]);
+    let config_datakey = Pool.PoolDataKeyToXDR({tag: "UserConfig", values: [user_id]})
+    config_datakey = xdr.ScVal.fromXDR(config_datakey.toXDR());
     let user_config = BigInt(0);
     try {
       let user_config_entry = await stellar.getContractData(pool_id, config_datakey);
@@ -262,7 +264,6 @@ async function loadUserForPool(
         let config_index = BigInt(reserve.config.index * 3);
 
         let asset_balance = await getTokenBalance(stellar, network, asset_id, user_address);
-
         let d_token_balance = BigInt(0);
         let b_token_balance = BigInt(0);
 
@@ -308,7 +309,7 @@ async function loadOraclePrices(stellar: Server, pool: Pool): Promise<Map<string
     try {
       let price_datakey = xdr.ScVal.scvVec([
         xdr.ScVal.scvSymbol('Prices'),
-        xdr.ScVal.scvBytes(Buffer.from(asset_id, 'hex')),
+        Address.contract(Buffer.from(asset_id,"hex")).toScVal(),
       ]);
       let price_entry = await stellar.getContractData(pool.config.oracle, price_datakey);
       let price = data_entry_converter.toNumber(price_entry.xdr);

@@ -1,12 +1,13 @@
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
+import { Pool } from 'blend-sdk';
 import { useState } from 'react';
-import { Address, Contract, xdr } from 'soroban-client';
+import { xdr } from 'soroban-client';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
-import { fromInputStringToScVal } from '../../utils/scval';
+import { scaleInputToBigInt } from '../../utils/scval';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
@@ -64,14 +65,8 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   const handleSubmitTransaction = () => {
     // TODO: Revalidate?
     if (toRepay && connected) {
-      let user_scval = new Address(walletAddress).toScVal();
-      let repay_op = new Contract(poolId).call(
-        'repay',
-        user_scval,
-        xdr.ScVal.scvBytes(Buffer.from(assetId, 'hex')),
-        fromInputStringToScVal(toRepay),
-        user_scval
-      );
+      let pool = new Pool.PoolOpBuilder(poolId);
+      let repay_op = xdr.Operation.fromXDR(pool.repay({from: walletAddress, asset: assetId, amount: scaleInputToBigInt(toRepay), on_behalf_of: walletAddress}), "base64");
       submitTransaction(repay_op);
     }
   };

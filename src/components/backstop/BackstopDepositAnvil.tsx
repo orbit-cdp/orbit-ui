@@ -2,11 +2,11 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useState } from 'react';
-import { Address, Contract, xdr } from 'soroban-client';
+import { xdr } from 'soroban-client';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
-import { fromInputStringToScVal } from '../../utils/scval';
+import { scaleInputToBigInt } from '../../utils/scval';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
@@ -52,13 +52,7 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
   const handleSubmitTransaction = () => {
     // TODO: Revalidate?
     if (toDeposit && connected) {
-      let user_scval = new Address(walletAddress).toScVal();
-      let deposit_op = new Contract(backstopContract._contract.contractId()).call(
-        'deposit',
-        user_scval,
-        xdr.ScVal.scvBytes(Buffer.from(poolId, 'hex')),
-        fromInputStringToScVal(toDeposit)
-      );
+      let deposit_op = xdr.Operation.fromXDR(backstopContract.deposit({from: walletAddress, pool_address: poolId, amount: scaleInputToBigInt(toDeposit)}), "base64");
       submitTransaction(deposit_op);
     }
   };

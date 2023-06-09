@@ -1,4 +1,4 @@
-import { Reserve } from 'blend-sdk';
+import { Pool as PoolContract } from 'blend-sdk';
 import { StateCreator } from 'zustand';
 import { Pool, ReserveBalance } from './poolSlice';
 import { DataStore, useStore } from './store';
@@ -152,7 +152,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
 
 function buildReserveEstimate(
   pool: Pool,
-  reserve: Reserve,
+  reserve: PoolContract.Reserve,
   latest_ledger: number
 ): ReserveEstimates {
   let decimal_bstop_rate = pool.config.bstop_rate / 1e8; // TODO: Fix after pool redeploy updates bstop rate
