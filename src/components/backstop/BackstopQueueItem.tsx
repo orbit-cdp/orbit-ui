@@ -1,5 +1,5 @@
 import { Box, CircularProgress, Typography } from '@mui/material';
-import { Q4W } from 'blend-sdk';
+import { Backstop } from 'blend-sdk';
 import { useEffect, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
@@ -11,7 +11,7 @@ import { Row } from '../common/Row';
 import { TokenIcon } from '../common/TokenIcon';
 
 export interface BackstopQueueItemProps extends PoolComponentProps {
-  q4w: Q4W;
+  q4w: Backstop.Q4W;
   amount: number;
   handleClickUnqueue: (amount: bigint) => void;
 }
