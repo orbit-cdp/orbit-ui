@@ -21,8 +21,8 @@ const Repay: NextPage = () => {
 
   const router = useRouter();
   const { poolId, assetId } = router.query;
-  const safePoolId = typeof poolId == 'string' && /^[0-9a-f]{64}$/.test(poolId) ? poolId : '';
-  const safeAssetId = typeof assetId == 'string' && /^[0-9a-f]{64}$/.test(assetId) ? assetId : '';
+  const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
+  const safeAssetId = typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId) ? assetId : '';
 
   const refreshPoolReserveAll = useStore((state) => state.refreshPoolReserveAll);
   const estimateToLatestLedger = useStore((state) => state.estimateToLatestLedger);

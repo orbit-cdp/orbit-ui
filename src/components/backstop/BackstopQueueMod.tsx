@@ -55,7 +55,7 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
       let withdraw_op = new Contract(backstopContract._contract.contractId("hex")).call(
         'withdraw',
         user_scval,
-        Address.contract(Buffer.from(poolId, 'hex')).toScVal(),
+        Address.fromString(poolId).toScVal(),
         fromBigIntToScVal(amount)
       );
       submitTransaction(withdraw_op);
