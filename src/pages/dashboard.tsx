@@ -29,8 +29,8 @@ const Dashboard: NextPage = () => {
   const isMounted = useRef(false);
   const router = useRouter();
   const { poolId } = router.query;
-  const safePoolId = typeof poolId == 'string' && /^[0-9a-f]{64}$/.test(poolId) ? poolId : '';
-
+  const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
+  
   const theme = useTheme();
   const refreshPoolReserveAll = useStore((state) => state.refreshPoolReserveAll);
   const estimateToLatestLedger = useStore((state) => state.estimateToLatestLedger);

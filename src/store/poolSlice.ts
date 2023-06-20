@@ -207,14 +207,14 @@ async function loadReservesForPool(
         stellar,
         network,
         asset_id,
-        Address.contract(Buffer.from(pool.id, 'hex'))
+        Address.fromString(pool.id)
       );
 
       // TODO: Find a better way to do this...
       let symbol: string;
-      if (asset_id === 'd93f5c7bb0ebc4a9c8f727c5cebc4e41194d38257e1d0d910356b43bfc528813') {
+      if (asset_id === 'CDMT6XD3WDV4JKOI64T4LTV4JZARSTJYEV7B2DMRANLLIO74KKEBHYNJ') {
         symbol = 'XLM';
-      } else if (asset_id === '20dc9381238b384537f611263e642796771c8ab36587ae8e413d3ef714a368c5') {
+      } else if (asset_id === 'CAQNZE4BEOFTQRJX6YISMPTEE6LHOHEKWNSYPLUOIE6T55YUUNUMLI6Y') {
         symbol = 'USDC';
       } else {
         let name_datakey = xdr.ScVal.scvSymbol('METADATA');
@@ -309,7 +309,7 @@ async function loadOraclePrices(stellar: Server, pool: Pool): Promise<Map<string
     try {
       let price_datakey = xdr.ScVal.scvVec([
         xdr.ScVal.scvSymbol('Prices'),
-        Address.contract(Buffer.from(asset_id,"hex")).toScVal(),
+        Address.fromString(asset_id).toScVal(),
       ]);
       let price_entry = await stellar.getContractData(pool.config.oracle, price_datakey);
       let price = data_entry_converter.toNumber(price_entry.xdr);
