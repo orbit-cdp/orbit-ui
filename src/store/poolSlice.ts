@@ -5,9 +5,9 @@ import { getTokenBalance } from '../utils/stellar_rpc';
 import { DataStore, useStore } from './store';
 
 export type ReserveBalance = {
-  asset: BigInt;
-  b_token: BigInt;
-  d_token: BigInt;
+  asset: bigint;
+  b_token: bigint;
+  d_token: bigint;
 };
 
 export type Pool = {
@@ -18,6 +18,19 @@ export type Pool = {
   reserves: string[];
 };
 
+export type ReserveEmission = {
+  eps: bigint;
+  reserveIndex: bigint;
+  lastTime: bigint;
+  expiration: bigint;
+}
+
+export type UserReserveEmission = {
+  userIndex: bigint;
+  accrued: bigint;
+  lastUpdated: bigint;
+}
+
 /**
  * Ledger state for a set of pools
  */
@@ -26,11 +39,17 @@ export interface PoolSlice {
   reserves: Map<string, Map<string, Pool.Reserve>>;
   resUserBalances: Map<string, Map<string, ReserveBalance>>;
   poolPrices: Map<string, Map<string, number>>;
+  reserveEmissions: Map<string, Map<number, ReserveEmission>>;
+  userReserveEmissions: Map<string, Map<number, UserReserveEmission>>;
+  userEmissionBalance: Map<string, bigint>;
+
   refreshPoolData: (pool_id: string) => Promise<void>;
   refreshPoolReserveData: (pool_id: string) => Promise<void>;
   refreshPoolUserData: (pool_id: string, user: string) => Promise<void>;
   refreshPrices: (pool_id: string) => Promise<void>;
   refreshPoolReserveAll: (pool_id: string, user?: string | undefined) => Promise<void>;
+  refreshPoolEmissionData: (pool_id: string) => Promise<void>;
+  refreshUserEmissionData: (pool_id: string, user: string) => Promise<void>;
 }
 
 export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set, get) => ({
@@ -38,6 +57,11 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
   reserves: new Map<string, Map<string, Pool.Reserve>>(),
   resUserBalances: new Map<string, Map<string, ReserveBalance>>(),
   poolPrices: new Map<string, Map<string, number>>(),
+  reserveEmissions: new Map<string, Map<number, ReserveEmission>>(),
+  userReserveEmissions: new Map<string, Map<number, UserReserveEmission>>(),
+  userEmissionBalance: new Map<string, bigint>(),
+
+
   refreshPoolData: async (pool_id: string) => {
     try {
       const stellar = get().rpcServer();
@@ -150,27 +174,104 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
       console.error('unable to refresh data:', e);
     }
   },
+  refreshPoolEmissionData: async (pool_id: string) => {
+    const stellar = get().rpcServer();
+    const reserve_map = get().reserves.get(pool_id);
+    if (reserve_map == undefined) {
+        throw Error('unknown pool');
+      }
+
+    let reserveEmissionMap = new Map<number, ReserveEmission>();
+    for (const entry of Array.from(reserve_map.entries())) {
+      const reserve = entry[1];
+      console.log(reserve)
+      const d_token_index = reserve.config.index * 3;
+      const b_token_index = reserve.config.index * 3 + 1;
+      let dTokenEmissions = await loadReserveEmissions(stellar, d_token_index, pool_id);
+      if (dTokenEmissions) {
+        reserveEmissionMap.set(d_token_index, dTokenEmissions);
+      }
+      
+      let bTokenEmissions = await loadReserveEmissions(stellar, b_token_index, pool_id);
+      if (bTokenEmissions) {
+        reserveEmissionMap.set(b_token_index, bTokenEmissions);
+      }
+    }
+    useStore.setState((prev) => ( {
+      reserveEmissions: new Map(prev.reserveEmissions).set(pool_id, reserveEmissionMap),
+    }));
+  },
+
+  refreshUserEmissionData: async (pool_id: string, user: string) => {
+    const stellar = get().rpcServer();
+    let tx_response = await stellar.getTransaction(
+        '0000000000000000000000000000000000000000000000000000000000000000'
+      ); // TODO: File issue/pr to add getLatestLedger endpoint
+    let latest_ledger_close = BigInt(tx_response.latestLedgerCloseTime);
+    
+    const reserve_map = get().reserves.get(pool_id);
+    const user_balances = get().resUserBalances.get(pool_id)
+    const reserveEmissionData = get().reserveEmissions.get(pool_id);
+    if (!reserve_map || !user_balances || !reserveEmissionData ) {
+        throw Error('unknown pool');
+    }
+
+    let total_user_emissions = BigInt(0);
+    let userEmissionMap = new Map<number, UserReserveEmission>();
+    for (const entry of Array.from(reserve_map.entries())){
+      const asset_id = entry[0];
+      const reserve = entry[1];
+      const user_balance = user_balances.get(asset_id);
+      const dTokenBal = user_balance?.d_token ?? BigInt(0);
+      const bTokenBal = user_balance?.b_token ?? BigInt(0);
+      const d_token_index = reserve.config.index * 3;
+      const b_token_index = reserve.config.index * 3 + 1;
+
+      let dTokenEmissionData = reserveEmissionData.get(d_token_index);
+      let dTokenUserEmissions = await loadUserReserveEmissions(stellar, d_token_index, user, pool_id);
+      if ( dTokenUserEmissions && dTokenEmissionData ){
+        dTokenUserEmissions.lastUpdated = latest_ledger_close;
+        total_user_emissions = total_user_emissions + dTokenUserEmissions.accrued + dTokenBal * (dTokenEmissionData.reserveIndex - dTokenUserEmissions.userIndex) + (dTokenBal * dTokenEmissionData.eps * (latest_ledger_close - dTokenEmissionData.lastTime) / reserve.data.d_supply);
+        userEmissionMap.set(d_token_index, dTokenUserEmissions);
+      }
+
+      let bTokenEmissionData = reserveEmissionData.get(d_token_index);
+      let bTokenUserEmissions = await loadUserReserveEmissions(stellar, b_token_index, user, pool_id);
+      if (bTokenUserEmissions && bTokenEmissionData){
+        bTokenUserEmissions.lastUpdated = latest_ledger_close;
+        total_user_emissions = total_user_emissions + bTokenUserEmissions.accrued + bTokenBal * (bTokenEmissionData.reserveIndex - bTokenUserEmissions.userIndex) + (bTokenBal * bTokenEmissionData.eps * (latest_ledger_close - bTokenEmissionData.lastTime) / reserve.data.b_supply);
+        userEmissionMap.set(b_token_index, bTokenUserEmissions);
+      }
+    }
+    useStore.setState((prev) => ( {
+      userReserveEmissions: new Map(prev.userReserveEmissions).set(pool_id, userEmissionMap),
+    }));
+    useStore.setState((prev) => ( {
+      userEmissionBalance: new Map(prev.userEmissionBalance).set(pool_id, total_user_emissions),
+    }));
+    console.log("TOTAL EMISSIONS ACCRUED", total_user_emissions);
+  }
 });
 
 /********** Contract Data Helpers **********/
 
 async function loadPool(stellar: Server, pool_id: string): Promise<Pool> {
-  let config_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('PoolConfig')]);
+  let config_datakey = Pool.PoolDataKeyToXDR({tag: "PoolConfig"});
   config_datakey = xdr.ScVal.fromXDR(config_datakey.toXDR());
   let config_entry = await stellar.getContractData(pool_id, config_datakey);
   let pool_config = Pool.PoolConfig.fromContractDataXDR(config_entry.xdr);
 
-  let admin_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('Admin')]);
+  let admin_datakey = Pool.PoolDataKeyToXDR({tag: "Admin"});
   admin_datakey = xdr.ScVal.fromXDR(admin_datakey.toXDR());
   let admin_entry = await stellar.getContractData(pool_id, admin_datakey);
   let admin = data_entry_converter.toString(admin_entry.xdr);
 
-  let res_list_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('ResList')]);
+  let res_list_datakey = Pool.PoolDataKeyToXDR({tag: "ResList"});
   res_list_datakey = xdr.ScVal.fromXDR(res_list_datakey.toXDR());
   let res_list_entry = await stellar.getContractData(pool_id, res_list_datakey);
   let res_list = data_entry_converter.toStringArray(res_list_entry.xdr, 'hex');
 
-  let name_datakey = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol('Name')]);
+  let name_datakey = Pool.PoolDataKeyToXDR({tag: "Name"});
   name_datakey = xdr.ScVal.fromXDR(name_datakey.toXDR());
   let name_entry = await stellar.getContractData(pool_id, name_datakey);
   let name = data_entry_converter.toString(name_entry.xdr, 'utf-8');
@@ -212,7 +313,7 @@ async function loadReservesForPool(
 
       // TODO: Find a better way to do this...
       let symbol: string;
-      if (asset_id === 'CDMT6XD3WDV4JKOI64T4LTV4JZARSTJYEV7B2DMRANLLIO74KKEBHYNJ') {
+      if (asset_id === 'CDUHCNUZTZHN77EPACZ6CWBYSLE5WSKSBO74LYMSHRIP2G2GOHEEF3OK') {
         symbol = 'XLM';
       } else if (asset_id === 'CAQNZE4BEOFTQRJX6YISMPTEE6LHOHEKWNSYPLUOIE6T55YUUNUMLI6Y') {
         symbol = 'USDC';
@@ -320,4 +421,42 @@ async function loadOraclePrices(stellar: Server, pool: Pool): Promise<Map<string
     }
   }
   return price_map;
+}
+
+async function loadReserveEmissions(stellar: Server, reserve_token_index: number, pool_id: string): Promise<ReserveEmission | undefined> {
+  let emissionConfigKey = Pool.PoolDataKeyToXDR({tag: 'EmisConfig', values: [reserve_token_index]});
+  emissionConfigKey = xdr.ScVal.fromXDR(emissionConfigKey.toXDR());
+  let emissionConfigEntry = await stellar.getContractData(pool_id, emissionConfigKey).catch(notFound => {return undefined;});
+  if (emissionConfigEntry == undefined) {
+    return undefined;
+  }
+
+  let emissionDataKey = Pool.PoolDataKeyToXDR({tag: "EmisData", values: [reserve_token_index]})
+  emissionDataKey = xdr.ScVal.fromXDR(emissionDataKey.toXDR());
+  let emis_data_entry = await stellar.getContractData(pool_id, emissionDataKey);
+
+  let emissionData = Pool.ReserveEmissionsDataFromXDR(emis_data_entry.xdr)
+  let emissionConfig = Pool.ReserveEmissionsConfigFromXDR(emissionConfigEntry.xdr);
+
+  return {
+    eps: emissionConfig.eps,
+    reserveIndex: emissionData.index,
+    lastTime: emissionData.last_time,
+    expiration: emissionConfig.expiration,
+  }
+}
+
+async function loadUserReserveEmissions(stellar: Server, reserve_token_index: number, user: string, pool_id: string): Promise<UserReserveEmission | undefined> {
+  let userDataKey = Pool.PoolDataKeyToXDR({tag: "UserEmis", values: [{user, reserve_id: reserve_token_index}]})
+  userDataKey = xdr.ScVal.fromXDR(userDataKey.toXDR());
+  let userDataEntry = await stellar.getContractData(pool_id, userDataKey).catch(notFound => {return undefined});
+  if (userDataEntry == undefined){
+    return undefined;
+  }
+  const userEmission = Pool.UserEmissionDataFromXDR(userDataEntry.xdr);
+  return {
+    userIndex: userEmission.index,
+    accrued: userEmission.accrued,
+    lastUpdated: BigInt(0)
+  } 
 }
