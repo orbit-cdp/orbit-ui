@@ -185,16 +185,16 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
     for (const entry of Array.from(reserve_map.entries())) {
       const reserve = entry[1];
       console.log(reserve)
-      const d_token_index = reserve.config.index * 3;
-      const b_token_index = reserve.config.index * 3 + 1;
-      let dTokenEmissions = await loadReserveEmissions(stellar, d_token_index, pool_id);
-      if (dTokenEmissions) {
-        reserveEmissionMap.set(d_token_index, dTokenEmissions);
+      const liability_token_index = reserve.config.index * 3;
+      const supply_token_index = reserve.config.index * 3 + 1;
+      let liability_emis_data = await loadReserveEmissions(stellar, liability_token_index, pool_id);
+      if (liability_emis_data) {
+        reserveEmissionMap.set(liability_token_index, liability_emis_data);
       }
       
-      let bTokenEmissions = await loadReserveEmissions(stellar, b_token_index, pool_id);
-      if (bTokenEmissions) {
-        reserveEmissionMap.set(b_token_index, bTokenEmissions);
+      let supply_emis_data = await loadReserveEmissions(stellar, supply_token_index, pool_id);
+      if (supply_emis_data) {
+        reserveEmissionMap.set(supply_token_index, supply_emis_data);
       }
     }
     useStore.setState((prev) => ( {
@@ -222,25 +222,25 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
       const asset_id = entry[0];
       const reserve = entry[1];
       const user_balance = user_balances.get(asset_id);
-      const dTokenBal = user_balance?.d_token ?? BigInt(0);
-      const bTokenBal = user_balance?.b_token ?? BigInt(0);
-      const d_token_index = reserve.config.index * 3;
-      const b_token_index = reserve.config.index * 3 + 1;
+      const liability_bal = user_balance?.d_token ?? BigInt(0);
+      const supply_bal = user_balance?.b_token ?? BigInt(0);
+      const liability_token_index = reserve.config.index * 3;
+      const supply_token_index = reserve.config.index * 3 + 1;
 
-      let dTokenEmissionData = reserveEmissionData.get(d_token_index);
-      let dTokenUserEmissions = await loadUserReserveEmissions(stellar, d_token_index, user, pool_id);
-      if ( dTokenUserEmissions && dTokenEmissionData ){
-        dTokenUserEmissions.lastUpdated = latest_ledger_close;
-        total_user_emissions = total_user_emissions + dTokenUserEmissions.accrued + dTokenBal * (dTokenEmissionData.reserveIndex - dTokenUserEmissions.userIndex) + (dTokenBal * dTokenEmissionData.eps * (latest_ledger_close - dTokenEmissionData.lastTime) / reserve.data.d_supply);
-        userEmissionMap.set(d_token_index, dTokenUserEmissions);
+      let reserve_liability_emis_data = reserveEmissionData.get(liability_token_index);
+      let user_liability_emis_data = await loadUserReserveEmissions(stellar, liability_token_index, user, pool_id);
+      if ( user_liability_emis_data && reserve_liability_emis_data ){
+        user_liability_emis_data.lastUpdated = latest_ledger_close;
+        total_user_emissions = total_user_emissions + user_liability_emis_data.accrued + liability_bal * (reserve_liability_emis_data.reserveIndex - user_liability_emis_data.userIndex) + (liability_bal * reserve_liability_emis_data.eps * (latest_ledger_close - reserve_liability_emis_data.lastTime) / reserve.data.d_supply);
+        userEmissionMap.set(liability_token_index, user_liability_emis_data);
       }
 
-      let bTokenEmissionData = reserveEmissionData.get(d_token_index);
-      let bTokenUserEmissions = await loadUserReserveEmissions(stellar, b_token_index, user, pool_id);
-      if (bTokenUserEmissions && bTokenEmissionData){
-        bTokenUserEmissions.lastUpdated = latest_ledger_close;
-        total_user_emissions = total_user_emissions + bTokenUserEmissions.accrued + bTokenBal * (bTokenEmissionData.reserveIndex - bTokenUserEmissions.userIndex) + (bTokenBal * bTokenEmissionData.eps * (latest_ledger_close - bTokenEmissionData.lastTime) / reserve.data.b_supply);
-        userEmissionMap.set(b_token_index, bTokenUserEmissions);
+      let reserve_supply_emis_data = reserveEmissionData.get(liability_token_index);
+      let user_supply_emis_data = await loadUserReserveEmissions(stellar, supply_token_index, user, pool_id);
+      if (user_supply_emis_data && reserve_supply_emis_data){
+        user_supply_emis_data.lastUpdated = latest_ledger_close;
+        total_user_emissions = total_user_emissions + user_supply_emis_data.accrued + supply_bal * (reserve_supply_emis_data.reserveIndex - user_supply_emis_data.userIndex) + (supply_bal * reserve_supply_emis_data.eps * (latest_ledger_close - reserve_supply_emis_data.lastTime) / reserve.data.b_supply);
+        userEmissionMap.set(supply_token_index, user_supply_emis_data);
       }
     }
     useStore.setState((prev) => ( {
@@ -249,7 +249,6 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
     useStore.setState((prev) => ( {
       userEmissionBalance: new Map(prev.userEmissionBalance).set(pool_id, total_user_emissions),
     }));
-    console.log("TOTAL EMISSIONS ACCRUED", total_user_emissions);
   }
 });
 
