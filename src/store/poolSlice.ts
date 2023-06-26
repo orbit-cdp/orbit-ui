@@ -175,14 +175,15 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
     }
   },
   refreshPoolEmissionData: async (pool_id: string) => {
-    const stellar = get().rpcServer();
-    const reserve_map = get().reserves.get(pool_id);
-    if (reserve_map == undefined) {
-        throw Error('unknown pool');
+    try{
+      const stellar = get().rpcServer();
+      const reserve_map = get().reserves.get(pool_id);
+      if (reserve_map == undefined) {
+          throw Error('unknown pool');
       }
 
-    let reserveEmissionMap = new Map<number, ReserveEmission>();
-    for (const entry of Array.from(reserve_map.entries())) {
+      let reserveEmissionMap = new Map<number, ReserveEmission>();
+      for (const entry of Array.from(reserve_map.entries())) {
       const reserve = entry[1];
       console.log(reserve)
       const liability_token_index = reserve.config.index * 3;
@@ -196,59 +197,65 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
       if (supply_emis_data) {
         reserveEmissionMap.set(supply_token_index, supply_emis_data);
       }
+      }
+      useStore.setState((prev) => ( {
+        reserveEmissions: new Map(prev.reserveEmissions).set(pool_id, reserveEmissionMap),
+      }));
+    } catch (e) {
+      console.error("unable to refresh reserve emission data", e);
     }
-    useStore.setState((prev) => ( {
-      reserveEmissions: new Map(prev.reserveEmissions).set(pool_id, reserveEmissionMap),
-    }));
+    
   },
 
   refreshUserEmissionData: async (pool_id: string, user: string) => {
-    const stellar = get().rpcServer();
-    let tx_response = await stellar.getTransaction(
-        '0000000000000000000000000000000000000000000000000000000000000000'
-      ); // TODO: File issue/pr to add getLatestLedger endpoint
-    let latest_ledger_close = BigInt(tx_response.latestLedgerCloseTime);
-    
-    const reserve_map = get().reserves.get(pool_id);
-    const user_balances = get().resUserBalances.get(pool_id)
-    const reserveEmissionData = get().reserveEmissions.get(pool_id);
-    if (!reserve_map || !user_balances || !reserveEmissionData ) {
-        throw Error('unknown pool');
-    }
-
-    let total_user_emissions = BigInt(0);
-    let userEmissionMap = new Map<number, UserReserveEmission>();
-    for (const entry of Array.from(reserve_map.entries())){
-      const asset_id = entry[0];
-      const reserve = entry[1];
-      const user_balance = user_balances.get(asset_id);
-      const liability_bal = user_balance?.d_token ?? BigInt(0);
-      const supply_bal = user_balance?.b_token ?? BigInt(0);
-      const liability_token_index = reserve.config.index * 3;
-      const supply_token_index = reserve.config.index * 3 + 1;
-
-      let reserve_liability_emis_data = reserveEmissionData.get(liability_token_index);
-      let user_liability_emis_data = await loadUserReserveEmissions(stellar, liability_token_index, user, pool_id);
-      if ( user_liability_emis_data && reserve_liability_emis_data ){
-        user_liability_emis_data.lastUpdated = latest_ledger_close;
-        total_user_emissions = total_user_emissions + user_liability_emis_data.accrued + liability_bal * (reserve_liability_emis_data.reserveIndex - user_liability_emis_data.userIndex) + (liability_bal * reserve_liability_emis_data.eps * (latest_ledger_close - reserve_liability_emis_data.lastTime) / reserve.data.d_supply);
-        userEmissionMap.set(liability_token_index, user_liability_emis_data);
+    try{
+      const stellar = get().rpcServer();
+      let tx_response = await stellar.getTransaction(
+          '0000000000000000000000000000000000000000000000000000000000000000'
+        ); // TODO: File issue/pr to add getLatestLedger endpoint
+      let latest_ledger_close = BigInt(tx_response.latestLedgerCloseTime);
+      
+      const reserve_map = get().reserves.get(pool_id);
+      const user_balances = get().resUserBalances.get(pool_id)
+      const reserveEmissionData = get().reserveEmissions.get(pool_id);
+      if (!reserve_map || !user_balances || !reserveEmissionData ) {
+          throw Error('unknown pool');
       }
 
-      let reserve_supply_emis_data = reserveEmissionData.get(liability_token_index);
-      let user_supply_emis_data = await loadUserReserveEmissions(stellar, supply_token_index, user, pool_id);
-      if (user_supply_emis_data && reserve_supply_emis_data){
-        user_supply_emis_data.lastUpdated = latest_ledger_close;
-        total_user_emissions = total_user_emissions + user_supply_emis_data.accrued + supply_bal * (reserve_supply_emis_data.reserveIndex - user_supply_emis_data.userIndex) + (supply_bal * reserve_supply_emis_data.eps * (latest_ledger_close - reserve_supply_emis_data.lastTime) / reserve.data.b_supply);
-        userEmissionMap.set(supply_token_index, user_supply_emis_data);
+      let total_user_emissions = BigInt(0);
+      let userEmissionMap = new Map<number, UserReserveEmission>();
+      for (const entry of Array.from(reserve_map.entries())){
+        const asset_id = entry[0];
+        const reserve = entry[1];
+        const user_balance = user_balances.get(asset_id);
+        const liability_bal = user_balance?.d_token ?? BigInt(0);
+        const supply_bal = user_balance?.b_token ?? BigInt(0);
+        const liability_token_index = reserve.config.index * 3;
+        const supply_token_index = reserve.config.index * 3 + 1;
+
+        let reserve_liability_emis_data = reserveEmissionData.get(liability_token_index);
+        let user_liability_emis_data = await loadUserReserveEmissions(stellar, liability_token_index, user, pool_id);
+        if ( user_liability_emis_data && reserve_liability_emis_data ){
+          user_liability_emis_data.lastUpdated = latest_ledger_close;
+          total_user_emissions = total_user_emissions + user_liability_emis_data.accrued + liability_bal * (reserve_liability_emis_data.reserveIndex - user_liability_emis_data.userIndex) + (liability_bal * reserve_liability_emis_data.eps * (latest_ledger_close - reserve_liability_emis_data.lastTime) / reserve.data.d_supply);
+          userEmissionMap.set(liability_token_index, user_liability_emis_data);
+        }
+
+        let reserve_supply_emis_data = reserveEmissionData.get(liability_token_index);
+        let user_supply_emis_data = await loadUserReserveEmissions(stellar, supply_token_index, user, pool_id);
+        if (user_supply_emis_data && reserve_supply_emis_data){
+          user_supply_emis_data.lastUpdated = latest_ledger_close;
+          total_user_emissions = total_user_emissions + user_supply_emis_data.accrued + supply_bal * (reserve_supply_emis_data.reserveIndex - user_supply_emis_data.userIndex) + (supply_bal * reserve_supply_emis_data.eps * (latest_ledger_close - reserve_supply_emis_data.lastTime) / reserve.data.b_supply);
+          userEmissionMap.set(supply_token_index, user_supply_emis_data);
+        }
       }
-    }
-    useStore.setState((prev) => ( {
+      useStore.setState((prev) => ({
       userReserveEmissions: new Map(prev.userReserveEmissions).set(pool_id, userEmissionMap),
-    }));
-    useStore.setState((prev) => ( {
       userEmissionBalance: new Map(prev.userEmissionBalance).set(pool_id, total_user_emissions),
-    }));
+      }));
+    } catch (e) {
+      console.error("unable to refresh user emission data", e);
+    }
   }
 });
 
@@ -423,39 +430,47 @@ async function loadOraclePrices(stellar: Server, pool: Pool): Promise<Map<string
 }
 
 async function loadReserveEmissions(stellar: Server, reserve_token_index: number, pool_id: string): Promise<ReserveEmission | undefined> {
-  let emissionConfigKey = Pool.PoolDataKeyToXDR({tag: 'EmisConfig', values: [reserve_token_index]});
-  emissionConfigKey = xdr.ScVal.fromXDR(emissionConfigKey.toXDR());
-  let emissionConfigEntry = await stellar.getContractData(pool_id, emissionConfigKey).catch(notFound => {return undefined;});
-  if (emissionConfigEntry == undefined) {
-    return undefined;
-  }
+  try{
+    let emissionConfigKey = Pool.PoolDataKeyToXDR({tag: 'EmisConfig', values: [reserve_token_index]});
+    emissionConfigKey = xdr.ScVal.fromXDR(emissionConfigKey.toXDR());
+    let emissionConfigEntry = await stellar.getContractData(pool_id, emissionConfigKey);
+    if (emissionConfigEntry == undefined) {
+      return undefined;
+    }
 
-  let emissionDataKey = Pool.PoolDataKeyToXDR({tag: "EmisData", values: [reserve_token_index]})
-  emissionDataKey = xdr.ScVal.fromXDR(emissionDataKey.toXDR());
-  let emis_data_entry = await stellar.getContractData(pool_id, emissionDataKey);
+    let emissionDataKey = Pool.PoolDataKeyToXDR({tag: "EmisData", values: [reserve_token_index]})
+    emissionDataKey = xdr.ScVal.fromXDR(emissionDataKey.toXDR());
+    let emis_data_entry = await stellar.getContractData(pool_id, emissionDataKey);
 
-  let emissionData = Pool.ReserveEmissionsDataFromXDR(emis_data_entry.xdr)
-  let emissionConfig = Pool.ReserveEmissionsConfigFromXDR(emissionConfigEntry.xdr);
+    let emissionData = Pool.ReserveEmissionsDataFromXDR(emis_data_entry.xdr)
+    let emissionConfig = Pool.ReserveEmissionsConfigFromXDR(emissionConfigEntry.xdr);
 
-  return {
-    eps: emissionConfig.eps,
-    reserveIndex: emissionData.index,
-    lastTime: emissionData.last_time,
-    expiration: emissionConfig.expiration,
+    return {
+      eps: emissionConfig.eps,
+      reserveIndex: emissionData.index,
+      lastTime: emissionData.last_time,
+      expiration: emissionConfig.expiration,
+    }
+  } catch (e) {
+    console.error("unable to fetch reserve emission data", e);
   }
 }
 
 async function loadUserReserveEmissions(stellar: Server, reserve_token_index: number, user: string, pool_id: string): Promise<UserReserveEmission | undefined> {
-  let userDataKey = Pool.PoolDataKeyToXDR({tag: "UserEmis", values: [{user, reserve_id: reserve_token_index}]})
-  userDataKey = xdr.ScVal.fromXDR(userDataKey.toXDR());
-  let userDataEntry = await stellar.getContractData(pool_id, userDataKey).catch(notFound => {return undefined});
-  if (userDataEntry == undefined){
-    return undefined;
+  try{
+    let userDataKey = Pool.PoolDataKeyToXDR({tag: "UserEmis", values: [{user, reserve_id: reserve_token_index}]})
+    userDataKey = xdr.ScVal.fromXDR(userDataKey.toXDR());
+    let userDataEntry = await stellar.getContractData(pool_id, userDataKey);
+    if (userDataEntry == undefined){
+      return undefined;
+    }
+    const userEmission = Pool.UserEmissionDataFromXDR(userDataEntry.xdr);
+    return {
+      userIndex: userEmission.index,
+      accrued: userEmission.accrued,
+      lastUpdated: BigInt(0)
+    } 
+  } catch (e) {
+    console.error("unable to fetch user reserve emission data", e);
   }
-  const userEmission = Pool.UserEmissionDataFromXDR(userDataEntry.xdr);
-  return {
-    userIndex: userEmission.index,
-    accrued: userEmission.accrued,
-    lastUpdated: BigInt(0)
-  } 
 }
