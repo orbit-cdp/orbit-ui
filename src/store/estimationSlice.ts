@@ -144,13 +144,13 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
           const user_supply_emission = userEmissionData?.get(res.config.index * 3 + 1)
          
           if (liability_emission && user_liability_emission) {
-            userEmissionBal = userEmissionBal +  (liability_bal * liability_emission.eps * (BigInt(latest_ledger_close) - user_liability_emission.lastUpdated) / res.data.d_supply);
+            userEmissionBal += liability_bal * (liability_emission.reserveIndex - user_liability_emission.userIndex) + (liability_bal * liability_emission.eps * (BigInt(latest_ledger_close) - liability_emission.lastTime) / res.data.d_supply);
           }
           if (supply_emission && user_supply_emission) {
-            userEmissionBal = userEmissionBal +  (supply_bal * supply_emission.eps * (BigInt(latest_ledger_close) - user_supply_emission.lastUpdated) / res.data.b_supply);
+            userEmissionBal += supply_bal * (supply_emission.reserveIndex - user_supply_emission.userIndex) +  (supply_bal * supply_emission.eps * (BigInt(latest_ledger_close) - supply_emission.lastTime) / res.data.b_supply);
           }
         }
-        
+
         useStore.setState((prev) => ({
           pool_est: new Map(prev.pool_est).set(pool_id, pool_est),
           reserve_est: new Map(prev.reserve_est).set(pool_id, res_estimations),
