@@ -184,8 +184,8 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
       let reserveEmissionMap = new Map<number, ReserveEmission>();
       for (const entry of Array.from(reserve_map.entries())) {
       const reserve = entry[1];
-      const liability_token_index = reserve.config.index * 3;
-      const supply_token_index = reserve.config.index * 3 + 1;
+      const liability_token_index = reserve.config.index * 2;
+      const supply_token_index = reserve.config.index * 2 + 1;
       let liability_emis_data = await loadReserveEmissions(stellar, liability_token_index, pool_id);
       if (liability_emis_data) {
         reserveEmissionMap.set(liability_token_index, liability_emis_data);
@@ -219,8 +219,8 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
       let userEmissionMap = new Map<number, UserReserveEmission>();
       for (const entry of Array.from(reserve_map.entries())){
         const reserve = entry[1];
-        const liability_token_index = reserve.config.index * 3;
-        const supply_token_index = reserve.config.index * 3 + 1;
+        const liability_token_index = reserve.config.index * 2;
+        const supply_token_index = reserve.config.index * 2 + 1;
 
         let reserve_liability_emis_data = reserveEmissionData.get(liability_token_index);
         let user_liability_emis_data = await loadUserReserveEmissions(stellar, liability_token_index, user, pool_id);
@@ -341,58 +341,40 @@ async function loadUserForPool(
   let user_balance_map = new Map<string, ReserveBalance>();
   try {
     let user_address = new Address(user_id);
-    let config_datakey = Pool.PoolDataKeyToXDR({tag: "UserConfig", values: [user_id]})
-    config_datakey = xdr.ScVal.fromXDR(config_datakey.toXDR());
-    let user_config = BigInt(0);
+    let positions_datakey = Pool.PoolDataKeyToXDR({tag: "Positions", values: [user_id]})
+    positions_datakey = xdr.ScVal.fromXDR(positions_datakey.toXDR());
+    let user_positions: Pool.Positions | undefined;
+  
     try {
-      let user_config_entry = await stellar.getContractData(pool_id, config_datakey);
-      user_config = data_entry_converter.toBigInt(user_config_entry.xdr);
+      let user_config_entry = await stellar.getContractData(pool_id, positions_datakey);
+      user_positions = Pool.PositionsFromXDR(user_config_entry.xdr);
     } catch {
       // user has not touched pool yet
+      console.error("unable to refresh user positions")
+      user_positions = undefined;
     }
-
-    for (const res_entry of Array.from(reserves.entries())) {
-      try {
-        let asset_id = res_entry[0];
-        let reserve = res_entry[1];
-        let config_index = BigInt(reserve.config.index * 3);
-
-        let asset_balance = await getTokenBalance(stellar, network, asset_id, user_address);
-        let d_token_balance = BigInt(0);
-        let b_token_balance = BigInt(0);
-
-        if (((user_config >> config_index) & BigInt(0b1)) != BigInt(0)) {
-          d_token_balance = await getTokenBalance(
-            stellar,
-            network,
-            reserve.config.d_token_id,
-            user_address
-          );
+    if(user_positions) {
+      for (const res_entry of Array.from(reserves.entries())) {
+        try {
+          let asset_id = res_entry[0];
+          let reserve = res_entry[1];
+          let config_index = reserve.config.index;
+          let asset_balance = await getTokenBalance(stellar, network, asset_id, user_address);
+          let supply = user_positions.collateral.get(config_index) ?? BigInt(0);
+          let liability = user_positions.liabilities.get(config_index) ?? BigInt(0);
+          user_balance_map.set(asset_id, {
+            asset: asset_balance,
+            b_token: supply,
+            d_token: liability,
+          });
+        } catch (e) {
+          console.error(`failed to update user data for ${res_entry[0]}: `, e);
         }
-
-        if (((user_config >> config_index) & BigInt(0b10)) != BigInt(0)) {
-          b_token_balance = await getTokenBalance(
-            stellar,
-            network,
-            reserve.config.b_token_id,
-            user_address
-          );
-        }
-
-        // add reserve object to map
-        user_balance_map.set(asset_id, {
-          asset: asset_balance,
-          b_token: b_token_balance,
-          d_token: d_token_balance,
-        });
-      } catch (e) {
-        console.error(`failed to update user data for ${res_entry[0]}: `, e);
       }
-    }
+    } 
   } catch (e) {
     console.error('TODO: Write an error', e);
   }
-
   return user_balance_map;
 }
 
