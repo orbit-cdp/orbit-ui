@@ -64,9 +64,9 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
 
   const handleSubmitTransaction = () => {
     // TODO: Revalidate?
-    if (toRepay && connected) {
+    if (toRepay && connected && reserve) {
       let pool = new Pool.PoolOpBuilder(poolId);
-      let repay_op = xdr.Operation.fromXDR(pool.repay({from: walletAddress, asset: assetId, amount: scaleInputToBigInt(toRepay), on_behalf_of: walletAddress}), "base64");
+      let repay_op = xdr.Operation.fromXDR(pool.submit({from: walletAddress, spender: walletAddress, to: walletAddress, requests: [{amount: scaleInputToBigInt(toRepay), request_type: 5, reserve_index: reserve.config.index}]}), "base64");
       submitTransaction(repay_op);
     }
   };
