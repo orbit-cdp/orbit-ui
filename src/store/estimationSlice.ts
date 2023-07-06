@@ -48,6 +48,7 @@ export interface EstimationSlice {
   reserve_est: Map<string, ReserveEstimates[]>;
   user_est: Map<string, UserEstimates>;
   user_bal_est: Map<string, Map<string, UserReserveEstimates>>;
+  user_emis_bal_est: Map<string, bigint>;
   estimateToLatestLedger: (pool_id: string, user_id?: string | undefined) => Promise<void>;
 }
 
@@ -59,6 +60,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
   reserve_est: new Map<string, ReserveEstimates[]>(),
   user_est: new Map<string, UserEstimates>(),
   user_bal_est: new Map<string, Map<string, UserReserveEstimates>>(),
+  user_emis_bal_est: new Map<string, bigint>(),
   estimateToLatestLedger: async (pool_id: string, user_id?: string | undefined): Promise<void> => {
     try {
       const stellar = get().rpcServer();
@@ -72,8 +74,10 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
       const reserves = get().reserves.get(pool_id);
       const user_balances = get().resUserBalances.get(pool_id);
       const prices = get().poolPrices.get(pool_id);
-
-      if (pool == undefined || reserves == undefined || prices == undefined) {
+      const emissionData = get().reserveEmissions.get(pool_id);
+      const userEmissionData = get().userReserveEmissions.get(pool_id);
+      let userEmissionBal = get().userEmissionBalance.get(pool_id) ?? BigInt(0);
+      if (pool == undefined || reserves == undefined || prices == undefined || emissionData == undefined) {
         console.error('unable to estimate to latest ledger without ledger data');
         return;
       }
@@ -130,11 +134,29 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
         user_est.net_apy =
           user_est.net_apy / (user_est.total_supplied_base + user_est.total_borrowed_base);
 
+        for (const res of Array.from(reserves.values())) {
+          const supply_bal = user_balances.get(res.asset_id)?.b_token ?? BigInt(0);
+          const liability_bal = user_balances.get(res.asset_id)?.d_token ?? BigInt(0);
+
+          const liability_emission = emissionData.get(res.config.index * 3)
+          const supply_emission = emissionData.get(res.config.index * 3 + 1);
+          const user_liability_emission = userEmissionData?.get(res.config.index * 3 )
+          const user_supply_emission = userEmissionData?.get(res.config.index * 3 + 1)
+         
+          if (liability_emission && user_liability_emission) {
+            userEmissionBal += liability_bal * (liability_emission.reserveIndex - user_liability_emission.userIndex) + (liability_bal * liability_emission.eps * (BigInt(latest_ledger_close) - liability_emission.lastTime) / res.data.d_supply);
+          }
+          if (supply_emission && user_supply_emission) {
+            userEmissionBal += supply_bal * (supply_emission.reserveIndex - user_supply_emission.userIndex) +  (supply_bal * supply_emission.eps * (BigInt(latest_ledger_close) - supply_emission.lastTime) / res.data.b_supply);
+          }
+        }
+
         useStore.setState((prev) => ({
           pool_est: new Map(prev.pool_est).set(pool_id, pool_est),
           reserve_est: new Map(prev.reserve_est).set(pool_id, res_estimations),
           user_est: new Map(prev.user_est).set(pool_id, user_est),
           user_bal_est: new Map(prev.user_bal_est).set(pool_id, user_bal_est),
+          user_emis_bal_est: new Map(prev.user_emis_bal_est).set(pool_id, userEmissionBal)
         }));
         console.log(`estimated pool and user data to ledger ${latest_ledger}`);
       } else {
