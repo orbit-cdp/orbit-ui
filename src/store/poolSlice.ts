@@ -213,7 +213,6 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
       const reserve_map = get().reserves.get(pool_id);
       const user_balances = get().resUserBalances.get(pool_id);
       const reserveEmissionData = get().reserveEmissions.get(pool_id);
-      console.log(reserve_map, user_balances, reserveEmissionData)
       if (!reserve_map || !user_balances || !reserveEmissionData) {
         throw Error('unknown pool');
       }
@@ -244,15 +243,11 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
           user,
           pool_id
         );
-        console.log(user_supply_emis_data)
-        console.log(reserve_supply_emis_data)
         if (user_supply_emis_data && reserve_supply_emis_data) {
           total_user_emissions += user_supply_emis_data.accrued;
           userEmissionMap.set(supply_token_index, user_supply_emis_data);
         }
       }
-      console.log("USER EMIS MAP",userEmissionMap)
-      console.log("TOTAL EMISSIONS",total_user_emissions)
       useStore.setState((prev) => ({
         userReserveEmissions: new Map(prev.userReserveEmissions).set(pool_id, userEmissionMap),
         userEmissionBalance: new Map(prev.userEmissionBalance).set(pool_id, total_user_emissions),
@@ -444,6 +439,7 @@ async function loadReserveEmissions(
 
     let emissionData = Pool.ReserveEmissionsDataFromXDR(emis_data_entry.xdr);
     let emissionConfig = Pool.ReserveEmissionsConfigFromXDR(emissionConfigEntry.xdr);
+
     return {
       eps: emissionConfig.eps,
       reserveIndex: emissionData.index,

@@ -48,13 +48,11 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const borrowLimit = user_est ? newEffectiveLiabilities / user_est.e_collateral_base : undefined;
 
   const handleBorrowAmountChange = (borrowInput: string) => {
-    console.log(user_est)
     if (/^[0-9]*\.?[0-9]{0,7}$/.test(borrowInput) && user_est) {
       let num_borrow = Number(borrowInput);
       let borrow_base = (num_borrow * assetToBase) / liability_factor;
       let tempNewLiabilities = user_est.e_liabilities_base + borrow_base;
       if (tempNewLiabilities * 1.02 < user_est.e_collateral_base) {
-        console.log("toborrow set");
         setToBorrow(borrowInput);
         setNewEffectiveLiabilities(tempNewLiabilities);
       }
@@ -71,8 +69,6 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
 
   const handleSubmitTransaction = () => {
     // TODO: Revalidate?
-    console.log(reserve)
-    console.log(toBorrow)
     if (toBorrow && connected && reserve) {
       let pool = new Pool.PoolOpBuilder(poolId);
       let borrow_op = xdr.Operation.fromXDR(pool.submit({from: walletAddress, to: walletAddress, spender: walletAddress, requests: [{amount: scaleInputToBigInt(toBorrow), reserve_index: reserve.config.index, request_type: 4}]}), "base64");
