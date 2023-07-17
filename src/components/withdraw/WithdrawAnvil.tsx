@@ -67,9 +67,9 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
 
   const handleSubmitTransaction = () => {
     // TODO: Revalidate?
-    if (toWithdraw && connected) {
+    if (toWithdraw && connected && reserve) {
       let pool = new Pool.PoolOpBuilder(poolId);
-      let withdraw_op = xdr.Operation.fromXDR(pool.withdraw({from: walletAddress, asset: assetId, amount: scaleInputToBigInt(toWithdraw), to: walletAddress}), "base64");
+      let withdraw_op = xdr.Operation.fromXDR(pool.submit({from: walletAddress, spender: walletAddress, to: walletAddress, requests: [{amount: scaleInputToBigInt(toWithdraw), request_type: 3, reserve_index: reserve.config.index}]}), "base64");
       submitTransaction(withdraw_op);
     }
   };

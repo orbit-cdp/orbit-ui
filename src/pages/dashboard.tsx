@@ -35,14 +35,18 @@ const Dashboard: NextPage = () => {
   const refreshPoolReserveAll = useStore((state) => state.refreshPoolReserveAll);
   const estimateToLatestLedger = useStore((state) => state.estimateToLatestLedger);
   const refreshPoolBackstopData = useStore((state) => state.refreshPoolBackstopData);
+  const refreshPoolEmissionData = useStore((state) => state.refreshPoolEmissionData);
+  const refreshUserEmissionData = useStore((state) => state.refreshUserEmissionData);
   const pool_est = useStore((state) => state.pool_est.get(safePoolId));
 
   useEffect(() => {
     const updateDashboard = async () => {
       if (safePoolId != '') {
         await refreshPoolReserveAll(safePoolId, connected ? walletAddress : undefined);
+        await refreshPoolEmissionData(safePoolId)
         if (connected) {
           await refreshPoolBackstopData(safePoolId, walletAddress);
+          await refreshUserEmissionData(safePoolId, walletAddress);
         }
         await estimateToLatestLedger(safePoolId, connected ? walletAddress : undefined);
       }

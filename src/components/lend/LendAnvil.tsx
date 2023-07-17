@@ -62,9 +62,9 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
 
   const handleSubmitTransaction = () => {
     // TODO: Revalidate?
-    if (toLend && connected) {
+    if (toLend && connected && reserve) {
       let pool = new Pool.PoolOpBuilder(poolId);
-      let supply_op = xdr.Operation.fromXDR(pool.supply({from: walletAddress, asset: assetId, amount: scaleInputToBigInt(toLend)}), "base64");
+      let supply_op = xdr.Operation.fromXDR(pool.submit({from: walletAddress, spender: walletAddress, to: walletAddress, requests: [{amount: scaleInputToBigInt(toLend), request_type: 2, reserve_index: reserve.config.index}]}), "base64");
       submitTransaction(supply_op);
     }
   };

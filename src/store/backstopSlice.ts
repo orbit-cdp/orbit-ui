@@ -27,9 +27,9 @@ export interface BackstopSlice {
 
 export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice> = (set, get) => ({
   backstopContract: new Backstop.BackstopOpBuilder(
-    'CD5O6V7ATTOOGNP34R6UIS5VO72GZOJWRGNFP4B4KSKSDBU66XC42LPO'
+    'CACJ5U6SEPLXF2V42NUZLLBFQBUKWRU523HQJMS5XM7HAU5MSHJS5W7X'
   ),
-  backstopToken: 'CALGOGJLX3EUR6TRGFWGQJZD7IADYSLBKZGDDSOXINWWO75C3J74N5PL',
+  backstopToken: 'CBK5BVAAE6SSHAMNLRRSAPZAQIG3MYOQPKOM2TAD4HLODZ2DQVBDRL55',
   backstopTokenPrice: BigInt(0.05e7), // TODO: Calculate fair value from LP,
   backstopTokenBalance: BigInt(0),
   rewardZone: [],
@@ -45,7 +45,6 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
       rz_datakey = xdr.ScVal.fromXDR(rz_datakey.toXDR());
       let rz_dataEntry = await stellar.getContractData(contract._contract.contractId('hex'), rz_datakey);
       let rz = data_entry_converter.toStringArray(rz_dataEntry.xdr, 'hex');
-      rz = rz.slice(1,2);
       const poolBackstopBalMap = new Map<string, PoolBackstopBalance>();
       for (const rz_pool of rz) {
         poolBackstopBalMap.set(rz_pool, await loadPoolBackstopBalance(stellar, contract, rz_pool));
