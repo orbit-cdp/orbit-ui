@@ -236,7 +236,7 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
           userEmissionMap.set(liability_token_index, user_liability_emis_data);
         }
 
-        let reserve_supply_emis_data = reserveEmissionData.get(liability_token_index);
+        let reserve_supply_emis_data = reserveEmissionData.get(supply_token_index);
         let user_supply_emis_data = await loadUserReserveEmissions(
           stellar,
           supply_token_index,
@@ -253,7 +253,7 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
         userEmissionBalance: new Map(prev.userEmissionBalance).set(pool_id, total_user_emissions),
       }));
     } catch (e) {
-      console.error('unable to refresh user emission data', e);
+      console.error('unable to refresh user emission data', e, );
     }
   },
 });
@@ -464,15 +464,12 @@ async function loadUserReserveEmissions(
     });
     userDataKey = xdr.ScVal.fromXDR(userDataKey.toXDR());
     let userDataEntry = await stellar.getContractData(pool_id, userDataKey);
-    if (userDataEntry == undefined) {
-      return undefined;
-    }
     const userEmission = Pool.UserEmissionDataFromXDR(userDataEntry.xdr);
     return {
       userIndex: userEmission.index,
       accrued: userEmission.accrued,
     };
   } catch (e) {
-    console.error('unable to fetch user reserve emission data', e);
+    console.error('unable to fetch user reserve emission data', e, reserve_token_index);
   }
 }
