@@ -20,19 +20,19 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   const theme = useTheme();
   const { connected, walletAddress, submitTransaction } = useWallet();
 
-  const reserve = useStore((state) => state.reserves.get(poolId)?.get(assetId));
-  const prices = useStore((state) => state.poolPrices.get(poolId));
-  const user_est = useStore((state) => state.user_est.get(poolId));
-  const user_bal_est = useStore((state) => state.user_bal_est.get(poolId)?.get(assetId));
-
-  const symbol = reserve?.symbol ?? '';
-  const assetToBase = prices?.get(assetId) ?? 1;
-
+  const reserve = useStore((state) => state.poolData.get(poolId)?.reserves.get(assetId));
+  const assetToBase = useStore((state) => state.poolData.get(poolId))?.poolPrices.get(assetId) ?? 1;
+  const user_est = useStore((state) => state.pool_user_est.get(poolId));
+  const user_bal_est = useStore((state) =>
+    state.pool_user_est.get(poolId)?.reserve_estimates.get(assetId)
+  );
+  const loadPoolData = useStore((state) => state.loadPoolData);
   const [toWithdraw, setToWithdraw] = useState<string | undefined>(undefined);
   const [newEffectiveCollateral, setNewEffectiveCollateral] = useState<number>(
     user_est?.e_collateral_base ?? 0
   );
 
+  const symbol = reserve?.symbol ?? '';
   const oldBorrowCap = user_est
     ? user_est.e_collateral_base - user_est.e_liabilities_base
     : undefined;
@@ -65,12 +65,27 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
     }
   };
 
-  const handleSubmitTransaction = () => {
+  const handleSubmitTransaction = async () => {
     // TODO: Revalidate?
     if (toWithdraw && connected && reserve) {
       let pool = new Pool.PoolOpBuilder(poolId);
-      let withdraw_op = xdr.Operation.fromXDR(pool.submit({from: walletAddress, spender: walletAddress, to: walletAddress, requests: [{amount: scaleInputToBigInt(toWithdraw), request_type: 3, reserve_index: reserve.config.index}]}), "base64");
-      submitTransaction(withdraw_op);
+      let withdraw_op = xdr.Operation.fromXDR(
+        pool.submit({
+          from: walletAddress,
+          spender: walletAddress,
+          to: walletAddress,
+          requests: [
+            {
+              amount: scaleInputToBigInt(toWithdraw),
+              request_type: 3,
+              reserve_index: reserve.config.index,
+            },
+          ],
+        }),
+        'base64'
+      );
+      await submitTransaction(withdraw_op);
+      await loadPoolData(poolId, walletAddress, true);
     }
   };
 

@@ -20,19 +20,19 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   const theme = useTheme();
   const { connected, walletAddress, submitTransaction } = useWallet();
 
-  const reserve = useStore((state) => state.reserves.get(poolId)?.get(assetId));
-  const prices = useStore((state) => state.poolPrices.get(poolId));
-  const user_est = useStore((state) => state.user_est.get(poolId));
-  const user_bal_est = useStore((state) => state.user_bal_est.get(poolId)?.get(assetId));
-
-  const assetToBase = prices?.get(assetId) ?? 1;
-  const symbol = reserve?.symbol ?? '';
-
+  const reserve = useStore((state) => state.poolData.get(poolId)?.reserves.get(assetId));
+  const assetPrice = useStore((state) => state.poolData.get(poolId))?.poolPrices.get(assetId) ?? 1;
+  const user_est = useStore((state) => state.pool_user_est.get(poolId));
+  const user_bal_est = useStore((state) =>
+    state.pool_user_est.get(poolId)?.reserve_estimates.get(assetId)
+  );
+  const loadPoolData = useStore((state) => state.loadPoolData);
   const [toLend, setToLend] = useState<string | undefined>(undefined);
   const [newEffectiveCollateral, setNewEffectiveCollateral] = useState<number>(
     user_est?.e_collateral_base ?? 0
   );
 
+  const symbol = reserve?.symbol ?? '';
   const oldBorrowCap = user_est
     ? user_est.e_collateral_base - user_est.e_liabilities_base
     : undefined;
@@ -45,7 +45,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   const handleLendAmountChange = (lendInput: string) => {
     if (/^[0-9]*\.?[0-9]{0,7}$/.test(lendInput) && user_est && user_bal_est) {
       let num_lend = Number(lendInput);
-      let lend_base = num_lend * assetToBase * (Number(reserve?.config.c_factor) / 1e7);
+      let lend_base = num_lend * assetPrice * (Number(reserve?.config.c_factor) / 1e7);
       let tempEffectiveCollateral = user_est.e_collateral_base + lend_base;
       if (num_lend <= user_bal_est.asset) {
         setToLend(lendInput);
@@ -60,12 +60,27 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
     }
   };
 
-  const handleSubmitTransaction = () => {
+  const handleSubmitTransaction = async () => {
     // TODO: Revalidate?
     if (toLend && connected && reserve) {
       let pool = new Pool.PoolOpBuilder(poolId);
-      let supply_op = xdr.Operation.fromXDR(pool.submit({from: walletAddress, spender: walletAddress, to: walletAddress, requests: [{amount: scaleInputToBigInt(toLend), request_type: 2, reserve_index: reserve.config.index}]}), "base64");
-      submitTransaction(supply_op);
+      let supply_op = xdr.Operation.fromXDR(
+        pool.submit({
+          from: walletAddress,
+          spender: walletAddress,
+          to: walletAddress,
+          requests: [
+            {
+              amount: scaleInputToBigInt(toLend),
+              request_type: 2,
+              reserve_index: reserve.config.index,
+            },
+          ],
+        }),
+        'base64'
+      );
+      await submitTransaction(supply_op);
+      await loadPoolData(poolId, walletAddress, true);
     }
   };
 
@@ -115,7 +130,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toLend ?? 0) * assetToBase)}`}
+              {`$${toBalance(Number(toLend ?? 0) * assetPrice)}`}
             </Typography>
           </Box>
         </Box>

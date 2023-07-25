@@ -21,18 +21,10 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
 
   const [expand, setExpand] = useState(false);
 
-  const refreshPoolReserveAll = useStore((state) => state.refreshPoolReserveAll);
-  const refreshPrices = useStore((state) => state.refreshPrices);
-  const estimateToLatestLedger = useStore((state) => state.estimateToLatestLedger);
+  const loadPoolData = useStore((state) => state.loadPoolData);
   const pool = useStore((state) => state.pools.get(poolId));
   const poolEst = useStore((state) => state.pool_est.get(poolId));
-  const backstopTokenToBase = useStore((state) => state.backstopTokenPrice);
-  const backstopPoolBalance = useStore((state) => state.poolBackstopBalance.get(poolId));
-
-  const tokenToBase = Number(backstopTokenToBase) / 1e7;
-  const estBackstopSize = backstopPoolBalance
-    ? (Number(backstopPoolBalance.tokens) / 1e7) * tokenToBase
-    : undefined;
+  const backstopPoolEstimate = useStore((state) => state.backstop_pool_est.get(poolId));
 
   const [rotateArrow, setRotateArrow] = useState(false);
   const rotate = rotateArrow ? 'rotate(180deg)' : 'rotate(0)';
@@ -40,9 +32,7 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
   useEffect(() => {
     const refreshAndEstimate = async () => {
       if (poolEst == undefined) {
-        await refreshPoolReserveAll(poolId);
-        await refreshPrices(poolId);
-        await estimateToLatestLedger(poolId);
+        await loadPoolData(poolId, undefined);
       }
     };
 
@@ -51,7 +41,7 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
     } else {
       isMounted.current = true;
     }
-  }, [poolEst]);
+  }, [loadPoolData, poolEst, poolId]);
 
   return (
     <Section width={SectionSize.FULL} sx={{ flexDirection: 'column', marginBottom: '12px', ...sx }}>
@@ -108,7 +98,7 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
           ></StackedTextHLBox>
           <StackedTextHLBox
             name="Backstop"
-            text={`$${toBalance(estBackstopSize)}`}
+            text={`$${toBalance(backstopPoolEstimate?.backstopSize)}`}
             palette={theme.palette.backstop}
             sx={{ width: '33.33%' }}
           ></StackedTextHLBox>

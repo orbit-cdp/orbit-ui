@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import { useSettings, ViewType } from '../../contexts';
+import { ViewType, useSettings } from '../../contexts';
 import { useStore } from '../../store/store';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { MarketsListItem } from './MarketsListItem';
@@ -7,7 +7,7 @@ import { MarketsListItem } from './MarketsListItem';
 export const MarketsList: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
 
-  const poolReserves = useStore((state) => state.reserve_est.get(poolId));
+  const poolReserveEstimates = useStore((state) => state.pool_est.get(poolId)?.reserve_est);
 
   const headerNum = viewType == ViewType.REGULAR ? 6 : 3;
   const headerWidth = `${(100 / headerNum).toFixed(2)}%`;
@@ -84,8 +84,10 @@ export const MarketsList: React.FC<PoolComponentProps> = ({ poolId }) => {
           </>
         )}
       </Box>
-      {poolReserves ? (
-        poolReserves.map((reserve) => <MarketsListItem key={reserve.id} reserveData={reserve} />)
+      {poolReserveEstimates ? (
+        poolReserveEstimates.map((reserve) => (
+          <MarketsListItem key={reserve.id} reserveData={reserve} />
+        ))
       ) : (
         <></>
       )}

@@ -20,21 +20,17 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const { connected, walletAddress, submitTransaction } = useWallet();
 
   const backstopContract = useStore((state) => state.backstopContract);
-  const backstopPoolBalance = useStore((state) => state.poolBackstopBalance.get(poolId));
-  const backstopShares = useStore((state) => state.shares.get(poolId));
-  const backstopQ4W = useStore((state) => state.q4w.get(poolId));
-  const backstopTokenToBaseRaw = useStore((state) => state.backstopTokenPrice);
-
-  const backstopTokenToBase = Number(backstopTokenToBaseRaw) / 1e7;
-  const shareRate = backstopPoolBalance
-    ? Number(backstopPoolBalance.tokens) / Number(backstopPoolBalance.shares)
-    : 1;
-  const unqueuedBalance = (Number(backstopShares ?? 0) / 1e7) * shareRate;
-  const queuedBalance =
-    backstopQ4W?.reduce((total, q4w) => total + Number(q4w.amount) / 1e7, 0) ?? 0;
-  const availableToQueue = unqueuedBalance - queuedBalance;
-
+  const backstopUserEstimate = useStore((state) => state.backstop_user_est.get(poolId));
+  const backstopTokenPrice = Number(
+    useStore((state) => state.backstopData.backstopTokenPrice / BigInt(1e7))
+  );
+  const loadBackstopData = useStore((state) => state.loadBackstopData);
   const [toQueue, setToQueue] = useState<string | undefined>(undefined);
+
+  const queuedBalance =
+    backstopUserEstimate?.q4w?.reduce((total, q4w) => total + Number(q4w.amount) / 1e7, 0) ??
+    0 + (backstopUserEstimate?.q4wUnlockedAmount ?? 0);
+  const availableToQueue = backstopUserEstimate?.availableToQueue ?? 0;
 
   const handleQueueAmountChange = (queueInput: string) => {
     if (/^[0-9]*\.?[0-9]{0,7}$/.test(queueInput) && availableToQueue > 0) {
@@ -51,11 +47,19 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
     }
   };
 
-  const handleSubmitTransaction = () => {
+  const handleSubmitTransaction = async () => {
     // TODO: Revalidate?
     if (toQueue && connected) {
-      let queue_op = xdr.Operation.fromXDR(backstopContract.queue_withdrawal({from: walletAddress, pool_address: poolId, amount: scaleInputToBigInt(toQueue)}), "base64");
-      submitTransaction(queue_op);
+      let queue_op = xdr.Operation.fromXDR(
+        backstopContract.queue_withdrawal({
+          from: walletAddress,
+          pool_address: poolId,
+          amount: scaleInputToBigInt(toQueue),
+        }),
+        'base64'
+      );
+      await submitTransaction(queue_op);
+      await loadBackstopData(poolId, walletAddress, true);
     }
   };
 
@@ -105,7 +109,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toQueue ?? 0) * backstopTokenToBase)}`}
+              {`$${toBalance(Number(toQueue ?? 0) * backstopTokenPrice)}`}
             </Typography>
           </Box>
         </Box>

@@ -15,21 +15,15 @@ export interface BackstopBalanceCard extends PoolComponentProps {
 export const BackstopBalanceCard: React.FC<BackstopBalanceCard> = ({ type, poolId, sx }) => {
   const theme = useTheme();
 
-  const backstopPoolBalance = useStore((state) => state.poolBackstopBalance.get(poolId));
-  const backstopDeposit = useStore((state) => state.shares.get(poolId));
-  const backstopWalletBalance = useStore((state) => state.backstopTokenBalance);
-  const shareRate = backstopPoolBalance
-    ? Number(backstopPoolBalance.tokens) / Number(backstopPoolBalance.shares)
-    : 1;
-  const depositBalance = (Number(backstopDeposit ?? 0) / 1e7) * shareRate;
-  const walletBalance = Number(backstopWalletBalance) / 1e7;
+  const backstopUserEstimate = useStore((state) => state.backstop_user_est.get(poolId));
 
   const headerText = type == 'deposit' ? 'Backstop deposit balance' : 'Wallet balance';
   const linkText = type == 'deposit' ? 'Queue for withdrawal' : 'Deposit';
   const linkPathname = type == 'deposit' ? '/backstop-q4w' : '/backstop-deposit';
   const linkPalette = type == 'deposit' ? theme.palette.primary : theme.palette.backstop;
 
-  const balance = type == 'deposit' ? depositBalance : walletBalance;
+  const balance =
+    type == 'deposit' ? backstopUserEstimate?.depositBalance : backstopUserEstimate?.walletBalance;
 
   return (
     <Section
