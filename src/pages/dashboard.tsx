@@ -30,38 +30,30 @@ const Dashboard: NextPage = () => {
   const router = useRouter();
   const { poolId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
-  
+
   const theme = useTheme();
-  const refreshPoolReserveAll = useStore((state) => state.refreshPoolReserveAll);
-  const estimateToLatestLedger = useStore((state) => state.estimateToLatestLedger);
-  const refreshPoolBackstopData = useStore((state) => state.refreshPoolBackstopData);
-  const refreshPoolEmissionData = useStore((state) => state.refreshPoolEmissionData);
-  const refreshUserEmissionData = useStore((state) => state.refreshUserEmissionData);
+  const loadBackstopData = useStore((state) => state.loadBackstopData);
+  const loadPoolData = useStore((state) => state.loadPoolData);
   const pool_est = useStore((state) => state.pool_est.get(safePoolId));
 
   useEffect(() => {
     const updateDashboard = async () => {
       if (safePoolId != '') {
-        await refreshPoolReserveAll(safePoolId, connected ? walletAddress : undefined);
-        await refreshPoolEmissionData(safePoolId)
-        if (connected) {
-          await refreshPoolBackstopData(safePoolId, walletAddress);
-          await refreshUserEmissionData(safePoolId, walletAddress);
-        }
-        await estimateToLatestLedger(safePoolId, connected ? walletAddress : undefined);
+        await loadPoolData(safePoolId, connected ? walletAddress : undefined, false);
+        await loadBackstopData(safePoolId, connected ? walletAddress : undefined, false);
       }
     };
     if (isMounted.current) {
       setLastPool(safePoolId);
       updateDashboard();
-      const refreshInterval = setInterval(() => {
-        updateDashboard();
-      }, 60 * 1000);
+      const refreshInterval = setInterval(async () => {
+        await updateDashboard();
+      }, 30 * 1000);
       return () => clearInterval(refreshInterval);
     } else {
       isMounted.current = true;
     }
-  }, [safePoolId, connected]);
+  }, [safePoolId, connected, loadPoolData, walletAddress, loadBackstopData, setLastPool]);
 
   const handleLendClick = () => {
     if (!showLend) {

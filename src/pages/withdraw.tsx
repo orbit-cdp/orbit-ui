@@ -24,29 +24,32 @@ const Withdraw: NextPage = () => {
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
   const safeAssetId = typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId) ? assetId : '';
 
-  const refreshPoolReserveAll = useStore((state) => state.refreshPoolReserveAll);
-  const estimateToLatestLedger = useStore((state) => state.estimateToLatestLedger);
-  const reserve = useStore((state) => state.reserves.get(safePoolId)?.get(safeAssetId));
+  const loadPoolData = useStore((state) => state.loadPoolData);
+  const reserve = useStore((state) => state.poolData.get(safePoolId)?.reserves.get(safeAssetId));
   const reserve_est = useStore((state) =>
-    state.reserve_est.get(safePoolId)?.find((res) => res.id === safeAssetId)
+    state.pool_est.get(safePoolId)?.reserve_est?.find((res) => res.id === safeAssetId)
   );
-  const user_bal_est = useStore((state) => state.user_bal_est.get(safePoolId)?.get(safeAssetId));
-
-  // load ledger data if the page was loaded directly
-  useEffect(() => {
-    if (isMounted.current && safePoolId != '' && reserve == undefined) {
-      refreshPoolReserveAll(safePoolId, connected ? walletAddress : undefined);
-    }
-  }, [refreshPoolReserveAll, safePoolId, reserve]);
+  const user_bal_est = useStore((state) =>
+    state.pool_user_est.get(safePoolId)?.reserve_estimates.get(safeAssetId)
+  );
 
   // always re-estimate values to most recent ledger
   useEffect(() => {
-    if (isMounted.current && safePoolId != '' && reserve != undefined) {
-      estimateToLatestLedger(safePoolId, connected ? walletAddress : undefined);
+    const updatePool = async () => {
+      if (safePoolId != '') {
+        await loadPoolData(safePoolId, connected ? walletAddress : undefined, false);
+      }
+    };
+    if (isMounted.current) {
+      updatePool();
+      const refreshInterval = setInterval(async () => {
+        await updatePool();
+      }, 30 * 1000);
+      return () => clearInterval(refreshInterval);
     } else {
       isMounted.current = true;
     }
-  }, [estimateToLatestLedger, safePoolId, reserve]);
+  }, [loadPoolData, safePoolId, reserve, connected, walletAddress]);
 
   return (
     <>
