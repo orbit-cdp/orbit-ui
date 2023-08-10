@@ -33,16 +33,20 @@ export interface BackstopSlice {
   backstopData: BackstopData;
   backstopPoolData: Map<string, PoolBalance>;
   backstopUserData: Map<string, UserBalance>;
-  refreshBackstopData: () => Promise<void>;
-  refreshBackstopPoolData: (pool_id: string, user_id: string | undefined) => Promise<void>;
+  refreshBackstopData: (latest_ledger_close: number) => Promise<void>;
+  refreshBackstopPoolData: (
+    pool_id: string,
+    user_id: string | undefined,
+    latest_ledger_close: number
+  ) => Promise<void>;
 }
 
 export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice> = (set, get) => ({
   backstopContract: new Backstop.BackstopOpBuilder(
-    'CAZR5ARXKUI7YE7WVB2XVY54ZJQQ45WGGYMLOPNY6T5OOFKJ2O36JDQY'
+    'CAXKIXBKRC773EYUUONRVD3YCVSOE457OI5KFZZH7YCV4L7BSEBITQAC'
   ),
   backstopData: {
-    backstopToken: 'CBI3RNZACNPCMCKZI4O26WE4WELFGZOKU43F5W4GLIN3FRWB4EUTOPKR',
+    backstopToken: 'CDU4UHD5SF775WYJJ5RTVPK5JELIHPALXM6CEQ466LG6NWUX4QOHBENO',
     backstopTokenPrice: BigInt(0.05e7),
     rewardZone: [],
     lastUpdated: 0,
@@ -50,14 +54,11 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
   backstopPoolData: new Map<string, PoolBalance>(),
   backstopUserData: new Map<string, UserBalance>(),
 
-  refreshBackstopData: async () => {
+  refreshBackstopData: async (latest_ledger_close: number) => {
     try {
       const contract = get().backstopContract;
       const stellar = get().rpcServer();
-      let tx_response = await stellar.getTransaction(
-        '0000000000000000000000000000000000000000000000000000000000000000'
-      ); // TODO: File issue/pr to add getLatestLedger endpoint
-      let latest_ledger_close = tx_response.latestLedgerCloseTime;
+
       let rz_datakey = Backstop.BackstopDataKeyToXDR({ tag: 'RewardZone' });
       rz_datakey = xdr.ScVal.fromXDR(rz_datakey.toXDR());
       let rz_dataEntry = await stellar.getContractData(
@@ -80,16 +81,17 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
       console.error('unable to refresh backstop data:', e);
     }
   },
-  refreshBackstopPoolData: async (pool_id: string, user_id: string | undefined) => {
+  refreshBackstopPoolData: async (
+    pool_id: string,
+    user_id: string | undefined,
+    latest_ledger_close: number
+  ) => {
     try {
       const contract = get().backstopContract;
       const stellar = get().rpcServer();
       const network = get().passphrase;
       const backstopData = get().backstopData;
-      let tx_response = await stellar.getTransaction(
-        '0000000000000000000000000000000000000000000000000000000000000000'
-      ); // TODO: File issue/pr to add getLatestLedger endpoint
-      let latest_ledger_close = tx_response.latestLedgerCloseTime;
+
       let pool_backstop_balance = await loadPoolBackstopBalance(stellar, contract, pool_id);
       pool_backstop_balance.lastUpdated = latest_ledger_close;
       if (user_id) {

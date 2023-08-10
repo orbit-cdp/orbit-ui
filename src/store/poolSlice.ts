@@ -1,4 +1,4 @@
-import { data_entry_converter, Pool } from 'blend-sdk';
+import { Oracle, Pool, data_entry_converter } from 'blend-sdk';
 import { Address, Server, xdr } from 'soroban-client';
 import { Durability } from 'soroban-client/lib/server';
 import { StateCreator } from 'zustand';
@@ -53,8 +53,8 @@ export interface PoolSlice {
   poolData: Map<string, PoolData>;
   poolUserData: Map<string, PoolUserData>;
 
-  refreshPoolData: (pool_id: string, user?: string | undefined) => Promise<void>;
-  refreshUserData: (pool_id: string, user: string) => Promise<void>;
+  refreshPoolData: (pool_id: string, latest_ledger_close: number) => Promise<void>;
+  refreshUserData: (pool_id: string, user: string, latest_ledger_close: number) => Promise<void>;
 }
 
 export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set, get) => ({
@@ -62,14 +62,10 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
   poolData: new Map<string, PoolData>(),
   poolUserData: new Map<string, PoolUserData>(),
 
-  refreshPoolData: async (pool_id: string) => {
+  refreshPoolData: async (pool_id: string, latest_ledger_close: number) => {
     try {
       const stellar = get().rpcServer();
       const network = get().passphrase;
-      let tx_response = await stellar.getTransaction(
-        '0000000000000000000000000000000000000000000000000000000000000000'
-      ); // TODO: File issue/pr to add getLatestLedger endpoint
-      let latest_ledger_close = tx_response.latestLedgerCloseTime;
       let pool = get().pools.get(pool_id);
 
       let set_pool = false;
@@ -110,16 +106,13 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
     }
   },
 
-  refreshUserData: async (pool_id: string, user: string) => {
+  refreshUserData: async (pool_id: string, user: string, latest_ledger_close: number) => {
     try {
       const stellar = get().rpcServer();
       const network = get().passphrase;
       const reserve_map = get().poolData.get(pool_id)?.reserves;
       const reserveEmissionData = get().poolData.get(pool_id)?.reserveEmissions;
-      let tx_response = await stellar.getTransaction(
-        '0000000000000000000000000000000000000000000000000000000000000000'
-      ); // TODO: File issue/pr to add getLatestLedger endpoint
-      let latest_ledger_close = tx_response.latestLedgerCloseTime;
+
       if (!reserve_map || !reserveEmissionData) {
         throw Error('unknown pool');
       }
@@ -334,8 +327,9 @@ async function loadOraclePrices(stellar: Server, pool: Pool): Promise<Map<string
         price_datakey,
         Durability.Temporary
       );
-      let price = data_entry_converter.toNumber(price_entry.xdr);
-      price = price / 10 ** decimals;
+      let priceData = Oracle.PriceDataFromXDR(price_entry.xdr);
+
+      let price = Number(priceData.price) / 10 ** decimals;
       price_map.set(asset_id, price);
     } catch (e: any) {
       console.error(`unable to fetch a price for ${asset_id}:`, e);

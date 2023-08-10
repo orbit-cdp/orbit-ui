@@ -105,7 +105,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
         !pool ||
         force_reload
       ) {
-        await get().refreshPoolData(pool_id, undefined);
+        await get().refreshPoolData(pool_id, latest_ledger_close);
         poolData = get().poolData.get(pool_id);
         pool = get().pools.get(pool_id);
       }
@@ -137,7 +137,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
           Number(userData.lastUpdated) + Number(60) < latest_ledger_close ||
           force_reload
         ) {
-          await get().refreshUserData(pool_id, user_id);
+          await get().refreshUserData(pool_id, user_id, latest_ledger_close);
           userData = get().poolUserData.get(pool_id);
         }
         if (!userData) {
@@ -185,7 +185,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
         Number(backstopPoolBalance.lastUpdated) + Number(60) < latest_ledger_close ||
         force_reload
       ) {
-        await get().refreshBackstopPoolData(pool_id, undefined);
+        await get().refreshBackstopPoolData(pool_id, undefined, latest_ledger_close);
         backstopPoolBalance = get().backstopPoolData.get(pool_id);
       }
       if (
@@ -193,7 +193,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
         Number(backstopData.lastUpdated) + Number(60) < latest_ledger_close ||
         force_reload
       ) {
-        await get().refreshBackstopData();
+        await get().refreshBackstopData(latest_ledger_close);
         backstopData = get().backstopData;
       }
       if (backstopPoolBalance && poolEst) {
@@ -209,7 +209,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
             !backstopUserData ||
             Number(backstopUserData.lastUpdated) + Number(60) < latest_ledger_close
           ) {
-            await get().refreshBackstopPoolData(pool_id, user_id);
+            await get().refreshBackstopPoolData(pool_id, user_id, latest_ledger_close);
             backstopUserData = get().backstopUserData.get(pool_id);
           }
           if (!backstopUserData) {
@@ -335,19 +335,26 @@ function estimatePoolUserEmissionBalance(
 
     if (liability_emission && user_liability_emission) {
       userEmissionBal +=
-        liability_bal * (liability_emission.reserveIndex - user_liability_emission.userIndex) +
-        (liability_bal *
-          liability_emission.eps *
-          (BigInt(latestLedgerClose) - liability_emission.lastTime)) /
+        liability_bal * (liability_emission.reserveIndex - user_liability_emission.userIndex);
+      if (res.data.d_supply > 0) {
+        userEmissionBal +=
+          (liability_bal *
+            liability_emission.eps *
+            (BigInt(latestLedgerClose) - liability_emission.lastTime)) /
           res.data.d_supply;
+      }
     }
     if (supply_emission && user_supply_emission) {
       userEmissionBal +=
-        supply_bal * (supply_emission.reserveIndex - user_supply_emission.userIndex) +
-        (supply_bal *
-          supply_emission.eps *
-          (BigInt(latestLedgerClose) - supply_emission.lastTime)) /
+        supply_bal * (supply_emission.reserveIndex - user_supply_emission.userIndex);
+
+      if (res.data.b_supply > 0) {
+        userEmissionBal +=
+          (supply_bal *
+            supply_emission.eps *
+            (BigInt(latestLedgerClose) - supply_emission.lastTime)) /
           res.data.b_supply;
+      }
     }
   }
   return userEmissionBal;
