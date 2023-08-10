@@ -48,7 +48,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
       let withdraw_base = num_withdraw * assetToBase * (Number(reserve?.config.c_factor) / 1e7);
       let tempEffectiveCollateral = user_est.e_collateral_base - withdraw_base;
       if (
-        tempEffectiveCollateral > user_est.e_liabilities_base * 1.02 &&
+        tempEffectiveCollateral >= user_est.e_liabilities_base * 1.02 &&
         num_withdraw <= user_bal_est.supplied
       ) {
         setToWithdraw(withdrawInput);
@@ -58,10 +58,11 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   };
 
   const handleWithdrawMax = () => {
-    if (user_est) {
+    if (user_est && user_bal_est) {
       let to_bounded_hf = user_est.e_collateral_base - user_est.e_liabilities_base * 1.021;
       let to_wd = to_bounded_hf / (assetToBase * (Number(reserve?.config.c_factor) / 1e7));
-      handleWithdrawAmountChange(to_wd.toFixed(7));
+      let withdrawAmount = Math.min(to_wd, user_bal_est.supplied);
+      handleWithdrawAmountChange(withdrawAmount.toFixed(7));
     }
   };
 
@@ -78,7 +79,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
             {
               amount: scaleInputToBigInt(toWithdraw),
               request_type: 3,
-              reserve_index: reserve.config.index,
+              address: reserve.asset_id,
             },
           ],
         }),

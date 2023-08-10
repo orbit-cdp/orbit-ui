@@ -86,7 +86,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           requests: [
             {
               amount: scaleInputToBigInt(toBorrow),
-              reserve_index: reserve.config.index,
+              address: reserve.asset_id,
               request_type: 4,
             },
           ],

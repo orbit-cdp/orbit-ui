@@ -31,6 +31,8 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
     state.pool_est.get(poolId)?.reserve_est?.find((res) => res.id === assetId)
   );
   const [toRepay, setToRepay] = useState<string | undefined>(undefined);
+  const [toMaxRepay, setToMaxRepay] = useState<string | undefined>(undefined);
+
   const [newEffectiveLiabilities, setNewEffectiveLiabilities] = useState<number>(
     user_est?.e_liabilities_base ?? 0
   );
@@ -60,8 +62,12 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
 
   const handleRepayMax = () => {
     if (user_bal_est) {
-      let maxRepay = Math.min(user_bal_est.asset, user_bal_est.borrowed);
-      handleRepayAmountChange(maxRepay.toFixed(7));
+      let maxRepay =
+        user_bal_est.asset < user_bal_est.borrowed
+          ? user_bal_est.asset
+          : user_bal_est.borrowed + Number(1);
+      setToMaxRepay(maxRepay.toFixed(7));
+      handleRepayAmountChange(Math.min(user_bal_est.borrowed, user_bal_est.asset).toFixed(7));
     }
   };
 
@@ -69,6 +75,8 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
     // TODO: Revalidate?
     if (toRepay && connected && reserve) {
       let pool = new Pool.PoolOpBuilder(poolId);
+      let amount =
+        toMaxRepay && toRepay == user_bal_est?.borrowed.toFixed(7) ? toMaxRepay : toRepay;
       let repay_op = xdr.Operation.fromXDR(
         pool.submit({
           from: walletAddress,
@@ -76,9 +84,9 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
           to: walletAddress,
           requests: [
             {
-              amount: scaleInputToBigInt(toRepay),
+              amount: scaleInputToBigInt(amount),
               request_type: 5,
-              reserve_index: reserve.config.index,
+              address: reserve.asset_id,
             },
           ],
         }),

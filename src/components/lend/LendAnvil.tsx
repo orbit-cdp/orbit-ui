@@ -73,7 +73,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
             {
               amount: scaleInputToBigInt(toLend),
               request_type: 2,
-              reserve_index: reserve.config.index,
+              address: reserve.asset_id,
             },
           ],
         }),
