@@ -12,7 +12,7 @@ export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
   const router = useRouter();
   const pathname = router.pathname;
 
-  const rewardZone = useStore((state) => state.rewardZone);
+  const rewardZone = useStore((state) => state.backstopData.rewardZone);
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);

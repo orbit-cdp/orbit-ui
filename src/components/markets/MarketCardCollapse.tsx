@@ -14,19 +14,7 @@ export const MarketCardCollapse: React.FC<PoolComponentProps> = ({ poolId, sx, .
   const theme = useTheme();
 
   const pool = useStore((state) => state.pools.get(poolId));
-  const poolEst = useStore((state) => state.pool_est.get(poolId));
-  const backstopTokenToBase = useStore((state) => state.backstopTokenPrice);
-  const backstopPoolBalance = useStore((state) => state.poolBackstopBalance.get(poolId));
-
-  const tokenToBase = Number(backstopTokenToBase) / 1e7;
-  const estBackstopSize = backstopPoolBalance
-    ? (Number(backstopPoolBalance.tokens) / 1e7) * tokenToBase
-    : undefined;
-  const estBackstopApy =
-    poolEst && estBackstopSize ? poolEst.total_backstop_take_base / estBackstopSize : undefined;
-  const poolQ4W = backstopPoolBalance
-    ? Number(backstopPoolBalance.q4w) / Number(backstopPoolBalance.shares)
-    : undefined;
+  const backstopPoolEstimate = useStore((state) => state.backstop_pool_est.get(poolId));
 
   return (
     <Box
@@ -115,12 +103,12 @@ export const MarketCardCollapse: React.FC<PoolComponentProps> = ({ poolId, sx, .
               <Row>
                 <StackedTextBox
                   name="Backstop APY"
-                  text={toPercentage(estBackstopApy)}
+                  text={toPercentage(backstopPoolEstimate?.backstopApy)}
                   sx={{ width: '50%' }}
                 />
                 <StackedTextBox
                   name="Q4W"
-                  text={toPercentage(poolQ4W)}
+                  text={toPercentage(backstopPoolEstimate?.q4wRate)}
                   sx={{ width: '50%', color: theme.palette.backstop.main }}
                 />
               </Row>

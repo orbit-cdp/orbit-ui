@@ -1,5 +1,5 @@
 import { Box, BoxProps, Typography, useTheme } from '@mui/material';
-import { useSettings, ViewType } from '../../contexts';
+import { ViewType, useSettings } from '../../contexts';
 import { ReserveEstimates } from '../../store/estimationSlice';
 import * as formatter from '../../utils/formatter';
 import { TokenHeader } from '../common/TokenHeader';

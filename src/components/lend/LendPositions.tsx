@@ -9,9 +9,8 @@ import { LendPositionList } from './LendPositionList';
 
 export const LendPositions: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
-  const user_est = useStore((state) => state.user_est.get(poolId));
-
-  const hasPositions = user_est ? user_est.total_supplied_base != 0 : false;
+  const poolUserEstimates = useStore((state) => state.pool_user_est.get(poolId));
+  const hasPositions = poolUserEstimates ? poolUserEstimates.total_supplied_base != 0 : false;
 
   if (!hasPositions) {
     return <></>;
@@ -28,7 +27,7 @@ export const LendPositions: React.FC<PoolComponentProps> = ({ poolId }) => {
             <StackedText
               title="Balance"
               titleColor={theme.palette.text.primary}
-              text={`$${toBalance(user_est?.total_supplied_base ?? 0)}`}
+              text={`$${toBalance(poolUserEstimates?.total_supplied_base ?? 0)}`}
               textColor={theme.palette.lend.main}
               sx={{ width: '100%', padding: '6px' }}
             ></StackedText>
@@ -37,7 +36,7 @@ export const LendPositions: React.FC<PoolComponentProps> = ({ poolId }) => {
             <StackedText
               title="APY"
               titleColor={theme.palette.text.primary}
-              text={toPercentage(user_est?.supply_apy ?? 0)}
+              text={toPercentage(poolUserEstimates?.supply_apy ?? 0)}
               textColor={theme.palette.lend.main}
               sx={{ width: '100%', padding: '6px' }}
             ></StackedText>

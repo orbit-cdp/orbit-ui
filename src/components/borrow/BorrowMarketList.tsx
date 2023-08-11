@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import { useSettings, ViewType } from '../../contexts';
+import { ViewType, useSettings } from '../../contexts';
 import { useStore } from '../../store/store';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { BorrowMarketCard } from './BorrowMarketCard';
@@ -7,7 +7,7 @@ import { BorrowMarketCard } from './BorrowMarketCard';
 export const BorrowMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
 
-  const poolReserves = useStore((state) => state.reserve_est.get(poolId));
+  const poolReserves = useStore((state) => state.pool_est.get(poolId)?.reserve_est);
 
   const headerNum = viewType === ViewType.REGULAR ? 5 : 4;
   const headerWidth = `${(100 / headerNum).toFixed(2)}%`;

@@ -1,14 +1,15 @@
 import { Box, Typography } from '@mui/material';
-import { useSettings, ViewType } from '../../contexts';
+import { ViewType, useSettings } from '../../contexts';
 import { useStore } from '../../store/store';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { LendPositionCard } from './LendPositionCard';
 
 export const LendPositionList: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
-  const poolReserves = useStore((state) => state.reserve_est.get(poolId));
-  const userReserves = useStore((state) => state.user_bal_est.get(poolId));
-
+  const poolReserveEstimates = useStore((state) => state.pool_est.get(poolId)?.reserve_est);
+  const userReserveEstimates = useStore(
+    (state) => state.pool_user_est.get(poolId)?.reserve_estimates
+  );
   const headerNum = viewType === ViewType.REGULAR ? 5 : 4;
   const headerWidth = `${(100 / headerNum).toFixed(2)}%`;
   return (
@@ -53,9 +54,9 @@ export const LendPositionList: React.FC<PoolComponentProps> = ({ poolId }) => {
         <Box sx={{ width: headerWidth }} />
         {headerNum >= 5 && <Box sx={{ width: headerWidth }} />}
       </Box>
-      {poolReserves ? (
-        poolReserves.flatMap((reserve) => {
-          let user_bal = userReserves?.get(reserve.id);
+      {poolReserveEstimates ? (
+        poolReserveEstimates.flatMap((reserve) => {
+          let user_bal = userReserveEstimates?.get(reserve.id);
           if (user_bal && user_bal.supplied !== 0) {
             return [
               <LendPositionCard

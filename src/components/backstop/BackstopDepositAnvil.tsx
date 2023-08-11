@@ -20,40 +20,38 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
   const { connected, walletAddress, submitTransaction } = useWallet();
 
   const backstopContract = useStore((state) => state.backstopContract);
-  const backstopPoolBalance = useStore((state) => state.poolBackstopBalance.get(poolId));
-  const backstopDeposit = useStore((state) => state.shares.get(poolId));
-  const backstopWalletBalance = useStore((state) => state.backstopTokenBalance);
-  const backstopTokenToBaseRaw = useStore((state) => state.backstopTokenPrice);
-  const backstopTokenToBase = Number(backstopTokenToBaseRaw) / 1e7;
-  const shareRate = backstopPoolBalance
-    ? Number(backstopPoolBalance.tokens) / Number(backstopPoolBalance.shares)
-    : 1;
-  const depositBalance = (Number(backstopDeposit ?? 0) / 1e7) * shareRate;
-
+  const backstopUserEstimate = useStore((state) => state.backstop_user_est.get(poolId));
+  const backstopData = useStore((state) => state.backstopData);
+  const loadBackstopData = useStore((state) => state.loadBackstopData);
   const [toDeposit, setToDeposit] = useState<string | undefined>(undefined);
 
   const handleDepositAmountChange = (depositInput: string) => {
-    if (/^[0-9]*\.?[0-9]{0,7}$/.test(depositInput) && backstopDeposit != undefined) {
-      let num_deposit = Number(depositInput);
-      let num_wallet_balance = Number(backstopWalletBalance) / 1e7;
-      if (num_deposit <= num_wallet_balance) {
+    if (/^[0-9]*\.?[0-9]{0,7}$/.test(depositInput) && backstopUserEstimate != undefined) {
+      if (Number(depositInput) <= backstopUserEstimate.walletBalance) {
         setToDeposit(depositInput);
       }
     }
   };
 
   const handleDepositMax = () => {
-    if (backstopDeposit) {
-      let walletBalance = Number(backstopWalletBalance) / 1e7;
-      setToDeposit(walletBalance.toFixed(7));
+    if (backstopUserEstimate?.depositBalance) {
+      setToDeposit(backstopUserEstimate.depositBalance.toFixed(7));
     }
   };
 
-  const handleSubmitTransaction = () => {
+  const handleSubmitTransaction = async () => {
     // TODO: Revalidate?
     if (toDeposit && connected) {
-      let deposit_op = xdr.Operation.fromXDR(backstopContract.deposit({from: walletAddress, pool_address: poolId, amount: scaleInputToBigInt(toDeposit)}), "base64");
-      submitTransaction(deposit_op);
+      let deposit_op = xdr.Operation.fromXDR(
+        backstopContract.deposit({
+          from: walletAddress,
+          pool_address: poolId,
+          amount: scaleInputToBigInt(toDeposit),
+        }),
+        'base64'
+      );
+      await submitTransaction(deposit_op);
+      await loadBackstopData(poolId, walletAddress, true);
     }
   };
 
@@ -103,7 +101,9 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toDeposit ?? 0) * backstopTokenToBase)}`}
+              {`$${toBalance(
+                (Number(toDeposit ?? 0) * Number(backstopData.backstopTokenPrice)) / 1e7
+              )}`}
             </Typography>
           </Box>
         </Box>
@@ -146,8 +146,10 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
           <Value title="Amount to deposit" value={`${toDeposit ?? '0'} BLND-USDC LP`} />
           <ValueChange
             title="Your total deposit"
-            curValue={`${toBalance(depositBalance)} BLND-USDC LP`}
-            newValue={`${toBalance(depositBalance + Number(toDeposit ?? '0'))} BLND-USDC LP`}
+            curValue={`${toBalance(backstopUserEstimate?.depositBalance)} BLND-USDC LP`}
+            newValue={`${toBalance(
+              backstopUserEstimate?.depositBalance ?? 0 + Number(toDeposit ?? '0')
+            )} BLND-USDC LP`}
           />
         </Box>
       </Section>

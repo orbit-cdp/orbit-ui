@@ -23,7 +23,7 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
   poolId,
 }) => {
   const { walletAddress } = useWallet();
-  const refreshBackstopData = useStore((state) => state.refreshPoolBackstopData);
+  const loadBackstopData = useStore((state) => state.loadBackstopData);
 
   const NOW_SECONDS = Math.floor(Date.now() / 1000);
   const THIRTY_DAYS_SECONDS = 30 * 24 * 60 * 60;
@@ -40,9 +40,9 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
       return () => clearInterval(refreshInterval);
     } else if (timeLeft == 0) {
       // timeExpired - force an update
-      refreshBackstopData(poolId, walletAddress);
+      loadBackstopData(poolId, walletAddress);
     }
-  }, [q4w, timeLeft, NOW_SECONDS, refreshBackstopData, walletAddress, poolId]);
+  }, [q4w, timeLeft, NOW_SECONDS, loadBackstopData, walletAddress, poolId]);
 
   return (
     <Row key={q4w.exp}>

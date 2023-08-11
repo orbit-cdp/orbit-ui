@@ -1,6 +1,5 @@
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, Typography, useTheme } from '@mui/material';
-import { Backstop } from 'blend-sdk';
 import { Address, Contract, xdr } from 'soroban-client';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
@@ -18,47 +17,40 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { connected, walletAddress, submitTransaction } = useWallet();
 
   const backstopContract = useStore((state) => state.backstopContract);
-  const backstopPoolBalance = useStore((state) => state.poolBackstopBalance.get(poolId));
-  const backstopShares = useStore((state) => state.shares.get(poolId));
-  const backstopQ4W = useStore((state) => state.q4w.get(poolId)) ?? [];
-  const shareRate = backstopPoolBalance
-    ? Number(backstopPoolBalance.tokens) / Number(backstopPoolBalance.shares)
-    : 1;
+  const backstopUserEstimate = useStore((state) => state.backstop_user_est.get(poolId));
+  const backstopPoolEstimate = useStore((state) => state.backstop_pool_est.get(poolId));
+  const loadBackstopData = useStore((state) => state.loadBackstopData);
 
-  const NOW_SECONDS = Math.floor(Date.now() / 1000);
-
-  let unlockedAmount = BigInt(0);
-  let lockedList: Backstop.Q4W[] = [];
-  for (const q4w of backstopQ4W) {
-    if (q4w.exp < NOW_SECONDS) {
-      // unlocked, only display a single unlocked entry
-      unlockedAmount += q4w.amount;
-    } else {
-      lockedList.push(q4w);
-    }
-  }
-
-  if (unlockedAmount == BigInt(0) && lockedList.length == 0) {
+  if (backstopUserEstimate?.q4wUnlockedAmount == 0 && backstopUserEstimate.q4w.length == 0) {
     return <></>;
   }
 
-  const handleClickUnqueue = (amount: bigint) => {
+  const handleClickUnqueue = async (amount: bigint) => {
     if (connected) {
-      let dequeue_op = xdr.Operation.fromXDR(backstopContract.dequeue_withdrawal({from: walletAddress, pool_address: poolId, amount: BigInt(amount)}), "base64");
-      submitTransaction(dequeue_op);
+      let dequeue_op = xdr.Operation.fromXDR(
+        backstopContract.dequeue_withdrawal({
+          from: walletAddress,
+          pool_address: poolId,
+          amount: BigInt(amount),
+        }),
+        'base64'
+      );
+      await submitTransaction(dequeue_op);
+      await loadBackstopData(poolId, walletAddress, true);
     }
   };
 
-  const handleClickWithdrawal = (amount: bigint) => {
+  const handleClickWithdrawal = async (amount: bigint) => {
     if (connected) {
       let user_scval = new Address(walletAddress).toScVal();
-      let withdraw_op = new Contract(backstopContract._contract.contractId("hex")).call(
+      let withdraw_op = new Contract(backstopContract._contract.contractId('strkey')).call(
         'withdraw',
         user_scval,
         Address.fromString(poolId).toScVal(),
         fromBigIntToScVal(amount)
       );
-      submitTransaction(withdraw_op);
+      await submitTransaction(withdraw_op);
+      await loadBackstopData(poolId, walletAddress, true);
     }
   };
 
@@ -79,7 +71,7 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
             <Typography sx={{ padding: '6px' }}>Queued for withdrawal (Q4W)</Typography>
           </Box>
         </Row>
-        {unlockedAmount != BigInt(0) && (
+        {backstopUserEstimate?.q4wUnlockedAmount != 0 && (
           <Row>
             <Box sx={{ margin: '6px', padding: '6px', display: 'flex', alignItems: 'center' }}>
               <CheckCircleOutlineIcon
@@ -88,7 +80,7 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
               <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
               <Box sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
                 <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                  {toBalance((Number(unlockedAmount) / 1e7) * shareRate)}
+                  {toBalance(backstopUserEstimate?.q4wUnlockedAmount)}
                 </Typography>
                 <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
                   BLND-USDC LP
@@ -96,7 +88,14 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
               </Box>
             </Box>
             <OpaqueButton
-              onClick={() => handleClickWithdrawal(unlockedAmount)}
+              onClick={() =>
+                handleClickWithdrawal(
+                  BigInt(
+                    ((backstopUserEstimate?.q4wUnlockedAmount ?? 0) * 1e7) /
+                      (backstopPoolEstimate?.shareRate ?? 1)
+                  )
+                )
+              }
               palette={theme.palette.primary}
               sx={{ height: '35px', width: '108px', margin: '12px', padding: '6px' }}
             >
@@ -104,14 +103,14 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
             </OpaqueButton>
           </Row>
         )}
-        {lockedList
+        {backstopUserEstimate?.q4w
           .sort((a, b) => Number(b.amount) - Number(a.amount))
           .map((q4w) => (
             <BackstopQueueItem
               key={q4w.exp}
               poolId={poolId}
               q4w={q4w}
-              amount={(Number(q4w.amount) / 1e7) * shareRate}
+              amount={(Number(q4w.amount) / 1e7) * (backstopPoolEstimate?.shareRate ?? 1)}
               handleClickUnqueue={handleClickUnqueue}
             />
           ))}
