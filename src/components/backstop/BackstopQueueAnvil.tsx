@@ -54,7 +54,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
         backstopContract.queue_withdrawal({
           from: walletAddress,
           pool_address: poolId,
-          amount: scaleInputToBigInt(toQueue),
+          amount: scaleInputToBigInt(toQueue, 7),
         }),
         'base64'
       );

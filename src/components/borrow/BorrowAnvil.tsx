@@ -67,9 +67,19 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   };
 
   const handleBorrowMax = () => {
-    if (oldBorrowCapAsset && user_est && reserveEstimate) {
+    if (oldBorrowCapAsset && user_est && reserveEstimate && reserve) {
       let to_bounded_hf = user_est.e_collateral_base - user_est.e_liabilities_base * 1.021;
-      let to_borrow = to_bounded_hf / ((1.02 * assetToBase * 1) / reserveEstimate.l_factor);
+      let to_borrow = Math.min(
+        to_bounded_hf / ((1.02 * assetToBase * 1) / reserveEstimate.l_factor),
+        reserveEstimate.supplied * (reserve.config.max_util / 1e7) - reserveEstimate.borrowed
+      );
+      console.log(reserveEstimate.supplied * (reserve.config.max_util / 1e7));
+      console.log(
+        reserveEstimate.supplied,
+        reserveEstimate.borrowed,
+        reserve.config.max_util,
+        reserve.config.util
+      );
       handleBorrowAmountChange(to_borrow.toFixed(7));
     }
   };
@@ -85,7 +95,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           spender: walletAddress,
           requests: [
             {
-              amount: scaleInputToBigInt(toBorrow),
+              amount: scaleInputToBigInt(toBorrow, reserve.config.decimals),
               address: reserve.asset_id,
               request_type: 4,
             },

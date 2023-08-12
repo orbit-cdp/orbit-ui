@@ -43,14 +43,16 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   const borrowLimit = user_est ? user_est.e_liabilities_base / newEffectiveCollateral : undefined;
 
   const handleWithdrawAmountChange = (withdrawInput: string) => {
-    if (/^[0-9]*\.?[0-9]{0,7}$/.test(withdrawInput) && user_est && user_bal_est) {
+    if (/^[0-9]*\.?[0-9]{0,10}$/.test(withdrawInput) && user_est && user_bal_est) {
       let num_withdraw = Number(withdrawInput);
       let withdraw_base = num_withdraw * assetToBase * (Number(reserve?.config.c_factor) / 1e7);
       let tempEffectiveCollateral = user_est.e_collateral_base - withdraw_base;
       if (
-        tempEffectiveCollateral >= user_est.e_liabilities_base * 1.02 &&
-        num_withdraw <= user_bal_est.supplied
+        tempEffectiveCollateral >=
+        user_est.e_liabilities_base * 1.02
+        // num_withdraw <= user_bal_est.supplied
       ) {
+        console.log(withdrawInput);
         setToWithdraw(withdrawInput);
         setNewEffectiveCollateral(tempEffectiveCollateral);
       }
@@ -61,7 +63,8 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
     if (user_est && user_bal_est) {
       let to_bounded_hf = user_est.e_collateral_base - user_est.e_liabilities_base * 1.021;
       let to_wd = to_bounded_hf / (assetToBase * (Number(reserve?.config.c_factor) / 1e7));
-      let withdrawAmount = Math.min(to_wd, user_bal_est.supplied);
+      let withdrawAmount = Math.min(to_wd, user_bal_est.supplied) + 1;
+      console.log(withdrawAmount);
       handleWithdrawAmountChange(withdrawAmount.toFixed(7));
     }
   };
@@ -77,7 +80,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
           to: walletAddress,
           requests: [
             {
-              amount: scaleInputToBigInt(toWithdraw),
+              amount: scaleInputToBigInt(toWithdraw, reserve.config.decimals),
               request_type: 3,
               address: reserve.asset_id,
             },

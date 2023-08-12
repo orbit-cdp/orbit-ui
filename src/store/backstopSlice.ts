@@ -43,10 +43,10 @@ export interface BackstopSlice {
 
 export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice> = (set, get) => ({
   backstopContract: new Backstop.BackstopOpBuilder(
-    'CAXKIXBKRC773EYUUONRVD3YCVSOE457OI5KFZZH7YCV4L7BSEBITQAC'
+    'CBDFDMT6GALZ4HTN3WVAML2R2WEGI7QMMYLDRE4YI2JK3WQ54VETKO5E'
   ),
   backstopData: {
-    backstopToken: 'CDU4UHD5SF775WYJJ5RTVPK5JELIHPALXM6CEQ466LG6NWUX4QOHBENO',
+    backstopToken: 'CDDN4QLWFQ7JVSHRGSGBTTIXKZGVOZFGNCGWDWZRZAMKRUKMBP3GISZE',
     backstopTokenPrice: BigInt(0.05e7),
     rewardZone: [],
     lastUpdated: 0,

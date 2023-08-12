@@ -46,7 +46,7 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
         backstopContract.deposit({
           from: walletAddress,
           pool_address: poolId,
-          amount: scaleInputToBigInt(toDeposit),
+          amount: scaleInputToBigInt(toDeposit, 7),
         }),
         'base64'
       );
