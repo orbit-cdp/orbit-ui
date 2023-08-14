@@ -70,7 +70,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
 
   const handleBorrowMax = () => {
     if (oldBorrowCapAsset && user_est && reserveEstimate && reserve) {
-      let to_bounded_hf = user_est.e_collateral_base - user_est.e_liabilities_base * 1.025;
+      let to_bounded_hf = (user_est.e_collateral_base - user_est.e_liabilities_base) / 1.025;
       let to_borrow = Math.min(
         to_bounded_hf / (assetToBase / reserveEstimate.l_factor),
         reserveEstimate.supplied * (reserve.config.max_util / 1e7) - reserveEstimate.borrowed

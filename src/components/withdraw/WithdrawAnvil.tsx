@@ -58,7 +58,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
 
   const handleWithdrawMax = () => {
     if (user_est && user_bal_est) {
-      let to_bounded_hf = user_est.e_collateral_base - user_est.e_liabilities_base * 1.025;
+      let to_bounded_hf = (user_est.e_collateral_base - user_est.e_liabilities_base) / 1.025;
       let to_wd = to_bounded_hf / (assetToBase * (Number(reserve?.config.c_factor) / 1e7));
       let withdrawAmount = Math.min(to_wd, user_bal_est.supplied) + 1 / 10 ** decimals;
       handleWithdrawAmountChange(withdrawAmount.toFixed(decimals));
