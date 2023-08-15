@@ -15,8 +15,9 @@ export default function MyApp(props: AppProps) {
   const { Component, pageProps } = props;
 
   const { refreshBackstopData } = useStore();
+
   useEffect(() => {
-    refreshBackstopData();
+    refreshBackstopData(0);
   }, [refreshBackstopData]);
 
   return (

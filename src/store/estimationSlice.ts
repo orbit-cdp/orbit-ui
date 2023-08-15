@@ -13,6 +13,7 @@ export type PoolEstimates = {
 
 export type ReserveEstimates = {
   id: string;
+  decimals: number;
   supplied: number;
   borrowed: number;
   available: number;
@@ -181,14 +182,6 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
       let backstopPoolBalance = get().backstopPoolData.get(pool_id);
 
       if (
-        !backstopPoolBalance ||
-        Number(backstopPoolBalance.lastUpdated) + Number(60) < latest_ledger_close ||
-        force_reload
-      ) {
-        await get().refreshBackstopPoolData(pool_id, undefined, latest_ledger_close);
-        backstopPoolBalance = get().backstopPoolData.get(pool_id);
-      }
-      if (
         !backstopData ||
         Number(backstopData.lastUpdated) + Number(60) < latest_ledger_close ||
         force_reload
@@ -196,6 +189,16 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
         await get().refreshBackstopData(latest_ledger_close);
         backstopData = get().backstopData;
       }
+
+      if (
+        !backstopPoolBalance ||
+        Number(backstopPoolBalance.lastUpdated) + Number(60) < latest_ledger_close ||
+        force_reload
+      ) {
+        await get().refreshBackstopPoolData(pool_id, undefined, latest_ledger_close);
+        backstopPoolBalance = get().backstopPoolData.get(pool_id);
+      }
+
       if (backstopPoolBalance && poolEst) {
         const tokenToBase = Number(backstopData.backstopTokenPrice) / 1e7;
         const estBackstopSize = (Number(backstopPoolBalance.tokens) / 1e7) * tokenToBase;
@@ -253,6 +256,7 @@ function buildReserveEstimate(
   let est_res_data = reserve.estimateData(decimal_bstop_rate, lastUpdated);
   return {
     id: reserve.asset_id,
+    decimals: reserve.config.decimals,
     supplied: est_res_data.total_supply * est_res_data.b_rate,
     borrowed: est_res_data.total_liabilities * est_res_data.d_rate,
     available: Number(reserve.pool_tokens) / 10 ** reserve.config.decimals,

@@ -43,10 +43,10 @@ export interface BackstopSlice {
 
 export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice> = (set, get) => ({
   backstopContract: new Backstop.BackstopOpBuilder(
-    'CBDFDMT6GALZ4HTN3WVAML2R2WEGI7QMMYLDRE4YI2JK3WQ54VETKO5E'
+    'CA4H6BQI3PRFLZTMLDZNWO2TC2N7QQA34JGH52VNCORWMF2RLW6GDVJR'
   ),
   backstopData: {
-    backstopToken: 'CDDN4QLWFQ7JVSHRGSGBTTIXKZGVOZFGNCGWDWZRZAMKRUKMBP3GISZE',
+    backstopToken: 'CANAYUWHRELN7KIDB6O35ZLFJBX6PJHJKZBUCXRZMZTYI2SBQFGAQSGK',
     backstopTokenPrice: BigInt(0.05e7),
     rewardZone: [],
     lastUpdated: 0,
@@ -61,10 +61,7 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
 
       let rz_datakey = Backstop.BackstopDataKeyToXDR({ tag: 'RewardZone' });
       rz_datakey = xdr.ScVal.fromXDR(rz_datakey.toXDR());
-      let rz_dataEntry = await stellar.getContractData(
-        contract._contract.contractId('strkey'),
-        rz_datakey
-      );
+      let rz_dataEntry = await stellar.getContractData(contract._contract.contractId(), rz_datakey);
       let rz = data_entry_converter.toStringArray(rz_dataEntry.xdr, 'hex');
       const poolBackstopBalMap = new Map<string, PoolBalance>();
       for (const rz_pool of rz) {
@@ -134,7 +131,7 @@ async function loadUserBalance(
     });
     user_balance_datakey = xdr.ScVal.fromXDR(user_balance_datakey.toXDR());
     let user_balance_dataEntry = await stellar.getContractData(
-      contract._contract.contractId('strkey'),
+      contract._contract.contractId(),
       user_balance_datakey
     );
     let user_balance = Backstop.UserBalanceFromXDR(user_balance_dataEntry.xdr);
@@ -166,7 +163,7 @@ async function loadPoolBackstopBalance(
     });
     pool_balance_datakey = xdr.ScVal.fromXDR(pool_balance_datakey.toXDR());
     let pool_balance_entry = await stellar.getContractData(
-      contract._contract.contractId('strkey'),
+      contract._contract.contractId(),
       pool_balance_datakey
     );
     const pool_balance = Backstop.PoolBalanceFromXDR(pool_balance_entry.xdr);

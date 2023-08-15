@@ -31,12 +31,12 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
     state.pool_est.get(poolId)?.reserve_est?.find((res) => res.id === assetId)
   );
   const [toRepay, setToRepay] = useState<string | undefined>(undefined);
-  const [toMaxRepay, setToMaxRepay] = useState<string | undefined>(undefined);
 
   const [newEffectiveLiabilities, setNewEffectiveLiabilities] = useState<number>(
     user_est?.e_liabilities_base ?? 0
   );
 
+  const decimals = reserve?.config.decimals ?? 7;
   const symbol = reserve?.symbol ?? '';
   const oldBorrowCap = user_est
     ? user_est.e_collateral_base - user_est.e_liabilities_base
@@ -48,12 +48,13 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   const borrowLimit = user_est ? newEffectiveLiabilities / user_est.e_collateral_base : undefined;
 
   const handleRepayAmountChange = (repayInput: string) => {
-    if (/^[0-9]*\.?[0-9]{0,10}$/.test(repayInput) && user_est && user_bal_est) {
+    let regex = new RegExp(`^[0-9]*\.?[0-9]{0,${decimals}}$`);
+    if (regex.test(repayInput) && user_est && user_bal_est) {
       let num_repay = Number(repayInput);
       //TODO: check if setting 0 in the case that reserve_est is undefined is ok
       let repay_base = reserve_est ? (num_repay * assetToBase) / reserve_est.l_factor : 0;
       let tempNewLiabilities = user_est.e_liabilities_base - repay_base;
-      if (num_repay <= user_bal_est.asset) {
+      if (num_repay <= user_bal_est.asset * 1.1) {
         setToRepay(repayInput);
         setNewEffectiveLiabilities(tempNewLiabilities);
       }
@@ -65,23 +66,14 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
       let maxRepay =
         user_bal_est.asset < user_bal_est.borrowed
           ? user_bal_est.asset
-          : user_bal_est.borrowed + Number(1);
-      console.log(maxRepay);
-      console.log(user_bal_est.asset < user_bal_est.borrowed);
-      console.log(user_bal_est.borrowed);
-      setToMaxRepay(maxRepay.toFixed(reserve?.config.decimals));
-      handleRepayAmountChange(
-        Math.min(user_bal_est.borrowed, user_bal_est.asset).toFixed(reserve?.config.decimals)
-      );
+          : user_bal_est.borrowed * 1.0001;
+      handleRepayAmountChange(maxRepay.toFixed(decimals));
     }
   };
 
   const handleSubmitTransaction = async () => {
-    // TODO: Revalidate?
     if (toRepay && connected && reserve) {
       let pool = new Pool.PoolOpBuilder(poolId);
-      let amount =
-        toMaxRepay && toRepay == user_bal_est?.borrowed.toFixed(7) ? toMaxRepay : toRepay;
       let repay_op = xdr.Operation.fromXDR(
         pool.submit({
           from: walletAddress,
@@ -89,7 +81,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
           to: walletAddress,
           requests: [
             {
-              amount: scaleInputToBigInt(amount, reserve.config.decimals),
+              amount: scaleInputToBigInt(toRepay, decimals),
               request_type: 5,
               address: reserve.asset_id,
             },
@@ -148,7 +140,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toRepay ?? 0) * assetToBase)}`}
+              {`$${toBalance(Number(toRepay ?? 0) * assetToBase, decimals)}`}
             </Typography>
           </Box>
         </Box>
@@ -192,8 +184,11 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
           <Value title="Amount to repay" value={`${toRepay ?? '0'} ${symbol}`} />
           <ValueChange
             title="Your total borrowed"
-            curValue={`${toBalance(user_bal_est?.borrowed)} ${symbol}`}
-            newValue={`${toBalance((user_bal_est?.borrowed ?? 0) - Number(toRepay))} ${symbol}`}
+            curValue={`${toBalance(user_bal_est?.borrowed, decimals)} ${symbol}`}
+            newValue={`${toBalance(
+              (user_bal_est?.borrowed ?? 0) - Number(toRepay),
+              decimals
+            )} ${symbol}`}
           />
           <ValueChange
             title="Borrow capacity"

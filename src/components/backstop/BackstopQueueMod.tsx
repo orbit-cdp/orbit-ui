@@ -43,7 +43,7 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
   const handleClickWithdrawal = async (amount: bigint) => {
     if (connected) {
       let user_scval = new Address(walletAddress).toScVal();
-      let withdraw_op = new Contract(backstopContract._contract.contractId('strkey')).call(
+      let withdraw_op = new Contract(backstopContract._contract.contractId()).call(
         'withdraw',
         user_scval,
         Address.fromString(poolId).toScVal(),

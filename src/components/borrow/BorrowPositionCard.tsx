@@ -1,6 +1,6 @@
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
-import { ViewType, useSettings } from '../../contexts';
+import { useSettings, ViewType } from '../../contexts';
 import { ReserveEstimates, UserReserveEstimates } from '../../store/estimationSlice';
 import * as formatter from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
@@ -60,7 +60,9 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
               alignItems: 'center',
             }}
           >
-            <Typography variant="body1">{formatter.toBalance(userResData.borrowed)}</Typography>
+            <Typography variant="body1">
+              {formatter.toBalance(userResData.borrowed, reserveData.decimals)}
+            </Typography>
           </Box>
           <Box
             sx={{

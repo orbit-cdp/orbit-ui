@@ -29,7 +29,7 @@ const Markets: NextPage = () => {
     } else {
       isMounted.current = true;
     }
-  }, [loadBackstopData, loadPoolData, rewardZone]);
+  }, [loadBackstopData, loadPoolData, rewardZone, isMounted]);
 
   return (
     <>

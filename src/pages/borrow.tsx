@@ -45,7 +45,7 @@ const Borrow: NextPage = () => {
     } else {
       isMounted.current = true;
     }
-  }, [loadPoolData, safePoolId, reserve, connected, walletAddress]);
+  }, [loadPoolData, safePoolId, reserve, connected, walletAddress, isMounted]);
 
   return (
     <>
@@ -76,7 +76,7 @@ const Borrow: NextPage = () => {
                 Available
               </Typography>
               <Typography variant="h4" sx={{ color: theme.palette.borrow.main }}>
-                {toBalance(reserve_est?.available ?? 0)}
+                {toBalance(reserve_est?.available ?? 0, reserve?.config.decimals)}
               </Typography>
             </Box>
             <Box>

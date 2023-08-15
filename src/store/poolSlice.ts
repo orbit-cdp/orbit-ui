@@ -1,8 +1,9 @@
-import { Oracle, Pool, data_entry_converter } from 'blend-sdk';
+import { data_entry_converter, Oracle, Pool } from 'blend-sdk';
 import { Address, Server, xdr } from 'soroban-client';
 import { Durability } from 'soroban-client/lib/server';
 import { StateCreator } from 'zustand';
 import { getTokenBalance } from '../utils/stellar_rpc';
+import { TOKEN_META } from '../utils/token_display';
 import { DataStore, useStore } from './store';
 
 export type ReserveBalance = {
@@ -232,27 +233,7 @@ async function loadReservesForPool(
       );
 
       // TODO: Find a better way to do this...
-      let symbol: string;
-      if (asset_id === 'CDMLFMKMMD7MWZP3FKUBZPVHTUEDLSX4BYGYKH4GCESXYHS3IHQ4EIG4') {
-        symbol = 'XLM';
-      } else if (asset_id === 'CDGEKHK4H4P6LQUGXANFONY6A3YTKTOBZ2GWKZ6JSJSVWPXIHNEL36TV') {
-        symbol = 'USDC';
-      } else {
-        let name_datakey = xdr.ScVal.scvSymbol('METADATA');
-        let name_entry = await stellar.getContractData(asset_id, name_datakey);
-        let token_metadata = xdr.LedgerEntryData.fromXDR(name_entry.xdr, 'base64')
-          .contractData()
-          .body()
-          .data()
-          .val()
-          .map();
-        let token_symbol = token_metadata
-          ?.find((token_metadata) => token_metadata?.key()?.sym()?.toString() == 'symbol')
-          ?.val()
-          ?.str()
-          ?.toString();
-        symbol = token_symbol ?? 'unknown';
-      }
+      let symbol: string = TOKEN_META[asset_id as keyof typeof TOKEN_META]?.code ?? 'unknown';
 
       // add reserve object to map
       reserve_map.set(
@@ -288,23 +269,25 @@ async function loadUserForPool(
       console.error('unable to refresh user positions');
       user_positions = undefined;
     }
-    if (user_positions) {
-      for (const res_entry of Array.from(reserves.entries())) {
-        try {
-          let asset_id = res_entry[0];
-          let reserve = res_entry[1];
-          let config_index = reserve.config.index;
-          let asset_balance = await getTokenBalance(stellar, network, asset_id, user_address);
-          let supply = user_positions.collateral.get(config_index) ?? BigInt(0);
-          let liability = user_positions.liabilities.get(config_index) ?? BigInt(0);
-          user_balance_map.set(asset_id, {
-            asset: asset_balance,
-            b_token: supply,
-            d_token: liability,
-          });
-        } catch (e) {
-          console.error(`failed to update user data for ${res_entry[0]}: `, e);
+    for (const res_entry of Array.from(reserves.entries())) {
+      try {
+        let asset_id = res_entry[0];
+        let reserve = res_entry[1];
+        let config_index = reserve.config.index;
+        let asset_balance = await getTokenBalance(stellar, network, asset_id, user_address);
+        let supply = BigInt(0);
+        let liability = BigInt(0);
+        if (user_positions) {
+          supply = user_positions.collateral.get(config_index) ?? BigInt(0);
+          liability = user_positions.liabilities.get(config_index) ?? BigInt(0);
         }
+        user_balance_map.set(asset_id, {
+          asset: asset_balance,
+          b_token: supply,
+          d_token: liability,
+        });
+      } catch (e) {
+        console.error(`failed to update user data for ${res_entry[0]}: `, e);
       }
     }
   } catch (e) {

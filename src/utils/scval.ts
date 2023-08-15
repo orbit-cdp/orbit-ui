@@ -3,14 +3,12 @@ import { xdr } from 'soroban-client';
 
 export function scaleInputToBigInt(input: string, decimals: number): bigint {
   let scaled_input;
-  console.log(input);
   if (input.includes('.')) {
     let [base, decimal] = input.split('.');
     scaled_input = `${base}${decimal}${'0'.repeat(decimals - decimal.length)}`;
   } else {
     scaled_input = `${input}${'0'.repeat(decimals)}`;
   }
-  console.log(scaled_input);
   return BigInt(scaled_input);
 }
 
