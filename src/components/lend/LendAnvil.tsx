@@ -43,10 +43,11 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   const borrowLimit = user_est ? user_est.e_liabilities_base / newEffectiveCollateral : undefined;
 
   const handleLendAmountChange = (lendInput: string) => {
-    if (/^[0-9]*\.?[0-9]{0,7}$/.test(lendInput) && user_est && user_bal_est) {
+    if (/^[0-9]*\.?[0-9]{0,10}$/.test(lendInput) && user_est && user_bal_est) {
       let num_lend = Number(lendInput);
       let lend_base = num_lend * assetPrice * (Number(reserve?.config.c_factor) / 1e7);
       let tempEffectiveCollateral = user_est.e_collateral_base + lend_base;
+      console.log(num_lend, user_bal_est.asset);
       if (num_lend <= user_bal_est.asset) {
         setToLend(lendInput);
         setNewEffectiveCollateral(tempEffectiveCollateral);
@@ -56,7 +57,9 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
 
   const handleLendMax = () => {
     if (user_bal_est) {
-      handleLendAmountChange(user_bal_est.asset.toFixed(7));
+      console.log('test');
+      console.log(user_bal_est.asset.toFixed(reserve?.config.decimals ?? 7));
+      handleLendAmountChange(user_bal_est.asset.toFixed(reserve?.config.decimals ?? 7));
     }
   };
 
@@ -71,7 +74,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
           to: walletAddress,
           requests: [
             {
-              amount: scaleInputToBigInt(toLend),
+              amount: scaleInputToBigInt(toLend, reserve.config.decimals),
               request_type: 2,
               address: reserve.asset_id,
             },

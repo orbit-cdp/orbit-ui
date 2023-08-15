@@ -48,7 +48,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   const borrowLimit = user_est ? newEffectiveLiabilities / user_est.e_collateral_base : undefined;
 
   const handleRepayAmountChange = (repayInput: string) => {
-    if (/^[0-9]*\.?[0-9]{0,7}$/.test(repayInput) && user_est && user_bal_est) {
+    if (/^[0-9]*\.?[0-9]{0,10}$/.test(repayInput) && user_est && user_bal_est) {
       let num_repay = Number(repayInput);
       //TODO: check if setting 0 in the case that reserve_est is undefined is ok
       let repay_base = reserve_est ? (num_repay * assetToBase) / reserve_est.l_factor : 0;
@@ -66,8 +66,13 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
         user_bal_est.asset < user_bal_est.borrowed
           ? user_bal_est.asset
           : user_bal_est.borrowed + Number(1);
-      setToMaxRepay(maxRepay.toFixed(7));
-      handleRepayAmountChange(Math.min(user_bal_est.borrowed, user_bal_est.asset).toFixed(7));
+      console.log(maxRepay);
+      console.log(user_bal_est.asset < user_bal_est.borrowed);
+      console.log(user_bal_est.borrowed);
+      setToMaxRepay(maxRepay.toFixed(reserve?.config.decimals));
+      handleRepayAmountChange(
+        Math.min(user_bal_est.borrowed, user_bal_est.asset).toFixed(reserve?.config.decimals)
+      );
     }
   };
 
@@ -84,7 +89,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
           to: walletAddress,
           requests: [
             {
-              amount: scaleInputToBigInt(amount),
+              amount: scaleInputToBigInt(amount, reserve.config.decimals),
               request_type: 5,
               address: reserve.asset_id,
             },

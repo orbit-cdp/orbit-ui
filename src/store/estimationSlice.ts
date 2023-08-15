@@ -255,7 +255,7 @@ function buildReserveEstimate(
     id: reserve.asset_id,
     supplied: est_res_data.total_supply * est_res_data.b_rate,
     borrowed: est_res_data.total_liabilities * est_res_data.d_rate,
-    available: Number(reserve.pool_tokens) / 1e7,
+    available: Number(reserve.pool_tokens) / 10 ** reserve.config.decimals,
     apy: est_res_data.cur_apy,
     supply_apy: est_res_data.cur_apy * est_res_data.cur_util * (1 - decimal_bstop_rate),
     util: est_res_data.cur_util,
@@ -268,12 +268,14 @@ function buildReserveEstimate(
 
 function buildUserReserveEstimates(
   reserve_est: ReserveEstimates,
-  user_res_balance: ReserveBalance
+  user_res_balance: ReserveBalance,
+  decimals: number
 ): UserReserveEstimates {
+  const scaler = 10 ** decimals;
   return {
-    asset: Number(user_res_balance.asset) / 1e7,
-    supplied: (Number(user_res_balance.b_token) / 1e7) * reserve_est.b_rate,
-    borrowed: (Number(user_res_balance.d_token) / 1e7) * reserve_est.d_rate,
+    asset: Number(user_res_balance.asset) / scaler,
+    supplied: (Number(user_res_balance.b_token) / scaler) * reserve_est.b_rate,
+    borrowed: (Number(user_res_balance.d_token) / scaler) * reserve_est.d_rate,
   };
 }
 
@@ -296,7 +298,8 @@ function buildPoolUserEstimate(
   for (const res_est of pool_est.reserve_est ?? []) {
     let user_balance = userData?.reserveBalances.get(res_est.id);
     if (user_balance) {
-      let user_res_est = buildUserReserveEstimates(res_est, user_balance);
+      let decimals = poolData.reserves.get(res_est.id)?.config.decimals ?? 0;
+      let user_res_est = buildUserReserveEstimates(res_est, user_balance, decimals);
       let price = poolData?.poolPrices.get(res_est.id) ?? 1;
       let res_supplied_base = user_res_est.supplied * price;
       let res_borrowed_base = user_res_est.borrowed * price;
