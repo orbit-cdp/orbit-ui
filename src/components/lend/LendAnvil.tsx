@@ -32,6 +32,8 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
     user_est?.e_collateral_base ?? 0
   );
 
+  const decimals = reserve?.config.decimals ?? 7;
+  const scalar = 10 ** decimals;
   const symbol = reserve?.symbol ?? '';
   const oldBorrowCap = user_est
     ? user_est.e_collateral_base - user_est.e_liabilities_base
@@ -43,9 +45,10 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   const borrowLimit = user_est ? user_est.e_liabilities_base / newEffectiveCollateral : undefined;
 
   const handleLendAmountChange = (lendInput: string) => {
-    if (/^[0-9]*\.?[0-9]{0,7}$/.test(lendInput) && user_est && user_bal_est) {
+    let regex = new RegExp(`^[0-9]*\.?[0-9]{0,${decimals}}$`);
+    if (regex.test(lendInput) && user_est && user_bal_est) {
       let num_lend = Number(lendInput);
-      let lend_base = num_lend * assetPrice * (Number(reserve?.config.c_factor) / 1e7);
+      let lend_base = num_lend * assetPrice * (Number(reserve?.config.c_factor) / scalar);
       let tempEffectiveCollateral = user_est.e_collateral_base + lend_base;
       if (num_lend <= user_bal_est.asset) {
         setToLend(lendInput);
@@ -56,7 +59,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
 
   const handleLendMax = () => {
     if (user_bal_est) {
-      handleLendAmountChange(user_bal_est.asset.toFixed(7));
+      handleLendAmountChange(user_bal_est.asset.toFixed(decimals));
     }
   };
 
@@ -71,9 +74,9 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
           to: walletAddress,
           requests: [
             {
-              amount: scaleInputToBigInt(toLend),
+              amount: scaleInputToBigInt(toLend, reserve.config.decimals),
               request_type: 2,
-              reserve_index: reserve.config.index,
+              address: reserve.asset_id,
             },
           ],
         }),
@@ -130,7 +133,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toLend ?? 0) * assetPrice)}`}
+              {`$${toBalance(Number(toLend ?? 0) * assetPrice, decimals)}`}
             </Typography>
           </Box>
         </Box>
@@ -174,9 +177,10 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
           <Value title="Amount to supply" value={`${toLend ?? '0'} ${symbol}`} />
           <ValueChange
             title="Your total supplied"
-            curValue={`${toBalance(user_bal_est?.supplied)} ${symbol}`}
+            curValue={`${toBalance(user_bal_est?.supplied, decimals)} ${symbol}`}
             newValue={`${toBalance(
-              (user_bal_est?.supplied ?? 0) + Number(toLend ?? '0')
+              (user_bal_est?.supplied ?? 0) + Number(toLend ?? '0'),
+              decimals
             )} ${symbol}`}
           />
           <ValueChange

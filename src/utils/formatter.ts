@@ -10,23 +10,23 @@ const POSTFIXES = ['', 'k', 'M', 'B', 'T', 'P', 'E', 'Z', 'Y'];
  * @param amount - The number being converted to a balance
  * @returns string in the form of a formatted balance. Does not include units.
  */
-export function toBalance(amount: number | undefined): string {
+export function toBalance(amount: number | undefined, decimals?: number | undefined): string {
   if (amount == undefined) {
     return '';
   }
 
-  let decimals = 0;
+  let visibleDecimals = 0;
   if (amount === 0) {
-    decimals = 0;
+    visibleDecimals = 0;
   } else {
     if (amount > 1) {
-      decimals = 2;
+      visibleDecimals = 2;
     } else {
-      decimals = 7;
+      visibleDecimals = decimals ?? 7;
     }
   }
 
-  const minValue = 10 ** -(decimals as number);
+  const minValue = 10 ** -(visibleDecimals as number);
   const isSmallerThanMin = amount !== 0 && Math.abs(amount) < Math.abs(minValue);
   let adjAmount = isSmallerThanMin ? minValue : amount;
 
@@ -40,8 +40,8 @@ export function toBalance(amount: number | undefined): string {
   adjAmount = bnValue.shiftedBy(-3 * postfixIndex).toNumber();
 
   const formattedStr = new Intl.NumberFormat('en-US', {
-    maximumFractionDigits: decimals,
-    minimumFractionDigits: decimals,
+    maximumFractionDigits: visibleDecimals,
+    minimumFractionDigits: visibleDecimals,
   }).format(adjAmount);
   return `${formattedStr}${POSTFIXES[postfixIndex]}`;
 }

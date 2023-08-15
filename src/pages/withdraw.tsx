@@ -49,7 +49,7 @@ const Withdraw: NextPage = () => {
     } else {
       isMounted.current = true;
     }
-  }, [loadPoolData, safePoolId, reserve, connected, walletAddress]);
+  }, [loadPoolData, safePoolId, reserve, connected, walletAddress, isMounted]);
 
   return (
     <>
@@ -80,7 +80,7 @@ const Withdraw: NextPage = () => {
                 Available
               </Typography>
               <Typography variant="h4" sx={{ color: theme.palette.lend.main }}>
-                {toBalance(user_bal_est?.supplied ?? 0)}
+                {toBalance(user_bal_est?.supplied ?? 0, reserve?.config.decimals)}
               </Typography>
             </Box>
             <Box>

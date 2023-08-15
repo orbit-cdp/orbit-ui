@@ -49,7 +49,7 @@ const Repay: NextPage = () => {
     } else {
       isMounted.current = true;
     }
-  }, [loadPoolData, safePoolId, reserve, connected, walletAddress]);
+  }, [loadPoolData, safePoolId, reserve, connected, walletAddress, isMounted]);
 
   return (
     <>
@@ -80,7 +80,7 @@ const Repay: NextPage = () => {
                 Debt
               </Typography>
               <Typography variant="h4" sx={{ color: theme.palette.borrow.main }}>
-                {toBalance(user_bal_est?.borrowed ?? 0)}
+                {toBalance(user_bal_est?.borrowed ?? 0, reserve?.config.decimals)}
               </Typography>
             </Box>
             <Box>

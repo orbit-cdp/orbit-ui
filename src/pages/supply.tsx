@@ -48,7 +48,7 @@ const Supply: NextPage = () => {
     } else {
       isMounted.current = true;
     }
-  }, [loadPoolData, safePoolId, reserve, connected, walletAddress]);
+  }, [loadPoolData, safePoolId, reserve, connected, walletAddress, isMounted]);
 
   return (
     <>
@@ -79,7 +79,7 @@ const Supply: NextPage = () => {
                 Balance
               </Typography>
               <Typography variant="h4" sx={{ color: theme.palette.lend.main }}>
-                {toBalance(user_bal_est?.asset ?? 0)}
+                {toBalance(user_bal_est?.asset ?? 0, reserve?.config.decimals)}
               </Typography>
             </Box>
             <Box>

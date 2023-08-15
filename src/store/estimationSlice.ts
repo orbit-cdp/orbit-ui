@@ -13,6 +13,7 @@ export type PoolEstimates = {
 
 export type ReserveEstimates = {
   id: string;
+  decimals: number;
   supplied: number;
   borrowed: number;
   available: number;
@@ -105,7 +106,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
         !pool ||
         force_reload
       ) {
-        await get().refreshPoolData(pool_id, undefined);
+        await get().refreshPoolData(pool_id, latest_ledger_close);
         poolData = get().poolData.get(pool_id);
         pool = get().pools.get(pool_id);
       }
@@ -137,7 +138,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
           Number(userData.lastUpdated) + Number(60) < latest_ledger_close ||
           force_reload
         ) {
-          await get().refreshUserData(pool_id, user_id);
+          await get().refreshUserData(pool_id, user_id, latest_ledger_close);
           userData = get().poolUserData.get(pool_id);
         }
         if (!userData) {
@@ -181,21 +182,23 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
       let backstopPoolBalance = get().backstopPoolData.get(pool_id);
 
       if (
-        !backstopPoolBalance ||
-        Number(backstopPoolBalance.lastUpdated) + Number(60) < latest_ledger_close ||
-        force_reload
-      ) {
-        await get().refreshBackstopPoolData(pool_id, undefined);
-        backstopPoolBalance = get().backstopPoolData.get(pool_id);
-      }
-      if (
         !backstopData ||
         Number(backstopData.lastUpdated) + Number(60) < latest_ledger_close ||
         force_reload
       ) {
-        await get().refreshBackstopData();
+        await get().refreshBackstopData(latest_ledger_close);
         backstopData = get().backstopData;
       }
+
+      if (
+        !backstopPoolBalance ||
+        Number(backstopPoolBalance.lastUpdated) + Number(60) < latest_ledger_close ||
+        force_reload
+      ) {
+        await get().refreshBackstopPoolData(pool_id, undefined, latest_ledger_close);
+        backstopPoolBalance = get().backstopPoolData.get(pool_id);
+      }
+
       if (backstopPoolBalance && poolEst) {
         const tokenToBase = Number(backstopData.backstopTokenPrice) / 1e7;
         const estBackstopSize = (Number(backstopPoolBalance.tokens) / 1e7) * tokenToBase;
@@ -209,7 +212,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
             !backstopUserData ||
             Number(backstopUserData.lastUpdated) + Number(60) < latest_ledger_close
           ) {
-            await get().refreshBackstopPoolData(pool_id, user_id);
+            await get().refreshBackstopPoolData(pool_id, user_id, latest_ledger_close);
             backstopUserData = get().backstopUserData.get(pool_id);
           }
           if (!backstopUserData) {
@@ -253,9 +256,10 @@ function buildReserveEstimate(
   let est_res_data = reserve.estimateData(decimal_bstop_rate, lastUpdated);
   return {
     id: reserve.asset_id,
+    decimals: reserve.config.decimals,
     supplied: est_res_data.total_supply * est_res_data.b_rate,
     borrowed: est_res_data.total_liabilities * est_res_data.d_rate,
-    available: Number(reserve.pool_tokens) / 1e7,
+    available: Number(reserve.pool_tokens) / 10 ** reserve.config.decimals,
     apy: est_res_data.cur_apy,
     supply_apy: est_res_data.cur_apy * est_res_data.cur_util * (1 - decimal_bstop_rate),
     util: est_res_data.cur_util,
@@ -268,12 +272,14 @@ function buildReserveEstimate(
 
 function buildUserReserveEstimates(
   reserve_est: ReserveEstimates,
-  user_res_balance: ReserveBalance
+  user_res_balance: ReserveBalance,
+  decimals: number
 ): UserReserveEstimates {
+  const scaler = 10 ** decimals;
   return {
-    asset: Number(user_res_balance.asset) / 1e7,
-    supplied: (Number(user_res_balance.b_token) / 1e7) * reserve_est.b_rate,
-    borrowed: (Number(user_res_balance.d_token) / 1e7) * reserve_est.d_rate,
+    asset: Number(user_res_balance.asset) / scaler,
+    supplied: (Number(user_res_balance.b_token) / scaler) * reserve_est.b_rate,
+    borrowed: (Number(user_res_balance.d_token) / scaler) * reserve_est.d_rate,
   };
 }
 
@@ -296,7 +302,8 @@ function buildPoolUserEstimate(
   for (const res_est of pool_est.reserve_est ?? []) {
     let user_balance = userData?.reserveBalances.get(res_est.id);
     if (user_balance) {
-      let user_res_est = buildUserReserveEstimates(res_est, user_balance);
+      let decimals = poolData.reserves.get(res_est.id)?.config.decimals ?? 0;
+      let user_res_est = buildUserReserveEstimates(res_est, user_balance, decimals);
       let price = poolData?.poolPrices.get(res_est.id) ?? 1;
       let res_supplied_base = user_res_est.supplied * price;
       let res_borrowed_base = user_res_est.borrowed * price;
@@ -335,19 +342,26 @@ function estimatePoolUserEmissionBalance(
 
     if (liability_emission && user_liability_emission) {
       userEmissionBal +=
-        liability_bal * (liability_emission.reserveIndex - user_liability_emission.userIndex) +
-        (liability_bal *
-          liability_emission.eps *
-          (BigInt(latestLedgerClose) - liability_emission.lastTime)) /
+        liability_bal * (liability_emission.reserveIndex - user_liability_emission.userIndex);
+      if (res.data.d_supply > 0) {
+        userEmissionBal +=
+          (liability_bal *
+            liability_emission.eps *
+            (BigInt(latestLedgerClose) - liability_emission.lastTime)) /
           res.data.d_supply;
+      }
     }
     if (supply_emission && user_supply_emission) {
       userEmissionBal +=
-        supply_bal * (supply_emission.reserveIndex - user_supply_emission.userIndex) +
-        (supply_bal *
-          supply_emission.eps *
-          (BigInt(latestLedgerClose) - supply_emission.lastTime)) /
+        supply_bal * (supply_emission.reserveIndex - user_supply_emission.userIndex);
+
+      if (res.data.b_supply > 0) {
+        userEmissionBal +=
+          (supply_bal *
+            supply_emission.eps *
+            (BigInt(latestLedgerClose) - supply_emission.lastTime)) /
           res.data.b_supply;
+      }
     }
   }
   return userEmissionBal;

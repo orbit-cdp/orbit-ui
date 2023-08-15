@@ -53,7 +53,15 @@ const Dashboard: NextPage = () => {
     } else {
       isMounted.current = true;
     }
-  }, [safePoolId, connected, loadPoolData, walletAddress, loadBackstopData, setLastPool]);
+  }, [
+    safePoolId,
+    connected,
+    loadPoolData,
+    walletAddress,
+    loadBackstopData,
+    setLastPool,
+    isMounted,
+  ]);
 
   const handleLendClick = () => {
     if (!showLend) {

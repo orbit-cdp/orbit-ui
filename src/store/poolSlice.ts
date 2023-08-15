@@ -1,8 +1,9 @@
-import { data_entry_converter, Pool } from 'blend-sdk';
+import { data_entry_converter, Oracle, Pool } from 'blend-sdk';
 import { Address, Server, xdr } from 'soroban-client';
 import { Durability } from 'soroban-client/lib/server';
 import { StateCreator } from 'zustand';
 import { getTokenBalance } from '../utils/stellar_rpc';
+import { TOKEN_META } from '../utils/token_display';
 import { DataStore, useStore } from './store';
 
 export type ReserveBalance = {
@@ -53,8 +54,8 @@ export interface PoolSlice {
   poolData: Map<string, PoolData>;
   poolUserData: Map<string, PoolUserData>;
 
-  refreshPoolData: (pool_id: string, user?: string | undefined) => Promise<void>;
-  refreshUserData: (pool_id: string, user: string) => Promise<void>;
+  refreshPoolData: (pool_id: string, latest_ledger_close: number) => Promise<void>;
+  refreshUserData: (pool_id: string, user: string, latest_ledger_close: number) => Promise<void>;
 }
 
 export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set, get) => ({
@@ -62,14 +63,10 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
   poolData: new Map<string, PoolData>(),
   poolUserData: new Map<string, PoolUserData>(),
 
-  refreshPoolData: async (pool_id: string) => {
+  refreshPoolData: async (pool_id: string, latest_ledger_close: number) => {
     try {
       const stellar = get().rpcServer();
       const network = get().passphrase;
-      let tx_response = await stellar.getTransaction(
-        '0000000000000000000000000000000000000000000000000000000000000000'
-      ); // TODO: File issue/pr to add getLatestLedger endpoint
-      let latest_ledger_close = tx_response.latestLedgerCloseTime;
       let pool = get().pools.get(pool_id);
 
       let set_pool = false;
@@ -110,16 +107,13 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
     }
   },
 
-  refreshUserData: async (pool_id: string, user: string) => {
+  refreshUserData: async (pool_id: string, user: string, latest_ledger_close: number) => {
     try {
       const stellar = get().rpcServer();
       const network = get().passphrase;
       const reserve_map = get().poolData.get(pool_id)?.reserves;
       const reserveEmissionData = get().poolData.get(pool_id)?.reserveEmissions;
-      let tx_response = await stellar.getTransaction(
-        '0000000000000000000000000000000000000000000000000000000000000000'
-      ); // TODO: File issue/pr to add getLatestLedger endpoint
-      let latest_ledger_close = tx_response.latestLedgerCloseTime;
+
       if (!reserve_map || !reserveEmissionData) {
         throw Error('unknown pool');
       }
@@ -239,27 +233,7 @@ async function loadReservesForPool(
       );
 
       // TODO: Find a better way to do this...
-      let symbol: string;
-      if (asset_id === 'CDMLFMKMMD7MWZP3FKUBZPVHTUEDLSX4BYGYKH4GCESXYHS3IHQ4EIG4') {
-        symbol = 'XLM';
-      } else if (asset_id === 'CDGEKHK4H4P6LQUGXANFONY6A3YTKTOBZ2GWKZ6JSJSVWPXIHNEL36TV') {
-        symbol = 'USDC';
-      } else {
-        let name_datakey = xdr.ScVal.scvSymbol('METADATA');
-        let name_entry = await stellar.getContractData(asset_id, name_datakey);
-        let token_metadata = xdr.LedgerEntryData.fromXDR(name_entry.xdr, 'base64')
-          .contractData()
-          .body()
-          .data()
-          .val()
-          .map();
-        let token_symbol = token_metadata
-          ?.find((token_metadata) => token_metadata?.key()?.sym()?.toString() == 'symbol')
-          ?.val()
-          ?.str()
-          ?.toString();
-        symbol = token_symbol ?? 'unknown';
-      }
+      let symbol: string = TOKEN_META[asset_id as keyof typeof TOKEN_META]?.code ?? 'unknown';
 
       // add reserve object to map
       reserve_map.set(
@@ -295,23 +269,25 @@ async function loadUserForPool(
       console.error('unable to refresh user positions');
       user_positions = undefined;
     }
-    if (user_positions) {
-      for (const res_entry of Array.from(reserves.entries())) {
-        try {
-          let asset_id = res_entry[0];
-          let reserve = res_entry[1];
-          let config_index = reserve.config.index;
-          let asset_balance = await getTokenBalance(stellar, network, asset_id, user_address);
-          let supply = user_positions.collateral.get(config_index) ?? BigInt(0);
-          let liability = user_positions.liabilities.get(config_index) ?? BigInt(0);
-          user_balance_map.set(asset_id, {
-            asset: asset_balance,
-            b_token: supply,
-            d_token: liability,
-          });
-        } catch (e) {
-          console.error(`failed to update user data for ${res_entry[0]}: `, e);
+    for (const res_entry of Array.from(reserves.entries())) {
+      try {
+        let asset_id = res_entry[0];
+        let reserve = res_entry[1];
+        let config_index = reserve.config.index;
+        let asset_balance = await getTokenBalance(stellar, network, asset_id, user_address);
+        let supply = BigInt(0);
+        let liability = BigInt(0);
+        if (user_positions) {
+          supply = user_positions.collateral.get(config_index) ?? BigInt(0);
+          liability = user_positions.liabilities.get(config_index) ?? BigInt(0);
         }
+        user_balance_map.set(asset_id, {
+          asset: asset_balance,
+          b_token: supply,
+          d_token: liability,
+        });
+      } catch (e) {
+        console.error(`failed to update user data for ${res_entry[0]}: `, e);
       }
     }
   } catch (e) {
@@ -334,8 +310,9 @@ async function loadOraclePrices(stellar: Server, pool: Pool): Promise<Map<string
         price_datakey,
         Durability.Temporary
       );
-      let price = data_entry_converter.toNumber(price_entry.xdr);
-      price = price / 10 ** decimals;
+      let priceData = Oracle.PriceDataFromXDR(price_entry.xdr);
+
+      let price = Number(priceData.price) / 10 ** decimals;
       price_map.set(asset_id, price);
     } catch (e: any) {
       console.error(`unable to fetch a price for ${asset_id}:`, e);

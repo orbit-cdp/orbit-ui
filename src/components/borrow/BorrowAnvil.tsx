@@ -35,6 +35,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     user_est?.e_liabilities_base ?? 0
   );
 
+  const decimals = reserve?.config.decimals ?? 7;
   const symbol = reserve?.symbol ?? '';
   const baseToAsset = 1 / assetToBase;
   const oldBorrowCapAsset =
@@ -55,7 +56,8 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const borrowLimit = user_est ? newEffectiveLiabilities / user_est.e_collateral_base : undefined;
 
   const handleBorrowAmountChange = (borrowInput: string) => {
-    if (/^[0-9]*\.?[0-9]{0,7}$/.test(borrowInput) && user_est && reserveEstimate) {
+    let regex = new RegExp(`^[0-9]*\.?[0-9]{0,${decimals}}$`);
+    if (regex.test(borrowInput) && user_est && reserveEstimate) {
       let num_borrow = Number(borrowInput);
       let borrow_base = (num_borrow * assetToBase) / reserveEstimate.l_factor;
       let tempNewLiabilities = user_est.e_liabilities_base + borrow_base;
@@ -67,9 +69,12 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   };
 
   const handleBorrowMax = () => {
-    if (oldBorrowCapAsset && user_est && reserveEstimate) {
-      let to_bounded_hf = user_est.e_collateral_base - user_est.e_liabilities_base * 1.021;
-      let to_borrow = to_bounded_hf / ((1.02 * assetToBase * 1) / reserveEstimate.l_factor);
+    if (oldBorrowCapAsset && user_est && reserveEstimate && reserve) {
+      let to_bounded_hf = (user_est.e_collateral_base - user_est.e_liabilities_base) / 1.025;
+      let to_borrow = Math.min(
+        to_bounded_hf / (assetToBase / reserveEstimate.l_factor),
+        reserveEstimate.supplied * (reserve.config.max_util / 1e7) - reserveEstimate.borrowed
+      );
       handleBorrowAmountChange(to_borrow.toFixed(7));
     }
   };
@@ -85,8 +90,8 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           spender: walletAddress,
           requests: [
             {
-              amount: scaleInputToBigInt(toBorrow),
-              reserve_index: reserve.config.index,
+              amount: scaleInputToBigInt(toBorrow, reserve.config.decimals),
+              address: reserve.asset_id,
               request_type: 4,
             },
           ],
@@ -144,7 +149,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toBorrow ?? 0) * assetToBase)}`}
+              {`$${toBalance(Number(toBorrow ?? 0) * assetToBase, decimals)}`}
             </Typography>
           </Box>
         </Box>
@@ -188,9 +193,10 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           <Value title="Amount to borrow" value={`${toBorrow ?? '0'} ${symbol}`} />
           <ValueChange
             title="Your total borrowed"
-            curValue={`${toBalance(user_bal_est?.borrowed)} ${symbol}`}
+            curValue={`${toBalance(user_bal_est?.borrowed, decimals)} ${symbol}`}
             newValue={`${toBalance(
-              (user_bal_est?.borrowed ?? 0) + Number(toBorrow ?? 0)
+              (user_bal_est?.borrowed ?? 0) + Number(toBorrow ?? 0),
+              decimals
             )} ${symbol}`}
           />
           <ValueChange

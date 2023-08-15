@@ -45,7 +45,7 @@ const BackstopQ4W: NextPage = () => {
     } else {
       isMounted.current = true;
     }
-  }, [safePoolId, connected, loadPoolData, walletAddress, loadBackstopData]);
+  }, [safePoolId, connected, loadPoolData, walletAddress, loadBackstopData, isMounted]);
 
   return (
     <>

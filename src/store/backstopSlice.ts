@@ -33,16 +33,20 @@ export interface BackstopSlice {
   backstopData: BackstopData;
   backstopPoolData: Map<string, PoolBalance>;
   backstopUserData: Map<string, UserBalance>;
-  refreshBackstopData: () => Promise<void>;
-  refreshBackstopPoolData: (pool_id: string, user_id: string | undefined) => Promise<void>;
+  refreshBackstopData: (latest_ledger_close: number) => Promise<void>;
+  refreshBackstopPoolData: (
+    pool_id: string,
+    user_id: string | undefined,
+    latest_ledger_close: number
+  ) => Promise<void>;
 }
 
 export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice> = (set, get) => ({
   backstopContract: new Backstop.BackstopOpBuilder(
-    'CAZR5ARXKUI7YE7WVB2XVY54ZJQQ45WGGYMLOPNY6T5OOFKJ2O36JDQY'
+    'CA4H6BQI3PRFLZTMLDZNWO2TC2N7QQA34JGH52VNCORWMF2RLW6GDVJR'
   ),
   backstopData: {
-    backstopToken: 'CBI3RNZACNPCMCKZI4O26WE4WELFGZOKU43F5W4GLIN3FRWB4EUTOPKR',
+    backstopToken: 'CANAYUWHRELN7KIDB6O35ZLFJBX6PJHJKZBUCXRZMZTYI2SBQFGAQSGK',
     backstopTokenPrice: BigInt(0.05e7),
     rewardZone: [],
     lastUpdated: 0,
@@ -50,20 +54,14 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
   backstopPoolData: new Map<string, PoolBalance>(),
   backstopUserData: new Map<string, UserBalance>(),
 
-  refreshBackstopData: async () => {
+  refreshBackstopData: async (latest_ledger_close: number) => {
     try {
       const contract = get().backstopContract;
       const stellar = get().rpcServer();
-      let tx_response = await stellar.getTransaction(
-        '0000000000000000000000000000000000000000000000000000000000000000'
-      ); // TODO: File issue/pr to add getLatestLedger endpoint
-      let latest_ledger_close = tx_response.latestLedgerCloseTime;
+
       let rz_datakey = Backstop.BackstopDataKeyToXDR({ tag: 'RewardZone' });
       rz_datakey = xdr.ScVal.fromXDR(rz_datakey.toXDR());
-      let rz_dataEntry = await stellar.getContractData(
-        contract._contract.contractId('strkey'),
-        rz_datakey
-      );
+      let rz_dataEntry = await stellar.getContractData(contract._contract.contractId(), rz_datakey);
       let rz = data_entry_converter.toStringArray(rz_dataEntry.xdr, 'hex');
       const poolBackstopBalMap = new Map<string, PoolBalance>();
       for (const rz_pool of rz) {
@@ -80,16 +78,17 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
       console.error('unable to refresh backstop data:', e);
     }
   },
-  refreshBackstopPoolData: async (pool_id: string, user_id: string | undefined) => {
+  refreshBackstopPoolData: async (
+    pool_id: string,
+    user_id: string | undefined,
+    latest_ledger_close: number
+  ) => {
     try {
       const contract = get().backstopContract;
       const stellar = get().rpcServer();
       const network = get().passphrase;
       const backstopData = get().backstopData;
-      let tx_response = await stellar.getTransaction(
-        '0000000000000000000000000000000000000000000000000000000000000000'
-      ); // TODO: File issue/pr to add getLatestLedger endpoint
-      let latest_ledger_close = tx_response.latestLedgerCloseTime;
+
       let pool_backstop_balance = await loadPoolBackstopBalance(stellar, contract, pool_id);
       pool_backstop_balance.lastUpdated = latest_ledger_close;
       if (user_id) {
@@ -132,7 +131,7 @@ async function loadUserBalance(
     });
     user_balance_datakey = xdr.ScVal.fromXDR(user_balance_datakey.toXDR());
     let user_balance_dataEntry = await stellar.getContractData(
-      contract._contract.contractId('strkey'),
+      contract._contract.contractId(),
       user_balance_datakey
     );
     let user_balance = Backstop.UserBalanceFromXDR(user_balance_dataEntry.xdr);
@@ -164,7 +163,7 @@ async function loadPoolBackstopBalance(
     });
     pool_balance_datakey = xdr.ScVal.fromXDR(pool_balance_datakey.toXDR());
     let pool_balance_entry = await stellar.getContractData(
-      contract._contract.contractId('strkey'),
+      contract._contract.contractId(),
       pool_balance_datakey
     );
     const pool_balance = Backstop.PoolBalanceFromXDR(pool_balance_entry.xdr);
