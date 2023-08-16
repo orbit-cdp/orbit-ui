@@ -1,5 +1,5 @@
 import type { NextPage } from 'next';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { Divider } from '../components/common/Divider';
 import { Row } from '../components/common/Row';
 import { SectionBase } from '../components/common/SectionBase';
@@ -8,7 +8,6 @@ import { MarketCard } from '../components/markets/MarketCard';
 import { useStore } from '../store/store';
 
 const Markets: NextPage = () => {
-  const isMounted = useRef(false);
   const loadBackstopData = useStore((state) => state.loadBackstopData);
   const loadPoolData = useStore((state) => state.loadPoolData);
   const rewardZone = useStore((state) => state.backstopData.rewardZone);
@@ -20,16 +19,14 @@ const Markets: NextPage = () => {
         await loadBackstopData(poolId);
       });
     };
-    if (isMounted.current && rewardZone.length != 0) {
+    if (rewardZone.length != 0) {
       updateMarket();
       const refreshInterval = setInterval(async () => {
         await updateMarket();
       }, 30 * 1000);
       return () => clearInterval(refreshInterval);
-    } else {
-      isMounted.current = true;
     }
-  }, [loadBackstopData, loadPoolData, rewardZone, isMounted]);
+  }, [loadBackstopData, loadPoolData, rewardZone]);
 
   return (
     <>
