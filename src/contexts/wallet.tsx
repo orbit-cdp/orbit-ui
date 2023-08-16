@@ -27,6 +27,7 @@ const WalletContext = React.createContext<IWalletContext | undefined>(undefined)
 export const WalletProvider = ({ children = null as any }) => {
   const rpcServer = useStore((state) => state.rpcServer);
   const passphrase = useStore((state) => state.passphrase);
+  const removeUserState = useStore((state) => state.removeUserData);
 
   const [connected, setConnected] = useState<boolean>(false);
   const [autoConnect, setAutoConnect] = useState(true);
@@ -63,6 +64,7 @@ export const WalletProvider = ({ children = null as any }) => {
   }
 
   function disconnect() {
+    removeUserState();
     setWalletAddress('');
     setConnected(false);
   }
