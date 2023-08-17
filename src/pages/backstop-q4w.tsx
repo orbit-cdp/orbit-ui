@@ -1,7 +1,7 @@
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { BackstopDropdown } from '../components/backstop/BackstopDropdown';
 import { BackstopQueueAnvil } from '../components/backstop/BackstopQueueAnvil';
 import { BackstopQueueMod } from '../components/backstop/BackstopQueueMod';
@@ -18,7 +18,6 @@ import { toBalance, toPercentage } from '../utils/formatter';
 const BackstopQ4W: NextPage = () => {
   const { connected, walletAddress } = useWallet();
   const theme = useTheme();
-  const isMounted = useRef(false);
 
   const router = useRouter();
   const { poolId } = router.query;
@@ -36,16 +35,12 @@ const BackstopQ4W: NextPage = () => {
         await loadBackstopData(safePoolId, connected ? walletAddress : undefined, false);
       }
     };
-    if (isMounted.current) {
-      updateBackstop();
-      const refreshInterval = setInterval(async () => {
-        await updateBackstop();
-      }, 30 * 1000);
-      return () => clearInterval(refreshInterval);
-    } else {
-      isMounted.current = true;
-    }
-  }, [safePoolId, connected, loadPoolData, walletAddress, loadBackstopData, isMounted]);
+    updateBackstop();
+    const refreshInterval = setInterval(async () => {
+      await updateBackstop();
+    }, 30 * 1000);
+    return () => clearInterval(refreshInterval);
+  }, [safePoolId, connected, loadPoolData, walletAddress, loadBackstopData]);
 
   return (
     <>

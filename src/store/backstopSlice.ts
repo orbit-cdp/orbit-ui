@@ -19,12 +19,6 @@ export type BackstopData = {
   lastUpdated: number;
 };
 
-export type BackstopUserData = {
-  q4w: Backstop.Q4W[];
-  shares: bigint;
-  tokens: bigint;
-};
-
 /**
  * Ledger state for the backstop
  */

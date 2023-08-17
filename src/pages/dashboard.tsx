@@ -2,7 +2,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { BackstopPreviewBar } from '../components/backstop/BackstopPreviewBar';
 import { BorrowMarketList } from '../components/borrow/BorrowMarketList';
 import { BorrowPositions } from '../components/borrow/BorrowPositions';
@@ -26,7 +26,7 @@ const Dashboard: NextPage = () => {
   const { setLastPool, showLend, setShowLend } = useSettings();
   const { connected, walletAddress } = useWallet();
 
-  const isMounted = useRef(false);
+  // const isMounted = useRef(false);
   const router = useRouter();
   const { poolId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
@@ -43,25 +43,13 @@ const Dashboard: NextPage = () => {
         await loadBackstopData(safePoolId, connected ? walletAddress : undefined, false);
       }
     };
-    if (isMounted.current) {
-      setLastPool(safePoolId);
-      updateDashboard();
-      const refreshInterval = setInterval(async () => {
-        await updateDashboard();
-      }, 30 * 1000);
-      return () => clearInterval(refreshInterval);
-    } else {
-      isMounted.current = true;
-    }
-  }, [
-    safePoolId,
-    connected,
-    loadPoolData,
-    walletAddress,
-    loadBackstopData,
-    setLastPool,
-    isMounted,
-  ]);
+    setLastPool(safePoolId);
+    updateDashboard();
+    const refreshInterval = setInterval(async () => {
+      await updateDashboard();
+    }, 30 * 1000);
+    return () => clearInterval(refreshInterval);
+  }, [safePoolId, connected, loadPoolData, walletAddress, loadBackstopData, setLastPool]);
 
   const handleLendClick = () => {
     if (!showLend) {

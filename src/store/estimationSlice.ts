@@ -100,16 +100,20 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
       let latest_ledger_close = tx_response.latestLedgerCloseTime;
       let poolData = get().poolData.get(pool_id);
       let pool = get().pools.get(pool_id);
+      console.log(`Estimating pool data for ${pool_id} to ledger: ${latest_ledger_close}`);
+
       if (
         !poolData ||
         Number(poolData.lastUpdated) + Number(60) < latest_ledger_close ||
         !pool ||
         force_reload
       ) {
+        console.log(`Loading pool data for ${pool_id} from ledger: ${latest_ledger_close}`);
         await get().refreshPoolData(pool_id, latest_ledger_close);
         poolData = get().poolData.get(pool_id);
         pool = get().pools.get(pool_id);
       }
+
       if (!pool || !poolData) {
         throw Error('Invalid Pool');
       }
@@ -138,6 +142,9 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
           Number(userData.lastUpdated) + Number(60) < latest_ledger_close ||
           force_reload
         ) {
+          console.log(
+            `Loading pool position data for ${user_id} from ledger: ${latest_ledger_close}`
+          );
           await get().refreshUserData(pool_id, user_id, latest_ledger_close);
           userData = get().poolUserData.get(pool_id);
         }
@@ -176,6 +183,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
         '0000000000000000000000000000000000000000000000000000000000000000'
       ); // TODO: File issue/pr to add getLatestLedger endpoint
       let latest_ledger_close = tx_response.latestLedgerCloseTime;
+      console.log(`Estimating backstop data for ${pool_id} to ledger: ${latest_ledger_close}`);
 
       const poolEst = get().pool_est.get(pool_id);
       let backstopData = get().backstopData;
@@ -186,6 +194,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
         Number(backstopData.lastUpdated) + Number(60) < latest_ledger_close ||
         force_reload
       ) {
+        console.log(`Loading backstop data from ledger: ${latest_ledger_close}`);
         await get().refreshBackstopData(latest_ledger_close);
         backstopData = get().backstopData;
       }
@@ -195,6 +204,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
         Number(backstopPoolBalance.lastUpdated) + Number(60) < latest_ledger_close ||
         force_reload
       ) {
+        console.log(`Loading backstop data for ${pool_id} from ledger: ${latest_ledger_close}`);
         await get().refreshBackstopPoolData(pool_id, undefined, latest_ledger_close);
         backstopPoolBalance = get().backstopPoolData.get(pool_id);
       }
@@ -212,6 +222,9 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
             !backstopUserData ||
             Number(backstopUserData.lastUpdated) + Number(60) < latest_ledger_close
           ) {
+            console.log(
+              `Loading backstop position data for ${user_id} from ledger: ${latest_ledger_close}`
+            );
             await get().refreshBackstopPoolData(pool_id, user_id, latest_ledger_close);
             backstopUserData = get().backstopUserData.get(pool_id);
           }

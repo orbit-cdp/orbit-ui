@@ -1,7 +1,7 @@
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { BorrowAnvil } from '../components/borrow/BorrowAnvil';
 import { GoBackHeader } from '../components/common/GoBackHeader';
 import { OverlayModal } from '../components/common/OverlayModal';
@@ -16,7 +16,6 @@ import { toBalance, toPercentage } from '../utils/formatter';
 
 const Borrow: NextPage = () => {
   const theme = useTheme();
-  const isMounted = useRef(false);
   const { connected, walletAddress } = useWallet();
 
   const router = useRouter();
@@ -33,19 +32,15 @@ const Borrow: NextPage = () => {
   useEffect(() => {
     const updatePool = async () => {
       if (safePoolId != '') {
-        loadPoolData(safePoolId, connected ? walletAddress : undefined, false);
+        await loadPoolData(safePoolId, connected ? walletAddress : undefined, false);
       }
     };
-    if (isMounted.current) {
-      updatePool();
-      const refreshInterval = setInterval(async () => {
-        await updatePool();
-      }, 30 * 1000);
-      return () => clearInterval(refreshInterval);
-    } else {
-      isMounted.current = true;
-    }
-  }, [loadPoolData, safePoolId, reserve, connected, walletAddress, isMounted]);
+    updatePool();
+    const refreshInterval = setInterval(async () => {
+      await updatePool();
+    }, 30 * 1000);
+    return () => clearInterval(refreshInterval);
+  }, [loadPoolData, safePoolId, reserve, connected, walletAddress]);
 
   return (
     <>
