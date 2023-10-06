@@ -1,4 +1,3 @@
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
@@ -6,9 +5,7 @@ import { useEffect, useRef } from 'react';
 import { BackstopPreviewBar } from '../components/backstop/BackstopPreviewBar';
 import { BorrowMarketList } from '../components/borrow/BorrowMarketList';
 import { BorrowPositions } from '../components/borrow/BorrowPositions';
-import { CustomButton } from '../components/common/CustomButton';
 import { Divider } from '../components/common/Divider';
-import { LinkBox } from '../components/common/LinkBox';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { ToggleButton } from '../components/common/ToggleButton';
@@ -77,26 +74,8 @@ const Dashboard: NextPage = () => {
         <WalletWarning />
       </Row>
       <PoolExploreBar poolId={safePoolId} />
-      <PositionOverview poolId={safePoolId} />
-      <Row sx={{ padding: '6px' }}>
-        <LinkBox
-          sx={{ width: '100%' }}
-          to={{ pathname: '/backstop', query: { poolId: safePoolId } }}
-        >
-          <CustomButton
-            sx={{
-              color: theme.palette.text.primary,
-              '&:hover': {
-                color: theme.palette.backstop.main,
-              },
-            }}
-          >
-            <Typography variant="body1">Backstop Manager</Typography>
-            <ArrowForwardIcon fontSize="inherit" sx={{ marginLeft: '6px' }} />
-          </CustomButton>
-        </LinkBox>
-      </Row>
       <BackstopPreviewBar poolId={safePoolId} />
+      <PositionOverview poolId={safePoolId} />
       <Row>
         <Section width={SectionSize.FULL} sx={{ padding: '0px' }}>
           <ToggleButton
