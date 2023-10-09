@@ -3,13 +3,13 @@ import CheckIcon from '@mui/icons-material/Check';
 import { Box, BoxProps, Typography, useTheme } from '@mui/material';
 import React from 'react';
 
-export interface StackedTextBotBoxProps extends BoxProps {
+export interface PoolStatusBoxProps extends BoxProps {
   type?: 'normal' | 'large' | undefined;
   titleColor?: string | undefined;
   status?: 'Active' | 'On Ice' | 'Frozen' | undefined;
 }
 
-export const StackedTextBotBox: React.FC<StackedTextBotBoxProps> = ({
+export const PoolStatusBox: React.FC<PoolStatusBoxProps> = ({
   type,
   titleColor,
   status,

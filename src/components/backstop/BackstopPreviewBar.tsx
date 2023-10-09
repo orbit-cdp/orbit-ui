@@ -1,6 +1,6 @@
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, useTheme } from '@mui/material';
-import { ViewType, useSettings } from '../../contexts';
+import { useSettings, ViewType } from '../../contexts';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
@@ -10,7 +10,7 @@ import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
 import { StackedText } from '../common/StackedText';
-import { StackedTextBotBox } from '../common/StackedTextBotBox';
+import { PoolStatusBox } from '../pool/PoolStatusBox';
 
 export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
@@ -98,7 +98,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                 marginRight: '-30px',
               }}
             >
-              <StackedTextBotBox
+              <PoolStatusBox
                 titleColor="inherit"
                 type="large"
                 status="Active"
@@ -183,7 +183,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                 marginRight: '-30px',
               }}
             >
-              <StackedTextBotBox
+              <PoolStatusBox
                 titleColor="inherit"
                 type="large"
                 status="Active"
