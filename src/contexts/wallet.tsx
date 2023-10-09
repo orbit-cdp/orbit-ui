@@ -27,6 +27,7 @@ const WalletContext = React.createContext<IWalletContext | undefined>(undefined)
 export const WalletProvider = ({ children = null as any }) => {
   const rpcServer = useStore((state) => state.rpcServer);
   const passphrase = useStore((state) => state.passphrase);
+  const removeUserState = useStore((state) => state.removeUserData);
 
   const [connected, setConnected] = useState<boolean>(false);
   const [autoConnect, setAutoConnect] = useState(true);
@@ -63,6 +64,7 @@ export const WalletProvider = ({ children = null as any }) => {
   }
 
   function disconnect() {
+    removeUserState();
     setWalletAddress('');
     setConnected(false);
   }
@@ -101,28 +103,23 @@ export const WalletProvider = ({ children = null as any }) => {
         let stellar = rpcServer();
         let account = await stellar.getAccount(walletAddress);
 
-        console.log('got account: ', account?.accountId());
         let txBuilder = new TransactionBuilder(account, {
           fee: '10000',
           timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
           networkPassphrase: passphrase,
         });
-        console.log('built TX builder');
         txBuilder.addOperation(operation);
-        console.log('added operation');
         // simulate and rebuild tx
         let tx_no_footprint = txBuilder.build();
         let tx_footprint = await stellar.prepareTransaction(tx_no_footprint, passphrase);
-        console.log('prepped tx');
         // fetch signature from wallet
         setTxStatus(TxStatus.SIGNING);
         let tx_signed = await signTransaction(tx_footprint.toXDR(), {
           networkPassphrase: passphrase,
         });
-        console.log('signed tx: ', tx_signed);
         setTxStatus(TxStatus.SUBMITTING);
         let response = await stellar.sendTransaction(new Transaction(tx_signed, passphrase));
-        console.log(JSON.stringify(response));
+        console.log('tx_resp: ', JSON.stringify(response));
         let status = response.status as string;
         let tx_hash = response.hash;
         // Poll this until the status is not "pending"

@@ -17,7 +17,7 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
   const theme = useTheme();
   const router = useRouter();
 
-  const reserves = useStore((state) => state.reserves.get(poolId));
+  const reserves = useStore((state) => state.poolData.get(poolId)?.reserves);
   const activeReserve = reserves?.get(activeReserveId);
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);

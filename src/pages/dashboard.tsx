@@ -1,7 +1,7 @@
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { BackstopPreviewBar } from '../components/backstop/BackstopPreviewBar';
 import { BorrowMarketList } from '../components/borrow/BorrowMarketList';
 import { BorrowPositions } from '../components/borrow/BorrowPositions';
@@ -23,38 +23,30 @@ const Dashboard: NextPage = () => {
   const { setLastPool, showLend, setShowLend } = useSettings();
   const { connected, walletAddress } = useWallet();
 
-  const isMounted = useRef(false);
+  // const isMounted = useRef(false);
   const router = useRouter();
   const { poolId } = router.query;
-  const safePoolId = typeof poolId == 'string' && /^[0-9a-f]{64}$/.test(poolId) ? poolId : '';
+  const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
 
   const theme = useTheme();
-  const refreshPoolReserveAll = useStore((state) => state.refreshPoolReserveAll);
-  const estimateToLatestLedger = useStore((state) => state.estimateToLatestLedger);
-  const refreshPoolBackstopData = useStore((state) => state.refreshPoolBackstopData);
+  const loadBackstopData = useStore((state) => state.loadBackstopData);
+  const loadPoolData = useStore((state) => state.loadPoolData);
   const pool_est = useStore((state) => state.pool_est.get(safePoolId));
 
   useEffect(() => {
     const updateDashboard = async () => {
       if (safePoolId != '') {
-        await refreshPoolReserveAll(safePoolId, connected ? walletAddress : undefined);
-        if (connected) {
-          await refreshPoolBackstopData(safePoolId, walletAddress);
-        }
-        await estimateToLatestLedger(safePoolId, connected ? walletAddress : undefined);
+        await loadPoolData(safePoolId, connected ? walletAddress : undefined, false);
+        await loadBackstopData(safePoolId, connected ? walletAddress : undefined, false);
       }
     };
-    if (isMounted.current) {
-      setLastPool(safePoolId);
-      updateDashboard();
-      const refreshInterval = setInterval(() => {
-        updateDashboard();
-      }, 60 * 1000);
-      return () => clearInterval(refreshInterval);
-    } else {
-      isMounted.current = true;
-    }
-  }, [safePoolId, connected]);
+    setLastPool(safePoolId);
+    updateDashboard();
+    const refreshInterval = setInterval(async () => {
+      await updateDashboard();
+    }, 30 * 1000);
+    return () => clearInterval(refreshInterval);
+  }, [safePoolId, connected, loadPoolData, walletAddress, loadBackstopData, setLastPool]);
 
   const handleLendClick = () => {
     if (!showLend) {

@@ -59,7 +59,9 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
               alignItems: 'center',
             }}
           >
-            <Typography variant="body1">{formatter.toBalance(balance)}</Typography>
+            <Typography variant="body1">
+              {formatter.toBalance(balance, reserveData.decimals)}
+            </Typography>
           </Box>
           <Box
             sx={{

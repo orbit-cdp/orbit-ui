@@ -1,5 +1,5 @@
 import type { NextPage } from 'next';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { Divider } from '../components/common/Divider';
 import { Row } from '../components/common/Row';
 import { SectionBase } from '../components/common/SectionBase';
@@ -8,32 +8,25 @@ import { MarketCard } from '../components/markets/MarketCard';
 import { useStore } from '../store/store';
 
 const Markets: NextPage = () => {
-  const isMounted = useRef(false);
-  const refreshBackstopData = useStore((state) => state.refreshBackstopData);
-  const refreshPoolReserveAll = useStore((state) => state.refreshPoolReserveAll);
-  const estimateToLatestLedger = useStore((state) => state.estimateToLatestLedger);
-
-  const rewardZone = useStore((state) => state.rewardZone);
+  const loadBackstopData = useStore((state) => state.loadBackstopData);
+  const loadPoolData = useStore((state) => state.loadPoolData);
+  const rewardZone = useStore((state) => state.backstopData.rewardZone);
 
   useEffect(() => {
-    if (isMounted.current && rewardZone.length == 0) {
-      refreshBackstopData();
-    } else {
-      isMounted.current = true;
-    }
-  }, [refreshBackstopData]);
-
-  useEffect(() => {
-    const loadPoolReserveInfo = async (poolId: string) => {
-      await refreshPoolReserveAll(poolId);
-      await estimateToLatestLedger(poolId);
-    };
-    if (isMounted.current && rewardZone.length != 0) {
-      rewardZone.forEach((poolId) => {
-        loadPoolReserveInfo(poolId);
+    const updateMarket = async () => {
+      rewardZone.forEach(async (poolId) => {
+        await loadPoolData(poolId);
+        await loadBackstopData(poolId);
       });
+    };
+    if (rewardZone.length != 0) {
+      updateMarket();
+      const refreshInterval = setInterval(async () => {
+        await updateMarket();
+      }, 30 * 1000);
+      return () => clearInterval(refreshInterval);
     }
-  }, [rewardZone]);
+  }, [loadBackstopData, loadPoolData, rewardZone]);
 
   return (
     <>

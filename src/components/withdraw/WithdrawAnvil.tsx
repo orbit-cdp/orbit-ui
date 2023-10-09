@@ -20,19 +20,20 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   const theme = useTheme();
   const { connected, walletAddress, submitTransaction } = useWallet();
 
-  const reserve = useStore((state) => state.reserves.get(poolId)?.get(assetId));
-  const prices = useStore((state) => state.poolPrices.get(poolId));
-  const user_est = useStore((state) => state.user_est.get(poolId));
-  const user_bal_est = useStore((state) => state.user_bal_est.get(poolId)?.get(assetId));
-
-  const symbol = reserve?.symbol ?? '';
-  const assetToBase = prices?.get(assetId) ?? 1;
-
+  const reserve = useStore((state) => state.poolData.get(poolId)?.reserves.get(assetId));
+  const assetToBase = useStore((state) => state.poolData.get(poolId))?.poolPrices.get(assetId) ?? 1;
+  const user_est = useStore((state) => state.pool_user_est.get(poolId));
+  const user_bal_est = useStore((state) =>
+    state.pool_user_est.get(poolId)?.reserve_estimates.get(assetId)
+  );
+  const loadPoolData = useStore((state) => state.loadPoolData);
   const [toWithdraw, setToWithdraw] = useState<string | undefined>(undefined);
   const [newEffectiveCollateral, setNewEffectiveCollateral] = useState<number>(
     user_est?.e_collateral_base ?? 0
   );
 
+  const decimals = reserve?.config.decimals ?? 7;
+  const symbol = reserve?.symbol ?? '';
   const oldBorrowCap = user_est
     ? user_est.e_collateral_base - user_est.e_liabilities_base
     : undefined;
@@ -43,14 +44,12 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   const borrowLimit = user_est ? user_est.e_liabilities_base / newEffectiveCollateral : undefined;
 
   const handleWithdrawAmountChange = (withdrawInput: string) => {
-    if (/^[0-9]*\.?[0-9]{0,7}$/.test(withdrawInput) && user_est && user_bal_est) {
+    let regex = new RegExp(`^[0-9]*\.?[0-9]{0,${decimals}}$`);
+    if (regex.test(withdrawInput) && user_est && user_bal_est) {
       let num_withdraw = Number(withdrawInput);
       let withdraw_base = num_withdraw * assetToBase * (Number(reserve?.config.c_factor) / 1e7);
       let tempEffectiveCollateral = user_est.e_collateral_base - withdraw_base;
-      if (
-        tempEffectiveCollateral > user_est.e_liabilities_base * 1.02 &&
-        num_withdraw <= user_bal_est.supplied
-      ) {
+      if (tempEffectiveCollateral >= user_est.e_liabilities_base * 1.02) {
         setToWithdraw(withdrawInput);
         setNewEffectiveCollateral(tempEffectiveCollateral);
       }
@@ -58,19 +57,35 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   };
 
   const handleWithdrawMax = () => {
-    if (user_est) {
-      let to_bounded_hf = user_est.e_collateral_base - user_est.e_liabilities_base * 1.021;
+    if (user_est && user_bal_est) {
+      let to_bounded_hf = (user_est.e_collateral_base - user_est.e_liabilities_base) / 1.025;
       let to_wd = to_bounded_hf / (assetToBase * (Number(reserve?.config.c_factor) / 1e7));
-      handleWithdrawAmountChange(to_wd.toFixed(7));
+      let withdrawAmount = Math.min(to_wd, user_bal_est.supplied) + 1 / 10 ** decimals;
+      handleWithdrawAmountChange(withdrawAmount.toFixed(decimals));
     }
   };
 
-  const handleSubmitTransaction = () => {
+  const handleSubmitTransaction = async () => {
     // TODO: Revalidate?
-    if (toWithdraw && connected) {
+    if (toWithdraw && connected && reserve) {
       let pool = new Pool.PoolOpBuilder(poolId);
-      let withdraw_op = xdr.Operation.fromXDR(pool.withdraw({from: walletAddress, asset: assetId, amount: scaleInputToBigInt(toWithdraw), to: walletAddress}), "base64");
-      submitTransaction(withdraw_op);
+      let withdraw_op = xdr.Operation.fromXDR(
+        pool.submit({
+          from: walletAddress,
+          spender: walletAddress,
+          to: walletAddress,
+          requests: [
+            {
+              amount: scaleInputToBigInt(toWithdraw, decimals),
+              request_type: 3,
+              address: reserve.asset_id,
+            },
+          ],
+        }),
+        'base64'
+      );
+      await submitTransaction(withdraw_op);
+      await loadPoolData(poolId, walletAddress, true);
     }
   };
 
@@ -120,7 +135,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toWithdraw ?? 0) * assetToBase)}`}
+              {`$${toBalance(Number(toWithdraw ?? 0) * assetToBase, decimals)}`}
             </Typography>
           </Box>
         </Box>
@@ -164,9 +179,10 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
           <Value title="Amount to withdraw" value={`${toWithdraw ?? '0'} ${symbol}`} />
           <ValueChange
             title="Your total supplied"
-            curValue={`${toBalance(user_bal_est?.supplied)} ${symbol}`}
+            curValue={`${toBalance(user_bal_est?.supplied, decimals)} ${symbol}`}
             newValue={`${toBalance(
-              (user_bal_est?.supplied ?? 0) - Number(toWithdraw ?? '0')
+              (user_bal_est?.supplied ?? 0) - Number(toWithdraw ?? '0'),
+              decimals
             )} ${symbol}`}
           />
           <ValueChange

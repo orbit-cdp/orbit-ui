@@ -20,37 +20,46 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const theme = useTheme();
   const { connected, walletAddress, submitTransaction } = useWallet();
 
-  const reserve = useStore((state) => state.reserves.get(poolId)?.get(assetId));
-  const prices = useStore((state) => state.poolPrices.get(poolId));
-  const user_est = useStore((state) => state.user_est.get(poolId));
-  const user_bal_est = useStore((state) => state.user_bal_est.get(poolId)?.get(assetId));
-
-  const symbol = reserve?.symbol ?? '';
-
-  const liability_factor = Number(reserve?.config.l_factor) / 1e7;
-  const assetToBase = prices?.get(assetId) ?? 1;
-  const baseToAsset = 1 / assetToBase;
-
+  const reserve = useStore((state) => state.poolData.get(poolId)?.reserves.get(assetId));
+  const assetToBase = useStore((state) => state.poolData.get(poolId)?.poolPrices.get(assetId) ?? 1);
+  const user_est = useStore((state) => state.pool_user_est.get(poolId));
+  const user_bal_est = useStore((state) =>
+    state.pool_user_est.get(poolId)?.reserve_estimates.get(assetId)
+  );
+  const reserveEstimate = useStore((state) =>
+    state.pool_est.get(poolId)?.reserve_est?.find((res) => res.id === assetId)
+  );
+  const loadPoolData = useStore((state) => state.loadPoolData);
   const [toBorrow, setToBorrow] = useState<string | undefined>(undefined);
   const [newEffectiveLiabilities, setNewEffectiveLiabilities] = useState<number>(
     user_est?.e_liabilities_base ?? 0
   );
 
-  const oldBorrowCapAsset = user_est
-    ? (user_est.e_collateral_base - user_est.e_liabilities_base) * baseToAsset * liability_factor
-    : undefined;
+  const decimals = reserve?.config.decimals ?? 7;
+  const symbol = reserve?.symbol ?? '';
+  const baseToAsset = 1 / assetToBase;
+  const oldBorrowCapAsset =
+    user_est && reserveEstimate
+      ? (user_est.e_collateral_base - user_est.e_liabilities_base) *
+        baseToAsset *
+        reserveEstimate.l_factor
+      : undefined;
   const oldBorrowLimit = user_est
     ? user_est.e_liabilities_base / user_est.e_collateral_base
     : undefined;
-  const borrowCapAsset = user_est
-    ? (user_est.e_collateral_base - newEffectiveLiabilities) * baseToAsset * liability_factor
-    : undefined;
+  const borrowCapAsset =
+    user_est && reserveEstimate
+      ? (user_est.e_collateral_base - newEffectiveLiabilities) *
+        baseToAsset *
+        reserveEstimate.l_factor
+      : undefined;
   const borrowLimit = user_est ? newEffectiveLiabilities / user_est.e_collateral_base : undefined;
 
   const handleBorrowAmountChange = (borrowInput: string) => {
-    if (/^[0-9]*\.?[0-9]{0,7}$/.test(borrowInput) && user_est) {
+    let regex = new RegExp(`^[0-9]*\.?[0-9]{0,${decimals}}$`);
+    if (regex.test(borrowInput) && user_est && reserveEstimate) {
       let num_borrow = Number(borrowInput);
-      let borrow_base = (num_borrow * assetToBase) / liability_factor;
+      let borrow_base = (num_borrow * assetToBase) / reserveEstimate.l_factor;
       let tempNewLiabilities = user_est.e_liabilities_base + borrow_base;
       if (tempNewLiabilities * 1.02 < user_est.e_collateral_base) {
         setToBorrow(borrowInput);
@@ -60,19 +69,37 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   };
 
   const handleBorrowMax = () => {
-    if (oldBorrowCapAsset && user_est) {
-      let to_bounded_hf = user_est.e_collateral_base - user_est.e_liabilities_base * 1.021;
-      let to_borrow = to_bounded_hf / ((1.02 * assetToBase * 1) / liability_factor);
+    if (oldBorrowCapAsset && user_est && reserveEstimate && reserve) {
+      let to_bounded_hf = (user_est.e_collateral_base - user_est.e_liabilities_base) / 1.025;
+      let to_borrow = Math.min(
+        to_bounded_hf / (assetToBase / reserveEstimate.l_factor),
+        reserveEstimate.supplied * (reserve.config.max_util / 1e7) - reserveEstimate.borrowed
+      );
       handleBorrowAmountChange(to_borrow.toFixed(7));
     }
   };
 
-  const handleSubmitTransaction = () => {
+  const handleSubmitTransaction = async () => {
     // TODO: Revalidate?
-    if (toBorrow && connected) {
+    if (toBorrow && connected && reserve) {
       let pool = new Pool.PoolOpBuilder(poolId);
-      let borrow_op = xdr.Operation.fromXDR(pool.borrow({from: walletAddress, asset: assetId, amount: scaleInputToBigInt(toBorrow), to: walletAddress}), "base64");
-      submitTransaction(borrow_op);
+      let borrow_op = xdr.Operation.fromXDR(
+        pool.submit({
+          from: walletAddress,
+          to: walletAddress,
+          spender: walletAddress,
+          requests: [
+            {
+              amount: scaleInputToBigInt(toBorrow, reserve.config.decimals),
+              address: reserve.asset_id,
+              request_type: 4,
+            },
+          ],
+        }),
+        'base64'
+      );
+      await submitTransaction(borrow_op);
+      await loadPoolData(poolId, walletAddress, true);
     }
   };
 
@@ -122,7 +149,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toBorrow ?? 0) * assetToBase)}`}
+              {`$${toBalance(Number(toBorrow ?? 0) * assetToBase, decimals)}`}
             </Typography>
           </Box>
         </Box>
@@ -166,9 +193,10 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           <Value title="Amount to borrow" value={`${toBorrow ?? '0'} ${symbol}`} />
           <ValueChange
             title="Your total borrowed"
-            curValue={`${toBalance(user_bal_est?.borrowed)} ${symbol}`}
+            curValue={`${toBalance(user_bal_est?.borrowed, decimals)} ${symbol}`}
             newValue={`${toBalance(
-              (user_bal_est?.borrowed ?? 0) + Number(toBorrow ?? 0)
+              (user_bal_est?.borrowed ?? 0) + Number(toBorrow ?? 0),
+              decimals
             )} ${symbol}`}
           />
           <ValueChange

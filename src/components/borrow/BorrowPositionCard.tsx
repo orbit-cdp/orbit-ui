@@ -60,7 +60,9 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
               alignItems: 'center',
             }}
           >
-            <Typography variant="body1">{formatter.toBalance(userResData.borrowed)}</Typography>
+            <Typography variant="body1">
+              {formatter.toBalance(userResData.borrowed, reserveData.decimals)}
+            </Typography>
           </Box>
           <Box
             sx={{

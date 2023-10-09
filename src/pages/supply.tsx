@@ -1,7 +1,7 @@
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { GoBackHeader } from '../components/common/GoBackHeader';
 import { OverlayModal } from '../components/common/OverlayModal';
 import { ReserveDropdown } from '../components/common/ReserveDropdown';
@@ -16,37 +16,34 @@ import { toBalance, toPercentage } from '../utils/formatter';
 
 const Supply: NextPage = () => {
   const theme = useTheme();
-  const isMounted = useRef(false);
   const { connected, walletAddress } = useWallet();
 
   const router = useRouter();
   const { poolId, assetId } = router.query;
-  const safePoolId = typeof poolId == 'string' && /^[0-9a-f]{64}$/.test(poolId) ? poolId : '';
-  const safeAssetId = typeof assetId == 'string' && /^[0-9a-f]{64}$/.test(assetId) ? assetId : '';
+  const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
+  const safeAssetId = typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId) ? assetId : '';
 
-  const refreshPoolReserveAll = useStore((state) => state.refreshPoolReserveAll);
-  const estimateToLatestLedger = useStore((state) => state.estimateToLatestLedger);
-  const reserve = useStore((state) => state.reserves.get(safePoolId)?.get(safeAssetId));
+  const loadPoolData = useStore((state) => state.loadPoolData);
+  const reserve = useStore((state) => state.poolData.get(safePoolId)?.reserves.get(safeAssetId));
   const reserve_est = useStore((state) =>
-    state.reserve_est.get(safePoolId)?.find((res) => res.id === safeAssetId)
+    state.pool_est.get(safePoolId)?.reserve_est?.find((res) => res.id === safeAssetId)
   );
-  const user_bal_est = useStore((state) => state.user_bal_est.get(safePoolId)?.get(safeAssetId));
+  const user_bal_est = useStore((state) =>
+    state.pool_user_est.get(safePoolId)?.reserve_estimates.get(safeAssetId)
+  );
 
-  // load ledger data if the page was loaded directly
   useEffect(() => {
-    if (isMounted.current && safePoolId != '' && reserve == undefined) {
-      refreshPoolReserveAll(safePoolId, connected ? walletAddress : undefined);
-    }
-  }, [refreshPoolReserveAll, safePoolId, reserve]);
-
-  // always re-estimate values to most recent ledger
-  useEffect(() => {
-    if (isMounted.current && safePoolId != '' && reserve != undefined) {
-      estimateToLatestLedger(safePoolId, connected ? walletAddress : undefined);
-    } else {
-      isMounted.current = true;
-    }
-  }, [estimateToLatestLedger, safePoolId, reserve]);
+    const updatePool = async () => {
+      if (safePoolId != '') {
+        await loadPoolData(safePoolId, connected ? walletAddress : undefined, false);
+      }
+    };
+    updatePool();
+    const refreshInterval = setInterval(async () => {
+      await updatePool();
+    }, 30 * 1000);
+    return () => clearInterval(refreshInterval);
+  }, [loadPoolData, safePoolId, reserve, connected, walletAddress]);
 
   return (
     <>
@@ -77,7 +74,7 @@ const Supply: NextPage = () => {
                 Balance
               </Typography>
               <Typography variant="h4" sx={{ color: theme.palette.lend.main }}>
-                {toBalance(user_bal_est?.asset ?? 0)}
+                {toBalance(user_bal_est?.asset ?? 0, reserve?.config.decimals)}
               </Typography>
             </Box>
             <Box>

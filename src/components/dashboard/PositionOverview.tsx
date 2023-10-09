@@ -15,15 +15,15 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
   const theme = useTheme();
 
-  const user_estimates = useStore((state) => state.user_est.get(poolId));
+  const poolUserEstimate = useStore((state) => state.pool_user_est.get(poolId));
 
-  const borrow_capacity = user_estimates
-    ? user_estimates.e_collateral_base - user_estimates.e_liabilities_base
+  const borrow_capacity = poolUserEstimate
+    ? poolUserEstimate.e_collateral_base - poolUserEstimate.e_liabilities_base
     : 0;
-  const borrow_capacity_fill = user_estimates
-    ? (user_estimates.e_liabilities_base / user_estimates.e_collateral_base) * 100
+  const borrow_capacity_fill = poolUserEstimate
+    ? (poolUserEstimate.e_liabilities_base / poolUserEstimate.e_collateral_base) * 100
     : 100;
-  const net_apy = Number.isFinite(user_estimates?.net_apy) ? user_estimates?.net_apy : 0;
+  const net_apy = Number.isFinite(poolUserEstimate?.net_apy) ? poolUserEstimate?.net_apy : 0;
 
   return (
     <>
