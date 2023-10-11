@@ -1,8 +1,8 @@
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, useTheme } from '@mui/material';
-import { ViewType, useSettings } from '../../contexts';
+import { useSettings, ViewType } from '../../contexts';
 import { useStore } from '../../store/store';
-import { toBalance, toPercentage } from '../../utils/formatter';
+import { toBalance } from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
 import { Icon } from '../common/Icon';
 import { LinkBox } from '../common/LinkBox';
@@ -10,6 +10,7 @@ import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
 import { StackedText } from '../common/StackedText';
+import { PoolStatusBox } from '../pool/PoolStatusBox';
 
 export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
@@ -47,7 +48,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                   sx={{ marginRight: '12px' }}
                 />
                 <StackedText
-                  title="Balance"
+                  title="Your Backstop Balance"
                   titleColor="inherit"
                   text={userBalance ? `$${toBalance(userBalance)}` : '--'}
                   textColor="inherit"
@@ -74,7 +75,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
               }}
             >
               <StackedText
-                title="Backstop Size"
+                title="Total Backstop Size"
                 titleColor="inherit"
                 text={`$${toBalance(backstopPoolEstimate?.backstopSize)}`}
                 textColor="inherit"
@@ -91,20 +92,17 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
+                backgroundColor: theme.palette.background.default,
+                padding: '12px',
+                borderRadius: '5px',
+                marginRight: '-30px',
               }}
             >
-              <StackedText
-                title="Backstop Q4W"
+              <PoolStatusBox
                 titleColor="inherit"
-                text={toPercentage(backstopPoolEstimate?.q4wRate)}
-                textColor="inherit"
                 type="large"
-              />
-              <Icon
-                src={'/icons/dashboard/bkstp_queue.svg'}
-                alt={`backstop queue icon`}
-                isCircle={false}
-                sx={{ marginLeft: '12px' }}
+                status="Active"
+                sx={{ width: '136px' }}
               />
             </Box>
           </Box>
@@ -134,9 +132,9 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                   sx={{ marginRight: '12px' }}
                 />
                 <StackedText
-                  title="Claimable earnings"
+                  title="Your Backstop Balance"
                   titleColor="inherit"
-                  text="$888.888k"
+                  text={userBalance ? `$${toBalance(userBalance)}` : '--'}
                   textColor="inherit"
                   type="large"
                 />
@@ -162,9 +160,9 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
               }}
             >
               <StackedText
-                title="Backstop Size"
+                title="Total Backstop Size"
                 titleColor="inherit"
-                text="$888.888M"
+                text={`$${toBalance(estBackstopSize)}`}
                 textColor="inherit"
                 type="large"
               />
@@ -179,20 +177,17 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
+                backgroundColor: theme.palette.background.default,
+                padding: '12px',
+                borderRadius: '5px',
+                marginRight: '-30px',
               }}
             >
-              <StackedText
-                title="Backstop Q4W"
+              <PoolStatusBox
                 titleColor="inherit"
-                text="28.888%"
-                textColor="inherit"
                 type="large"
-              />
-              <Icon
-                src={'/icons/dashboard/bkstp_queue.svg'}
-                alt={`backstop queue icon`}
-                isCircle={false}
-                sx={{ marginLeft: '12px' }}
+                status="Active"
+                sx={{ width: '136px' }}
               />
             </Box>
           </Box>
