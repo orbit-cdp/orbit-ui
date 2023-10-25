@@ -1,14 +1,14 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { BackstopSlice, createBackstopSlice, UserBalance } from './backstopSlice';
+import { BackstopSlice, BackstopUserData, createBackstopSlice } from './backstopSlice';
 import {
   BackstopUserEstimates,
-  createEstimationSlice,
   EstimationSlice,
   PoolUserEstimates,
+  createEstimationSlice,
 } from './estimationSlice';
-import { createNetworkSlice, NetworkSlice } from './networkSlice';
-import { createPoolSlice, PoolSlice, PoolUserData } from './poolSlice';
+import { NetworkSlice, createNetworkSlice } from './networkSlice';
+import { PoolSlice, PoolUserData, createPoolSlice } from './poolSlice';
 
 (BigInt.prototype as any).toJSON = function () {
   return this.toString();
@@ -33,7 +33,7 @@ export const useStore = create<DataStore>()(
     removeUserData: () => {
       useStore.setState(() => ({
         poolUserData: new Map<string, PoolUserData>(),
-        backstopUserData: new Map<string, UserBalance>(),
+        backstopUserData: new Map<string, BackstopUserData>(),
         pool_user_est: new Map<string, PoolUserEstimates>(),
         backstop_user_est: new Map<string, BackstopUserEstimates>(),
       }));
