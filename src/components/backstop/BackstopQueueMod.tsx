@@ -1,10 +1,9 @@
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, Typography, useTheme } from '@mui/material';
-import { Address, Contract, xdr } from 'soroban-client';
+import { Address } from 'soroban-client';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
-import { fromBigIntToScVal } from '../../utils/scval';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
@@ -27,15 +26,15 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
 
   const handleClickUnqueue = async (amount: bigint) => {
     if (connected) {
-      let dequeue_op = xdr.Operation.fromXDR(
-        backstopContract.dequeue_withdrawal({
-          from: walletAddress,
-          pool_address: poolId,
-          amount: BigInt(amount),
-        }),
-        'base64'
-      );
-      await submitTransaction(dequeue_op);
+      // let dequeue_op = xdr.Operation.fromXDR(
+      //   backstopContract.dequeue_withdrawal({
+      //     from: walletAddress,
+      //     pool_address: poolId,
+      //     amount: BigInt(amount),
+      //   }),
+      //   'base64'
+      // );
+      // await submitTransaction(dequeue_op);
       await loadBackstopData(poolId, walletAddress, true);
     }
   };
@@ -43,13 +42,13 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
   const handleClickWithdrawal = async (amount: bigint) => {
     if (connected) {
       let user_scval = new Address(walletAddress).toScVal();
-      let withdraw_op = new Contract(backstopContract._contract.contractId()).call(
-        'withdraw',
-        user_scval,
-        Address.fromString(poolId).toScVal(),
-        fromBigIntToScVal(amount)
-      );
-      await submitTransaction(withdraw_op);
+      // let withdraw_op = new Contract(backstopContract.address).call(
+      //   'withdraw',
+      //   user_scval,
+      //   Address.fromString(poolId).toScVal(),
+      //   nativeToScVal(amount, { type: 'i128' })
+      // );
+      // await submitTransaction(withdraw_op);
       await loadBackstopData(poolId, walletAddress, true);
     }
   };
@@ -107,7 +106,7 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
           .sort((a, b) => Number(b.amount) - Number(a.amount))
           .map((q4w) => (
             <BackstopQueueItem
-              key={q4w.exp}
+              key={Number(q4w.exp)}
               poolId={poolId}
               q4w={q4w}
               amount={(Number(q4w.amount) / 1e7) * (backstopPoolEstimate?.shareRate ?? 1)}

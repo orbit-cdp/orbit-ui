@@ -1,13 +1,10 @@
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
-import { Pool } from 'blend-sdk';
 import { useState } from 'react';
-import { xdr } from 'soroban-client';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
-import { scaleInputToBigInt } from '../../utils/scval';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
@@ -20,7 +17,11 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   const theme = useTheme();
   const { connected, walletAddress, submitTransaction } = useWallet();
 
-  const reserve = useStore((state) => state.poolData.get(poolId)?.reserves.get(assetId));
+  const reserve = useStore((state) =>
+    state.poolData.get(poolId)?.reserves.find((reserve) => {
+      reserve.assetId == assetId;
+    })
+  );
   const assetPrice = useStore((state) => state.poolData.get(poolId))?.poolPrices.get(assetId) ?? 1;
   const user_est = useStore((state) => state.pool_user_est.get(poolId));
   const user_bal_est = useStore((state) =>
@@ -66,23 +67,23 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   const handleSubmitTransaction = async () => {
     // TODO: Revalidate?
     if (toLend && connected && reserve) {
-      let pool = new Pool.PoolOpBuilder(poolId);
-      let supply_op = xdr.Operation.fromXDR(
-        pool.submit({
-          from: walletAddress,
-          spender: walletAddress,
-          to: walletAddress,
-          requests: [
-            {
-              amount: scaleInputToBigInt(toLend, reserve.config.decimals),
-              request_type: 2,
-              address: reserve.asset_id,
-            },
-          ],
-        }),
-        'base64'
-      );
-      await submitTransaction(supply_op);
+      // let pool = new Pool.PoolOpBuilder(poolId);
+      // let supply_op = xdr.Operation.fromXDR(
+      //   pool.submit({
+      //     from: walletAddress,
+      //     spender: walletAddress,
+      //     to: walletAddress,
+      //     requests: [
+      //       {
+      //         amount: scaleInputToBigInt(toLend, reserve.config.decimals),
+      //         request_type: 2,
+      //         address: reserve.asset_id,
+      //       },
+      //     ],
+      //   }),
+      //   'base64'
+      // );
+      // await submitTransaction(supply_op);
       await loadPoolData(poolId, walletAddress, true);
     }
   };

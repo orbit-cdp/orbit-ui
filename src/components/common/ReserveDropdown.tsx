@@ -18,7 +18,9 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
   const router = useRouter();
 
   const reserves = useStore((state) => state.poolData.get(poolId)?.reserves);
-  const activeReserve = reserves?.get(activeReserveId);
+  const activeReserve = reserves?.find((reserve) => {
+    reserve.assetId == activeReserveId;
+  });
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -77,8 +79,8 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
       >
         {Array.from(reserves?.values() ?? []).map((reserve) => (
           <MenuItem
-            key={reserve.asset_id}
-            onClick={() => handleClickReserve(reserve.asset_id)}
+            key={reserve.assetId}
+            onClick={() => handleClickReserve(reserve.assetId)}
             sx={{
               display: 'flex',
               flexDirection: 'row',

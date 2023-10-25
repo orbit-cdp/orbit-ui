@@ -2,11 +2,9 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useState } from 'react';
-import { xdr } from 'soroban-client';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
-import { scaleInputToBigInt } from '../../utils/scval';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
@@ -21,7 +19,7 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
 
   const backstopContract = useStore((state) => state.backstopContract);
   const backstopUserEstimate = useStore((state) => state.backstop_user_est.get(poolId));
-  const backstopData = useStore((state) => state.backstopData);
+  const backstopConfig = useStore((state) => state.backstopConfig);
   const loadBackstopData = useStore((state) => state.loadBackstopData);
   const [toDeposit, setToDeposit] = useState<string | undefined>(undefined);
 
@@ -42,15 +40,15 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
   const handleSubmitTransaction = async () => {
     // TODO: Revalidate?
     if (toDeposit && connected) {
-      let deposit_op = xdr.Operation.fromXDR(
-        backstopContract.deposit({
-          from: walletAddress,
-          pool_address: poolId,
-          amount: scaleInputToBigInt(toDeposit, 7),
-        }),
-        'base64'
-      );
-      await submitTransaction(deposit_op);
+      // let deposit_op = xdr.Operation.fromXDR(
+      //   backstopContract.deposit({
+      //     from: walletAddress,
+      //     pool_address: poolId,
+      //     amount: scaleInputToBigInt(toDeposit, 7),
+      //   }),
+      //   'base64'
+      // );
+      // await submitTransaction(deposit_op);
       await loadBackstopData(poolId, walletAddress, true);
     }
   };
@@ -101,9 +99,8 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(
-                (Number(toDeposit ?? 0) * Number(backstopData.backstopTokenPrice)) / 1e7
-              )}`}
+              {/* TODO */}
+              {`$${toBalance((Number(toDeposit ?? 0) * Number(0.05)) / 1e7)}`}
             </Typography>
           </Box>
         </Box>

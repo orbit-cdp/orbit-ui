@@ -2,11 +2,9 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useState } from 'react';
-import { xdr } from 'soroban-client';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
-import { scaleInputToBigInt } from '../../utils/scval';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
@@ -21,9 +19,10 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
 
   const backstopContract = useStore((state) => state.backstopContract);
   const backstopUserEstimate = useStore((state) => state.backstop_user_est.get(poolId));
-  const backstopTokenPrice = Number(
-    useStore((state) => state.backstopData.backstopTokenPrice / BigInt(1e7))
-  );
+  // TODO
+  const backstopTokenPrice = 0.75; //Number(
+  //   useStore((state) => state.backstopData.backstopTokenPrice / BigInt(1e7))
+  // );
   const loadBackstopData = useStore((state) => state.loadBackstopData);
   const [toQueue, setToQueue] = useState<string | undefined>(undefined);
 
@@ -50,15 +49,15 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const handleSubmitTransaction = async () => {
     // TODO: Revalidate?
     if (toQueue && connected) {
-      let queue_op = xdr.Operation.fromXDR(
-        backstopContract.queue_withdrawal({
-          from: walletAddress,
-          pool_address: poolId,
-          amount: scaleInputToBigInt(toQueue, 7),
-        }),
-        'base64'
-      );
-      await submitTransaction(queue_op);
+      // let queue_op = xdr.Operation.fromXDR(
+      //   backstopContract.queue_withdrawal({
+      //     from: walletAddress,
+      //     pool_address: poolId,
+      //     amount: scaleInputToBigInt(toQueue, 7),
+      //   }),
+      //   'base64'
+      // );
+      // await submitTransaction(queue_op);
       await loadBackstopData(poolId, walletAddress, true);
     }
   };

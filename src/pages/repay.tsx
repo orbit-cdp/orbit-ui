@@ -24,7 +24,11 @@ const Repay: NextPage = () => {
   const safeAssetId = typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId) ? assetId : '';
 
   const loadPoolData = useStore((state) => state.loadPoolData);
-  const reserve = useStore((state) => state.poolData.get(safePoolId)?.reserves.get(safeAssetId));
+  const reserve = useStore((state) =>
+    state.poolData.get(safePoolId)?.reserves.find((reserve) => {
+      reserve.assetId == safeAssetId;
+    })
+  );
   const reserve_est = useStore((state) =>
     state.pool_est.get(safePoolId)?.reserve_est?.find((res) => res.id === safeAssetId)
   );

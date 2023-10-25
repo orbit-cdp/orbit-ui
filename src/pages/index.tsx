@@ -10,15 +10,17 @@ import { useStore } from '../store/store';
 const Markets: NextPage = () => {
   const loadBackstopData = useStore((state) => state.loadBackstopData);
   const loadPoolData = useStore((state) => state.loadPoolData);
-  const rewardZone = useStore((state) => state.backstopData.rewardZone);
-
+  const rewardZone = useStore((state) => state.backstopConfig.rewardZone);
+  console.log(rewardZone);
   useEffect(() => {
     const updateMarket = async () => {
       rewardZone.forEach(async (poolId) => {
+        console.log(poolId);
         await loadPoolData(poolId);
         await loadBackstopData(poolId);
       });
     };
+    console.log('IN MARKETS PAGE USE EFFFECTS');
     if (rewardZone.length != 0) {
       updateMarket();
       const refreshInterval = setInterval(async () => {

@@ -12,7 +12,7 @@ import { WalletMenu } from './WalletMenu';
 
 export const NavBar = () => {
   const { viewType, lastPool } = useSettings();
-  const rewardZone = useStore((state) => state.backstopData.rewardZone);
+  const rewardZone = useStore((state) => state.backstopConfig.rewardZone);
 
   const [poolId, setPoolId] = useState<string>(lastPool ?? '');
 
