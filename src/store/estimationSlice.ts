@@ -1,6 +1,10 @@
-import * as Backstop from '@blend-capital/blend-sdk/backstop';
-import * as Pool from '@blend-capital/blend-sdk/pool';
-
+import {
+  PoolConfig,
+  Q4W,
+  Reserve,
+  ReserveEmissionConfig,
+  ReserveEmissionData,
+} from '@blend-capital/blend-sdk';
 import { StateCreator } from 'zustand';
 import { BackstopPoolData, BackstopUserData } from './backstopSlice';
 import { PoolData, PoolUserData, ReserveBalance } from './poolSlice';
@@ -58,7 +62,7 @@ export type BackstopUserEstimates = {
   depositBalance: number;
   walletBalance: number;
   q4wUnlockedAmount: number;
-  q4w: Backstop.Q4W[];
+  q4w: Q4W[];
 };
 /**
  * Estimate ledger data to a given ledger number, while producing human readable values
@@ -266,8 +270,8 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
 /********** Estimation Helpers **********/
 
 function buildReserveEstimate(
-  poolConfig: Pool.PoolConfig,
-  reserve: Pool.Reserve,
+  poolConfig: PoolConfig,
+  reserve: Reserve,
   lastUpdated: number
 ): ReserveEstimates {
   let decimal_bstop_rate = poolConfig.backstopRate / 1e8; // TODO: Fix after pool redeploy updates bstop rate
@@ -319,9 +323,12 @@ function buildPoolUserEstimate(
   };
   for (const res_est of pool_est.reserve_est ?? []) {
     let user_balance = userData?.reserveBalances.get(res_est.id);
-    let reserveData = poolData.reserves.find((reserve) => {
-      reserve.assetId == res_est.id;
-    });
+    let reserveData: Reserve | undefined;
+    for (const reserve of poolData.reserves) {
+      if (reserve.assetId == res_est.id) {
+        reserveData = reserve;
+      }
+    }
 
     if (user_balance && reserveData) {
       let decimals = reserveData.config.decimals;
@@ -343,7 +350,6 @@ function buildPoolUserEstimate(
   user_est.borrow_apy = user_est.borrow_apy / user_est.total_borrowed_base;
   user_est.net_apy =
     user_est.net_apy / (user_est.total_supplied_base + user_est.total_borrowed_base);
-
   return user_est;
 }
 
@@ -356,8 +362,8 @@ function estimatePoolUserEmissionBalance(
   for (const reserve of poolData.reserves) {
     const supply_bal = userData.reserveBalances.get(reserve.assetId)?.collateral ?? BigInt(0);
     const liability_bal = userData.reserveBalances.get(reserve.assetId)?.liability ?? BigInt(0);
-    const reserveEmissionConfig = reserve.emissionConfig;
-    const reserveEmissionData = reserve.emissionData;
+    const reserveEmissionConfig: ReserveEmissionConfig | undefined = reserve.emissionConfig;
+    const reserveEmissionData: ReserveEmissionData | undefined = reserve.emissionData;
     const user_liability_emission = userData.emissionsData.get(reserve.config.index * 2);
     const user_supply_emission = userData.emissionsData.get(reserve.config.index * 2 + 1);
 
@@ -393,12 +399,12 @@ function buildBackstopUserEstimate(
   const backstopPoolBalance = backstopPoolData.poolBalance;
   const shareRate = Number(backstopPoolBalance.tokens) / Number(backstopPoolBalance.shares);
   const backstopDeposit = backstopUserData.userBalance.shares;
-  const backstopWalletBalance = backstopUserData.userBalance;
+  const backstopWalletBalance = backstopUserData.walletBalance;
   const depositBalance = (Number(backstopDeposit ?? 0) / 1e7) * shareRate;
   const walletBalance = Number(backstopWalletBalance) / 1e7;
 
   let unlockedAmount = BigInt(0);
-  let lockedList: Backstop.Q4W[] = [];
+  let lockedList: Q4W[] = [];
   const NOW_SECONDS = Math.floor(Date.now() / 1000);
   for (const q4w of backstopUserData.userBalance.q4w) {
     if (q4w.exp < NOW_SECONDS) {
