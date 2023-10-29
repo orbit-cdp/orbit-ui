@@ -99,8 +99,8 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {/* TODO */}
-              {`$${toBalance((Number(toDeposit ?? 0) * Number(0.05)) / 1e7)}`}
+              {/* TODO calculate lp price*/}
+              {`$${toBalance((Number(toDeposit ?? 0) * Number(0.75e7)) / 1e7)}`}
             </Typography>
           </Box>
         </Box>

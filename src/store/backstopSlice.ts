@@ -1,18 +1,19 @@
-import * as Backstop from '@blend-capital/blend-sdk/backstop';
+import * as BlendSdk from '@blend-capital/blend-sdk';
 import { Address } from 'soroban-client';
 import { StateCreator } from 'zustand';
 import { getTokenBalance } from '../external/token';
 import { DataStore, useStore } from './store';
 
-export interface BackstopPoolData extends Backstop.BackstopPoolData {
+export interface BackstopPoolData extends BlendSdk.BackstopPoolData {
   lastUpdated: number;
 }
 
-export interface BackstopUserData extends Backstop.BackstopUserData {
+export interface BackstopUserData extends BlendSdk.BackstopUserData {
+  walletBalance: bigint;
   lastUpdated: number;
 }
 
-export interface BackstopConfig extends Backstop.BackstopConfig {
+export interface BackstopConfig extends BlendSdk.BackstopConfig {
   lastUpdated: number;
 }
 
@@ -20,7 +21,7 @@ export interface BackstopConfig extends Backstop.BackstopConfig {
  * Ledger state for the backstop
  */
 export interface BackstopSlice {
-  backstopContract: Backstop.BackstopClient;
+  backstopContract: BlendSdk.BackstopClient;
   backstopConfig: BackstopConfig;
   backstopPoolData: Map<string, BackstopPoolData>;
   backstopUserData: Map<string, BackstopUserData>;
@@ -33,8 +34,8 @@ export interface BackstopSlice {
 }
 
 export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice> = (set, get) => ({
-  backstopContract: new Backstop.BackstopClient(
-    'CC57ZMIPOM7KHMPOIRFOF35DVZXAYUOWI6A32QKMMMEI3BQCJKX76OG4'
+  backstopContract: new BlendSdk.BackstopClient(
+    'CDTOB4B2HDN55UP6FW4DWBH6BPTSOXQIEGW5LTVFQC5X4ONU7KWRPQSR'
   ),
   backstopConfig: {
     blndTkn: 'NULL',
@@ -56,13 +57,13 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
       const rpc = get().rpcUrl;
       const passphrase = get().passphrase;
       const contract = get().backstopContract;
-      const backstopConfig = await Backstop.BackstopConfig.load(
+      const backstopConfig = await BlendSdk.BackstopConfig.load(
         { rpc, passphrase, opts: { allowHttp: true } },
         contract.address
       );
       const poolData = new Map<string, BackstopPoolData>();
       backstopConfig.rewardZone.forEach(async (poolId) => {
-        const backstopPoolData = await Backstop.BackstopPoolData.load(
+        const backstopPoolData = await BlendSdk.BackstopPoolData.load(
           { rpc, passphrase, opts: { allowHttp: true } },
           contract.address,
           poolId
@@ -103,14 +104,14 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
       const stellar = get().rpcServer();
       const backstopConfig = get().backstopConfig;
 
-      let backstopPoolData = await Backstop.BackstopPoolData.load(
+      let backstopPoolData = await BlendSdk.BackstopPoolData.load(
         { rpc, passphrase, opts: { allowHttp: true } },
         contract.address,
         pool_id
       );
 
       if (user_id) {
-        let userData = await Backstop.BackstopUserData.load(
+        let userData = await BlendSdk.BackstopUserData.load(
           { rpc, passphrase, opts: { allowHttp: true } },
           contract.address,
           pool_id,
@@ -122,10 +123,10 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
           backstopConfig.backstopTkn,
           Address.fromString(user_id)
         );
-        console.log('USERS BACKSTOP Wallet BAL', userBackstopWalletBalance);
         useStore.setState((prev) => ({
           backstopUserData: new Map(prev.backstopUserData).set(pool_id, {
             userBalance: userData.userBalance,
+            walletBalance: userBackstopWalletBalance,
             userEmissions: userData.userEmissions,
             lastUpdated: latest_ledger_close,
           }),

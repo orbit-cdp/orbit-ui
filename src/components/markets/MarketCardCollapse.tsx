@@ -14,7 +14,6 @@ export const MarketCardCollapse: React.FC<PoolComponentProps> = ({ poolId, sx, .
   const theme = useTheme();
 
   const poolConfig = useStore((state) => state.pools.get(poolId));
-  console.log('MARKETCARDCOLLAPSE', poolConfig);
   const backstopPoolEstimate = useStore((state) => state.backstop_pool_est.get(poolId));
 
   return (
