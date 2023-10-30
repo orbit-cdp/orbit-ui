@@ -1,6 +1,6 @@
+import { PoolBackstopActionArgs } from '@blend-capital/blend-sdk';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, Typography, useTheme } from '@mui/material';
-import { Address } from 'soroban-client';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
@@ -13,7 +13,7 @@ import { BackstopQueueItem } from './BackstopQueueItem';
 
 export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, submitTransaction } = useWallet();
+  const { connected, walletAddress, backstopWithdraw, backstopDequeueWithdrawal } = useWallet();
 
   const backstopContract = useStore((state) => state.backstopContract);
   const backstopUserEstimate = useStore((state) => state.backstop_user_est.get(poolId));
@@ -26,29 +26,24 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
 
   const handleClickUnqueue = async (amount: bigint) => {
     if (connected) {
-      // let dequeue_op = xdr.Operation.fromXDR(
-      //   backstopContract.dequeue_withdrawal({
-      //     from: walletAddress,
-      //     pool_address: poolId,
-      //     amount: BigInt(amount),
-      //   }),
-      //   'base64'
-      // );
-      // await submitTransaction(dequeue_op);
+      let dequeueArgs: PoolBackstopActionArgs = {
+        from: walletAddress,
+        pool_address: poolId,
+        amount: BigInt(amount),
+      };
+      await backstopDequeueWithdrawal(dequeueArgs, false);
       await loadBackstopData(poolId, walletAddress, true);
     }
   };
 
   const handleClickWithdrawal = async (amount: bigint) => {
     if (connected) {
-      let user_scval = new Address(walletAddress).toScVal();
-      // let withdraw_op = new Contract(backstopContract.address).call(
-      //   'withdraw',
-      //   user_scval,
-      //   Address.fromString(poolId).toScVal(),
-      //   nativeToScVal(amount, { type: 'i128' })
-      // );
-      // await submitTransaction(withdraw_op);
+      let withdrawArgs: PoolBackstopActionArgs = {
+        from: walletAddress,
+        pool_address: poolId,
+        amount: BigInt(amount),
+      };
+      await backstopWithdraw(withdrawArgs, false);
       await loadBackstopData(poolId, walletAddress, true);
     }
   };

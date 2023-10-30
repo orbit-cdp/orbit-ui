@@ -5,7 +5,7 @@ import {
   Reserve,
   UserPositions,
 } from '@blend-capital/blend-sdk';
-import { Address, Server, nativeToScVal, scValToBigInt, scValToNative, xdr } from 'soroban-client';
+import { Address, nativeToScVal, scValToBigInt, scValToNative, Server, xdr } from 'soroban-client';
 import { StateCreator } from 'zustand';
 import { getTokenBalance } from '../external/token';
 import { DataStore, useStore } from './store';
@@ -60,22 +60,19 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
 
   refreshPoolData: async (pool_id: string, latest_ledger_close: number) => {
     try {
-      const rpc = get().rpcUrl;
-      const passphrase = get().passphrase;
+      const network = get().network;
       const stellar = get().rpcServer();
 
       let pool = get().pools.get(pool_id);
       let set_pool = false;
       if (pool == undefined) {
-        pool = await PoolConfig.load({ rpc, passphrase, opts: { allowHttp: true } }, pool_id);
+        pool = await PoolConfig.load(network, pool_id);
         set_pool = true;
       }
       const prices = await loadOraclePrices(stellar, pool_id, pool);
       const pool_reserves: Reserve[] = [];
       for (const assetId of pool.reserveList) {
-        pool_reserves.push(
-          await Reserve.load({ rpc, passphrase, opts: { allowHttp: true } }, pool_id, assetId)
-        );
+        pool_reserves.push(await Reserve.load(network, pool_id, assetId));
       }
       if (set_pool) {
         useStore.setState((prev) => ({
@@ -102,8 +99,7 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
 
   refreshUserData: async (pool_id: string, user: string, latest_ledger_close: number) => {
     try {
-      const rpc = get().rpcUrl;
-      const passphrase = get().passphrase;
+      const network = get().network;
       const reserves = get().poolData.get(pool_id)?.reserves;
       const stellar = get().rpcServer();
 
@@ -111,16 +107,12 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
         throw Error('unknown pool');
       }
 
-      const user_reserve_positions = await UserPositions.load(
-        { rpc, passphrase, opts: { allowHttp: true } },
-        pool_id,
-        user
-      );
+      const user_reserve_positions = await UserPositions.load(network, pool_id, user);
       const userReserveBalances = new Map<string, ReserveBalance>();
       for (const reserve of reserves) {
         let userAssetBalance = await getTokenBalance(
           stellar,
-          passphrase,
+          network.passphrase,
           reserve.assetId,
           Address.fromString(user)
         );
@@ -133,7 +125,7 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
 
       let total_user_emissions = BigInt(0);
       let userEmissions = await PoolUserEmissions.load(
-        { rpc, passphrase, opts: { allowHttp: true } },
+        network,
         pool_id,
         user,
         reserves.map((reserve) => {

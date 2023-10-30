@@ -35,7 +35,7 @@ export interface BackstopSlice {
 
 export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice> = (set, get) => ({
   backstopContract: new BlendSdk.BackstopClient(
-    'CDTOB4B2HDN55UP6FW4DWBH6BPTSOXQIEGW5LTVFQC5X4ONU7KWRPQSR'
+    'CBRWGSROX5TBRFLLYORPZ3HXCEUYXMPB5QAEDCNYNPELL3RL66ZWYJ2R'
   ),
   backstopConfig: {
     blndTkn: 'NULL',
@@ -54,17 +54,13 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
 
   refreshBackstopData: async (latest_ledger_close: number) => {
     try {
-      const rpc = get().rpcUrl;
-      const passphrase = get().passphrase;
+      const network = get().network;
       const contract = get().backstopContract;
-      const backstopConfig = await BlendSdk.BackstopConfig.load(
-        { rpc, passphrase, opts: { allowHttp: true } },
-        contract.address
-      );
+      const backstopConfig = await BlendSdk.BackstopConfig.load(network, contract.address);
       const poolData = new Map<string, BackstopPoolData>();
       backstopConfig.rewardZone.forEach(async (poolId) => {
         const backstopPoolData = await BlendSdk.BackstopPoolData.load(
-          { rpc, passphrase, opts: { allowHttp: true } },
+          network,
           contract.address,
           poolId
         );
@@ -98,28 +94,27 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
     latest_ledger_close: number
   ) => {
     try {
-      const rpc = get().rpcUrl;
-      const passphrase = get().passphrase;
+      const network = get().network;
       const contract = get().backstopContract;
       const stellar = get().rpcServer();
       const backstopConfig = get().backstopConfig;
 
       let backstopPoolData = await BlendSdk.BackstopPoolData.load(
-        { rpc, passphrase, opts: { allowHttp: true } },
+        network,
         contract.address,
         pool_id
       );
 
       if (user_id) {
         let userData = await BlendSdk.BackstopUserData.load(
-          { rpc, passphrase, opts: { allowHttp: true } },
+          network,
           contract.address,
           pool_id,
           user_id
         );
         let userBackstopWalletBalance = await getTokenBalance(
           stellar,
-          passphrase,
+          network.passphrase,
           backstopConfig.backstopTkn,
           Address.fromString(user_id)
         );

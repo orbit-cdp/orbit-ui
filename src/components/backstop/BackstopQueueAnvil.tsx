@@ -1,3 +1,4 @@
+import { PoolBackstopActionArgs } from '@blend-capital/blend-sdk';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
@@ -5,6 +6,7 @@ import { useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
+import { scaleInputToBigInt } from '../../utils/scval';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
@@ -15,7 +17,7 @@ import { ValueChange } from '../common/ValueChange';
 
 export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, submitTransaction } = useWallet();
+  const { connected, walletAddress, backstopDeposit } = useWallet();
 
   const backstopContract = useStore((state) => state.backstopContract);
   const backstopUserEstimate = useStore((state) => state.backstop_user_est.get(poolId));
@@ -47,17 +49,13 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   };
 
   const handleSubmitTransaction = async () => {
-    // TODO: Revalidate?
     if (toQueue && connected) {
-      // let queue_op = xdr.Operation.fromXDR(
-      //   backstopContract.queue_withdrawal({
-      //     from: walletAddress,
-      //     pool_address: poolId,
-      //     amount: scaleInputToBigInt(toQueue, 7),
-      //   }),
-      //   'base64'
-      // );
-      // await submitTransaction(queue_op);
+      let depositArgs: PoolBackstopActionArgs = {
+        from: walletAddress,
+        pool_address: poolId,
+        amount: scaleInputToBigInt(toQueue, 7),
+      };
+      await backstopDeposit(depositArgs, false);
       await loadBackstopData(poolId, walletAddress, true);
     }
   };

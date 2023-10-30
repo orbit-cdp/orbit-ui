@@ -1,3 +1,4 @@
+import { SubmitArgs } from '@blend-capital/blend-sdk';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
@@ -5,6 +6,7 @@ import { useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
+import { scaleInputToBigInt } from '../../utils/scval';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
@@ -15,12 +17,10 @@ import { ValueChange } from '../common/ValueChange';
 
 export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, submitTransaction } = useWallet();
+  const { connected, walletAddress, poolSubmit } = useWallet();
 
   const reserve = useStore((state) =>
-    state.poolData.get(poolId)?.reserves.find((reserve) => {
-      reserve.assetId == assetId;
-    })
+    state.poolData.get(poolId)?.reserves.find((reserve) => reserve.assetId == assetId)
   );
   const assetToBase = useStore((state) => state.poolData.get(poolId))?.poolPrices.get(assetId) ?? 1;
   const user_est = useStore((state) => state.pool_user_est.get(poolId));
@@ -74,23 +74,19 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
 
   const handleSubmitTransaction = async () => {
     if (toRepay && connected && reserve) {
-      // let pool = new Pool.PoolOpBuilder(poolId);
-      // let repay_op = xdr.Operation.fromXDR(
-      //   pool.submit({
-      //     from: walletAddress,
-      //     spender: walletAddress,
-      //     to: walletAddress,
-      //     requests: [
-      //       {
-      //         amount: scaleInputToBigInt(toRepay, decimals),
-      //         request_type: 5,
-      //         address: reserve.asset_id,
-      //       },
-      //     ],
-      //   }),
-      //   'base64'
-      // );
-      // await submitTransaction(repay_op);
+      let submitArgs: SubmitArgs = {
+        from: walletAddress,
+        to: walletAddress,
+        spender: walletAddress,
+        requests: [
+          {
+            amount: scaleInputToBigInt(toRepay, decimals),
+            request_type: 5,
+            address: reserve.assetId,
+          },
+        ],
+      };
+      await poolSubmit(poolId, submitArgs, false);
       await loadPoolData(poolId, walletAddress, true);
     }
   };
