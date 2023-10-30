@@ -93,7 +93,6 @@ export const WalletProvider = ({ children = null as any }) => {
    */
   async function sign(xdr: string): Promise<string> {
     if (connected) {
-      console.log('signing');
       setTxStatus(TxStatus.SIGNING);
       let result = await signTransaction(xdr, { networkPassphrase: network.passphrase });
       setTxStatus(TxStatus.SUBMITTING);
@@ -107,11 +106,8 @@ export const WalletProvider = ({ children = null as any }) => {
     submission: Promise<ContractResult<T>>
   ): Promise<T | undefined> {
     try {
-      console.log('in submit');
       // submission calls `sign` internally which handles setting TxStatus
       let result = await submission;
-      console.log('Submitted TX:', result.hash);
-      console.log('result: ', result.toString());
       if (result.ok) {
         setTxStatus(TxStatus.SUCCESS);
       } else {

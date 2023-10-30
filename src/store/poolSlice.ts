@@ -248,6 +248,5 @@ async function loadOraclePrices(
       price_map.set(assetId, Number(price) / 10 ** 7);
     }
   }
-  console.log(price_map);
   return price_map;
 }
