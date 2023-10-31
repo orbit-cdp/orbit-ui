@@ -135,7 +135,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
                   <LocalFireDepartmentIcon />
                 </Box>
                 <StackedText
-                  title="Claim Pool Emissions1"
+                  title="Claim Pool Emissions"
                   titleColor="inherit"
                   text={`${toBalance(poolUserEstimate?.emission_balance)} BLND`}
                   textColor="inherit"

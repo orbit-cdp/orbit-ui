@@ -17,7 +17,7 @@
     "@mui/material": "^5.8.6",
     "@stellar/freighter-api": "^1.4.0",
     "bignumber.js": "^9.0.2",
-    "@blend-capital/blend-sdk": "^0.0.3",
+    "@blend-capital/blend-sdk": "^0.0.4",
     "copy-to-clipboard": "^3.3.3",
     "next": "^12.3.4",
     "react": "^18.2.0",
