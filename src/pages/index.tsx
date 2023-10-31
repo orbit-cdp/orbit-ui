@@ -10,8 +10,7 @@ import { useStore } from '../store/store';
 const Markets: NextPage = () => {
   const loadBackstopData = useStore((state) => state.loadBackstopData);
   const loadPoolData = useStore((state) => state.loadPoolData);
-  const rewardZone = useStore((state) => state.backstopData.rewardZone);
-
+  const rewardZone = useStore((state) => state.backstopConfig.rewardZone);
   useEffect(() => {
     const updateMarket = async () => {
       rewardZone.forEach(async (poolId) => {

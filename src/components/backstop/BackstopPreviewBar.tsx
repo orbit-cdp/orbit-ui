@@ -1,6 +1,6 @@
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, useTheme } from '@mui/material';
-import { useSettings, ViewType } from '../../contexts';
+import { ViewType, useSettings } from '../../contexts';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
@@ -18,7 +18,8 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
 
   const backstopPoolEstimate = useStore((state) => state.backstop_pool_est.get(poolId));
   const backstopUserEstimate = useStore((state) => state.backstop_user_est.get(poolId));
-  const backstopTokenToBase = useStore((state) => state.backstopData.backstopTokenPrice);
+  //TODO
+  const backstopTokenToBase = 0.75; //useStore((state) => state.backstopData.backstopTokenPrice);
   const tokenToBase = Number(backstopTokenToBase) / 1e7;
   const userBalance = backstopUserEstimate
     ? Number(backstopUserEstimate.depositBalance) * tokenToBase
@@ -162,7 +163,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
               <StackedText
                 title="Total Backstop Size"
                 titleColor="inherit"
-                text={`$${toBalance(estBackstopSize)}`}
+                text={`$${toBalance(backstopPoolEstimate?.backstopSize)}`}
                 textColor="inherit"
                 type="large"
               />

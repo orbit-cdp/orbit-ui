@@ -1,5 +1,5 @@
+import { Q4W } from '@blend-capital/blend-sdk';
 import { Box, CircularProgress, Typography } from '@mui/material';
-import { Backstop } from 'blend-sdk';
 import { useEffect, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
@@ -11,11 +11,10 @@ import { Row } from '../common/Row';
 import { TokenIcon } from '../common/TokenIcon';
 
 export interface BackstopQueueItemProps extends PoolComponentProps {
-  q4w: Backstop.Q4W;
+  q4w: Q4W;
   amount: number;
   handleClickUnqueue: (amount: bigint) => void;
 }
-
 export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
   q4w,
   amount,
@@ -28,14 +27,14 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
   const NOW_SECONDS = Math.floor(Date.now() / 1000);
   const THIRTY_DAYS_SECONDS = 30 * 24 * 60 * 60;
 
-  const [timeLeft, setTimeLeft] = useState<number>(Math.max(0, q4w.exp - NOW_SECONDS));
+  const [timeLeft, setTimeLeft] = useState<number>(Math.max(0, Number(q4w.exp) - NOW_SECONDS));
   const timeWaitedPercentage = Math.min(1, 1 - timeLeft / THIRTY_DAYS_SECONDS);
 
   useEffect(() => {
     if (timeLeft > 0) {
       const timeInterval = timeLeft > 24 * 60 * 60 ? 60 * 1000 : 1000;
       const refreshInterval = setInterval(() => {
-        setTimeLeft(Math.min(0, NOW_SECONDS - q4w.exp));
+        setTimeLeft(Math.min(0, NOW_SECONDS - Number(q4w.exp)));
       }, timeInterval);
       return () => clearInterval(refreshInterval);
     } else if (timeLeft == 0) {
@@ -45,7 +44,7 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
   }, [q4w, timeLeft, NOW_SECONDS, loadBackstopData, walletAddress, poolId]);
 
   return (
-    <Row key={q4w.exp}>
+    <Row key={Number(q4w.exp)}>
       <Box sx={{ margin: '6px', padding: '6px', display: 'flex', alignItems: 'center' }}>
         <CircularProgress
           sx={{

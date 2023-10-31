@@ -8,7 +8,7 @@ import { NavItem } from './NavItem';
 export const NavMenu = () => {
   const theme = useTheme();
   const { viewType, lastPool } = useSettings();
-  const rewardZone = useStore((state) => state.backstopData.rewardZone);
+  const rewardZone = useStore((state) => state.backstopConfig.rewardZone);
   const [poolId, setPoolId] = useState<string>(lastPool ?? '');
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
