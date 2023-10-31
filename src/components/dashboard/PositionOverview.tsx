@@ -1,7 +1,9 @@
+import { PoolClaimArgs } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import { Box, CircularProgress, useTheme } from '@mui/material';
 import { useSettings, ViewType } from '../../contexts';
+import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
@@ -14,8 +16,11 @@ import { StackedText } from '../common/StackedText';
 export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
   const theme = useTheme();
+  const { connected, walletAddress, poolClaim } = useWallet();
 
   const poolUserEstimate = useStore((state) => state.pool_user_est.get(poolId));
+  const poolUserData = useStore((state) => state.poolUserData.get(poolId));
+  const loadPoolData = useStore((state) => state.loadPoolData);
 
   const borrow_capacity = poolUserEstimate
     ? poolUserEstimate.e_collateral_base - poolUserEstimate.e_liabilities_base
@@ -24,6 +29,23 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
     ? (poolUserEstimate.e_liabilities_base / poolUserEstimate.e_collateral_base) * 100
     : 100;
   const net_apy = Number.isFinite(poolUserEstimate?.net_apy) ? poolUserEstimate?.net_apy : 0;
+
+  const handleSubmitTransaction = async () => {
+    if (connected && poolUserData) {
+      let reserves_to_claim = Array.from(poolUserData.emissionsData.entries()).map(
+        (emission) => emission[0]
+      );
+      if (reserves_to_claim.length > 0) {
+        let claimArgs: PoolClaimArgs = {
+          from: walletAddress,
+          reserve_token_ids: reserves_to_claim,
+          to: walletAddress,
+        };
+        await poolClaim(poolId, claimArgs, false);
+        await loadPoolData(poolId, walletAddress, true);
+      }
+    }
+  };
 
   return (
     <>
@@ -84,10 +106,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
               />
             </Box>
           </Box>
-          <LinkBox
-            sx={{ width: '45%', marginRight: '12px' }}
-            to={{ pathname: '/backstop', query: { poolId: poolId } }}
-          >
+          <Box sx={{ width: '45%', marginRight: '12px' }}>
             <CustomButton
               sx={{
                 margin: '6px',
@@ -99,6 +118,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
                   color: theme.palette.primary.main,
                 },
               }}
+              onClick={handleSubmitTransaction}
             >
               <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
                 <Box
@@ -115,16 +135,16 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
                   <LocalFireDepartmentIcon />
                 </Box>
                 <StackedText
-                  title="Claim Pool Emissions"
+                  title="Claim Pool Emissions1"
                   titleColor="inherit"
-                  text="100.888k"
+                  text={`${toBalance(poolUserEstimate?.emission_balance)} BLND`}
                   textColor="inherit"
                   type="large"
                 />
               </Box>
               <ArrowForwardIcon fontSize="inherit" />
             </CustomButton>
-          </LinkBox>
+          </Box>
         </Row>
       )}
       {viewType !== ViewType.REGULAR && (
@@ -217,9 +237,10 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
                 <StackedText
                   title="Claim Pool Emissions"
                   titleColor="inherit"
-                  text="100.888k"
+                  text={`${toBalance(poolUserEstimate?.emission_balance)} BLND`}
                   textColor="inherit"
                   type="large"
+                  onClick={handleSubmitTransaction}
                 />
               </Box>
               <ArrowForwardIcon fontSize="inherit" />

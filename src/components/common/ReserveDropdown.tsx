@@ -18,9 +18,7 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
   const router = useRouter();
 
   const reserves = useStore((state) => state.poolData.get(poolId)?.reserves);
-  const activeReserve = reserves?.find((reserve) => {
-    reserve.assetId == activeReserveId;
-  });
+  const activeReserve = reserves?.find((reserve) => reserve.assetId == activeReserveId);
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);

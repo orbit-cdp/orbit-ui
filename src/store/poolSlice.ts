@@ -72,7 +72,9 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
       const prices = await loadOraclePrices(stellar, pool_id, pool);
       const pool_reserves: Reserve[] = [];
       for (const assetId of pool.reserveList) {
-        pool_reserves.push(await Reserve.load(network, pool_id, assetId));
+        let reserve = await Reserve.load(network, pool_id, assetId);
+        reserve.symbol = reserve.symbol == 'native' ? 'XLM' : reserve.symbol;
+        pool_reserves.push(reserve);
       }
       if (set_pool) {
         useStore.setState((prev) => ({
