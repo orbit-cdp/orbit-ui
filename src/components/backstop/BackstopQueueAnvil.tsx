@@ -17,7 +17,7 @@ import { ValueChange } from '../common/ValueChange';
 
 export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, backstopDeposit } = useWallet();
+  const { connected, walletAddress, backstopQueueWithdrawal } = useWallet();
 
   const backstopContract = useStore((state) => state.backstopContract);
   const backstopUserEstimate = useStore((state) => state.backstop_user_est.get(poolId));
@@ -55,7 +55,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
         pool_address: poolId,
         amount: scaleInputToBigInt(toQueue, 7),
       };
-      await backstopDeposit(depositArgs, false);
+      await backstopQueueWithdrawal(depositArgs, false);
       await loadBackstopData(poolId, walletAddress, true);
     }
   };

@@ -35,7 +35,7 @@ export interface BackstopSlice {
 
 export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice> = (set, get) => ({
   backstopContract: new BlendSdk.BackstopClient(
-    'CBRWGSROX5TBRFLLYORPZ3HXCEUYXMPB5QAEDCNYNPELL3RL66ZWYJ2R'
+    'CA47F2MX5KPXSFYLCOFVBDIM7O57IEMFXQHW6KTUZAJ4UP2FXPPNLHCA'
   ),
   backstopConfig: {
     blndTkn: 'NULL',

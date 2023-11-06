@@ -41,7 +41,7 @@ export type PoolUserEstimates = {
   e_collateral_base: number;
   e_liabilities_base: number;
   reserve_estimates: Map<string, UserReserveEstimates>;
-  emission_balance: bigint;
+  emission_balance: number;
 };
 
 export type UserReserveEstimates = {
@@ -106,7 +106,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
       let latest_ledger_close = tx_response.latestLedgerCloseTime;
       let poolData = get().poolData.get(pool_id);
       let pool = get().pools.get(pool_id);
-      console.log(`Estimating pool data for ${pool_id} to ledger: ${latest_ledger_close}`);
+      console.log(`Estimating pool data for ${pool_id} to ledger time: ${latest_ledger_close}`);
 
       if (
         !poolData ||
@@ -114,7 +114,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
         !pool ||
         force_reload
       ) {
-        console.log(`Loading pool data for ${pool_id} from ledger: ${latest_ledger_close}`);
+        console.log(`Loading pool data for ${pool_id} from ledger time: ${latest_ledger_close}`);
         await get().refreshPoolData(pool_id, latest_ledger_close);
         poolData = get().poolData.get(pool_id);
         pool = get().pools.get(pool_id);
@@ -149,7 +149,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
           force_reload
         ) {
           console.log(
-            `Loading pool position data for ${user_id} from ledger: ${latest_ledger_close}`
+            `Loading pool position data for ${user_id} from ledger time: ${latest_ledger_close}`
           );
           await get().refreshUserData(pool_id, user_id, latest_ledger_close);
           userData = get().poolUserData.get(pool_id);
@@ -189,7 +189,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
         '0000000000000000000000000000000000000000000000000000000000000000'
       ); // TODO: File issue/pr to add getLatestLedger endpoint
       let latest_ledger_close = tx_response.latestLedgerCloseTime;
-      console.log(`Estimating backstop data for ${pool_id} to ledger: ${latest_ledger_close}`);
+      console.log(`Estimating backstop data for ${pool_id} to ledger time: ${latest_ledger_close}`);
 
       const poolEst = get().pool_est.get(pool_id);
       let backstopConfig = get().backstopConfig;
@@ -200,7 +200,7 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
         Number(backstopConfig.lastUpdated) + Number(60) < latest_ledger_close ||
         force_reload
       ) {
-        console.log(`Loading backstop data from ledger: ${latest_ledger_close}`);
+        console.log(`Loading backstop data from ledger time: ${latest_ledger_close}`);
         await get().refreshBackstopData(latest_ledger_close);
         backstopConfig = get().backstopConfig;
       }
@@ -210,7 +210,9 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
         Number(backstopPoolData.lastUpdated) + Number(60) < latest_ledger_close ||
         force_reload
       ) {
-        console.log(`Loading backstop data for ${pool_id} from ledger: ${latest_ledger_close}`);
+        console.log(
+          `Loading backstop data for ${pool_id} from ledger time: ${latest_ledger_close}`
+        );
         await get().refreshBackstopPoolData(pool_id, undefined, latest_ledger_close);
         backstopPoolData = get().backstopPoolData.get(pool_id);
       }
@@ -229,10 +231,11 @@ export const createEstimationSlice: StateCreator<DataStore, [], [], EstimationSl
           let backstopUserData = get().backstopUserData.get(pool_id);
           if (
             !backstopUserData ||
-            Number(backstopUserData.lastUpdated) + Number(60) < latest_ledger_close
+            Number(backstopUserData.lastUpdated) + Number(60) < latest_ledger_close ||
+            force_reload
           ) {
             console.log(
-              `Loading backstop position data for ${user_id} from ledger: ${latest_ledger_close}`
+              `Loading backstop position data for ${user_id} from ledger time: ${latest_ledger_close}`
             );
             await get().refreshBackstopPoolData(pool_id, user_id, latest_ledger_close);
             backstopUserData = get().backstopUserData.get(pool_id);
@@ -319,19 +322,13 @@ function buildPoolUserEstimate(
     e_collateral_base: 0,
     e_liabilities_base: 0,
     reserve_estimates: new Map(),
-    emission_balance: BigInt(0),
+    emission_balance: 0,
   };
   for (const res_est of pool_est.reserve_est ?? []) {
     let user_balance = userData?.reserveBalances.get(res_est.id);
-    let reserveData: Reserve | undefined;
-    for (const reserve of poolData.reserves) {
-      if (reserve.assetId == res_est.id) {
-        reserveData = reserve;
-      }
-    }
 
-    if (user_balance && reserveData) {
-      let decimals = reserveData.config.decimals;
+    if (user_balance) {
+      let decimals = res_est.decimals;
       let user_res_est = buildUserReserveEstimates(res_est, user_balance, decimals);
       let price = poolData?.poolPrices.get(res_est.id) ?? 1;
       let res_supplied_base = user_res_est.supplied * price;
@@ -344,6 +341,8 @@ function buildPoolUserEstimate(
       user_est.borrow_apy += res_borrowed_base * res_est.apy;
       user_est.net_apy += res_supplied_base * res_est.supply_apy - res_borrowed_base * res_est.apy;
       user_est.reserve_estimates.set(res_est.id, user_res_est);
+
+      // calculate any emissions
     }
   }
   user_est.supply_apy = user_est.supply_apy / user_est.total_supplied_base;
@@ -357,7 +356,7 @@ function estimatePoolUserEmissionBalance(
   userData: PoolUserData,
   poolData: PoolData,
   latestLedgerClose: number
-): bigint {
+): number {
   let userEmissionBal = userData.totalEmissions;
   for (const reserve of poolData.reserves) {
     const supply_bal = userData.reserveBalances.get(reserve.assetId)?.collateral ?? BigInt(0);
@@ -389,7 +388,7 @@ function estimatePoolUserEmissionBalance(
       }
     }
   }
-  return userEmissionBal;
+  return Number(userEmissionBal) / 1e7;
 }
 
 function buildBackstopUserEstimate(
@@ -398,30 +397,26 @@ function buildBackstopUserEstimate(
 ): BackstopUserEstimates {
   const backstopPoolBalance = backstopPoolData.poolBalance;
   const shareRate = Number(backstopPoolBalance.tokens) / Number(backstopPoolBalance.shares);
-  const backstopDeposit = backstopUserData.userBalance.shares;
-  const backstopWalletBalance = backstopUserData.walletBalance;
-  const depositBalance = (Number(backstopDeposit ?? 0) / 1e7) * shareRate;
-  const walletBalance = Number(backstopWalletBalance) / 1e7;
 
   let unlockedAmount = BigInt(0);
   let lockedList: Q4W[] = [];
   const NOW_SECONDS = Math.floor(Date.now() / 1000);
+  let totalInQueue = BigInt(0);
   for (const q4w of backstopUserData.userBalance.q4w) {
+    totalInQueue += q4w.amount;
     if (q4w.exp < NOW_SECONDS) {
       // unlocked, only display a single unlocked entry
-      unlockedAmount += q4w.amount / BigInt(1e7);
+      unlockedAmount += q4w.amount;
     } else {
       lockedList.push(q4w);
     }
   }
   const unqueuedBalance = (Number(backstopUserData.userBalance.shares) / 1e7) * shareRate;
-  const queuedBalance =
-    lockedList.reduce((total, q4w) => total + Number(q4w.amount) / 1e7, 0) + Number(unlockedAmount);
-  const availableToQueue = unqueuedBalance - queuedBalance - Number(unlockedAmount);
+  const queuedBalance = (Number(totalInQueue) / 1e7) * shareRate;
   return {
-    availableToQueue,
-    depositBalance,
-    walletBalance,
+    availableToQueue: unqueuedBalance,
+    depositBalance: unqueuedBalance + queuedBalance,
+    walletBalance: Number(backstopUserData.walletBalance ?? 0) / 1e7,
     q4wUnlockedAmount: (Number(unlockedAmount) / 1e7) * shareRate,
     q4w: lockedList,
   };

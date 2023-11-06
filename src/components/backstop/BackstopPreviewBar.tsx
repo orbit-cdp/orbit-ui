@@ -1,6 +1,6 @@
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, useTheme } from '@mui/material';
-import { ViewType, useSettings } from '../../contexts';
+import { useSettings, ViewType } from '../../contexts';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
@@ -20,9 +20,8 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
   const backstopUserEstimate = useStore((state) => state.backstop_user_est.get(poolId));
   //TODO
   const backstopTokenToBase = 0.75; //useStore((state) => state.backstopData.backstopTokenPrice);
-  const tokenToBase = Number(backstopTokenToBase) / 1e7;
   const userBalance = backstopUserEstimate
-    ? Number(backstopUserEstimate.depositBalance) * tokenToBase
+    ? Number(backstopUserEstimate.depositBalance) * backstopTokenToBase
     : undefined;
 
   return (
