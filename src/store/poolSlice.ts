@@ -5,7 +5,7 @@ import {
   Reserve,
   UserPositions,
 } from '@blend-capital/blend-sdk';
-import { Address, nativeToScVal, scValToBigInt, scValToNative, Server, xdr } from 'soroban-client';
+import { Address, Server, nativeToScVal, scValToBigInt, scValToNative, xdr } from 'soroban-client';
 import { StateCreator } from 'zustand';
 import { getTokenBalance } from '../external/token';
 import { DataStore, useStore } from './store';
@@ -100,33 +100,38 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
   },
 
   refreshUserData: async (pool_id: string, user: string, latest_ledger_close: number) => {
+    const network = get().network;
+    const reserves = get().poolData.get(pool_id)?.reserves;
+    const stellar = get().rpcServer();
+
+    if (!reserves) {
+      throw Error('unknown pool');
+    }
+    let user_reserve_positions: UserPositions = new UserPositions(new Map(), new Map(), new Map());
     try {
-      const network = get().network;
-      const reserves = get().poolData.get(pool_id)?.reserves;
-      const stellar = get().rpcServer();
+      user_reserve_positions = await UserPositions.load(network, pool_id, user);
+    } catch (e) {
+      console.error('Unable to refresh user positions', e);
+    }
+    const userReserveBalances = new Map<string, ReserveBalance>();
+    for (const reserve of reserves) {
+      let userAssetBalance = await getTokenBalance(
+        stellar,
+        network.passphrase,
+        reserve.assetId,
+        Address.fromString(user)
+      );
+      userReserveBalances.set(reserve.assetId, {
+        asset: userAssetBalance,
+        collateral: user_reserve_positions.collateral.get(reserve.config.index) ?? BigInt(0),
+        liability: user_reserve_positions.liabilities.get(reserve.config.index) ?? BigInt(0),
+      });
+    }
 
-      if (!reserves) {
-        throw Error('unknown pool');
-      }
-
-      const user_reserve_positions = await UserPositions.load(network, pool_id, user);
-      const userReserveBalances = new Map<string, ReserveBalance>();
-      for (const reserve of reserves) {
-        let userAssetBalance = await getTokenBalance(
-          stellar,
-          network.passphrase,
-          reserve.assetId,
-          Address.fromString(user)
-        );
-        userReserveBalances.set(reserve.assetId, {
-          asset: userAssetBalance,
-          collateral: user_reserve_positions.collateral.get(reserve.config.index) ?? BigInt(0),
-          liability: user_reserve_positions.liabilities.get(reserve.config.index) ?? BigInt(0),
-        });
-      }
-
-      let total_user_emissions = BigInt(0);
-      let userEmissions = await PoolUserEmissions.load(
+    let total_user_emissions = BigInt(0);
+    let userEmissions = new PoolUserEmissions(new Map());
+    try {
+      userEmissions = await PoolUserEmissions.load(
         network,
         pool_id,
         user,
@@ -137,17 +142,18 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
       for (let entry of Array.from(userEmissions.emissions.entries())) {
         total_user_emissions += entry[1].accrued;
       }
-      useStore.setState((prev) => ({
-        poolUserData: new Map(prev.poolUserData).set(pool_id, {
-          reserveBalances: userReserveBalances,
-          emissionsData: userEmissions.emissions,
-          totalEmissions: total_user_emissions,
-          lastUpdated: latest_ledger_close,
-        }),
-      }));
     } catch (e) {
-      console.error('unable to refresh user emission data', e);
+      console.error('Unable to refresh user emissions');
     }
+
+    useStore.setState((prev) => ({
+      poolUserData: new Map(prev.poolUserData).set(pool_id, {
+        reserveBalances: userReserveBalances,
+        emissionsData: userEmissions.emissions,
+        totalEmissions: total_user_emissions,
+        lastUpdated: latest_ledger_close,
+      }),
+    }));
   },
 });
 
