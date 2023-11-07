@@ -50,6 +50,7 @@ const WalletContext = React.createContext<IWalletContext | undefined>(undefined)
 export const WalletProvider = ({ children = null as any }) => {
   const network = useStore((state) => state.network);
   const backstopClient = useStore((state) => state.backstopContract);
+  const loadAccount = useStore((state) => state.loadAccount);
   const removeUserState = useStore((state) => state.removeUserData);
 
   const [connected, setConnected] = useState<boolean>(false);
@@ -77,6 +78,7 @@ export const WalletProvider = ({ children = null as any }) => {
       publicKey = await getPublicKey();
       setWalletAddress(publicKey);
       setConnected(true);
+      await loadAccount(publicKey);
     } catch (e: any) {
       error = e?.message ?? 'Failed to connect wallet.';
     }
@@ -122,6 +124,14 @@ export const WalletProvider = ({ children = null as any }) => {
         console.log('Failed submitted transaction: ', result.hash);
         setTxStatus(TxStatus.FAIL);
       }
+
+      // reload Horizon account after submission
+      try {
+        await loadAccount(walletAddress);
+      } catch {
+        console.error('Failed loading account: ', walletAddress);
+      }
+
       return result.unwrap();
     } catch (e) {
       console.error('Failed submitting transaction: ', e);

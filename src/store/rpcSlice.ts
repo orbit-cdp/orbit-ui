@@ -3,13 +3,13 @@ import { Server } from 'soroban-client';
 import { StateCreator } from 'zustand';
 import { DataStore } from './store';
 
-export interface NetworkSlice {
+export interface RPCSlice {
   network: Network;
   rpcServer: () => Server;
   setNetwork: (rpcUrl: string, newPassphrase: string, opts?: Server.Options) => void;
 }
 
-export const createNetworkSlice: StateCreator<DataStore, [], [], NetworkSlice> = (set, get) => ({
+export const createRPCSlice: StateCreator<DataStore, [], [], RPCSlice> = (set, get) => ({
   network: {
     rpc: 'https://rpc-futurenet.stellar.org',
     passphrase: 'Test SDF Future Network ; October 2022',
