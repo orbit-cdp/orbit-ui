@@ -1,3 +1,4 @@
+import { Asset } from 'soroban-client';
 import { AccountResponse, Server as Horizon } from 'stellar-sdk';
 import { StateCreator } from 'zustand';
 import { DataStore } from './store';
@@ -10,7 +11,8 @@ export interface HorizonSlice {
   horizonServer: () => Horizon;
   setHorizon: (url: string, opts?: Horizon.Options) => void;
   account: AccountResponse | undefined;
-  loadAccount: (id: string) => Promise<void>;
+  loadAccount: (id: string) => Promise<AccountResponse>;
+  hasTrustline: (asset: Asset, account: AccountResponse) => boolean;
 }
 
 export const createHorizonSlice: StateCreator<DataStore, [], [], HorizonSlice> = (set, get) => ({
@@ -30,5 +32,20 @@ export const createHorizonSlice: StateCreator<DataStore, [], [], HorizonSlice> =
     let horizon = get().horizonServer();
     let account = await horizon.loadAccount(id);
     set({ account });
+    return account;
+  },
+  hasTrustline: (asset, account) => {
+    for (const balance of account.balances) {
+      if (balance.asset_type == 'credit_alphanum12' || balance.asset_type == 'credit_alphanum4') {
+        if (
+          balance.asset_code == asset.code &&
+          balance.asset_issuer == asset.issuer &&
+          balance.asset_type == asset.getAssetType()
+        ) {
+          return true;
+        }
+      }
+    }
+    return false;
   },
 });
