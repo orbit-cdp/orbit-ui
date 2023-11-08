@@ -103,57 +103,67 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
     const network = get().network;
     const reserves = get().poolData.get(pool_id)?.reserves;
     const stellar = get().rpcServer();
-
-    if (!reserves) {
-      throw Error('unknown pool');
-    }
-    let user_reserve_positions: UserPositions = new UserPositions(new Map(), new Map(), new Map());
     try {
-      user_reserve_positions = await UserPositions.load(network, pool_id, user);
-    } catch (e) {
-      console.error('Unable to refresh user positions', e);
-    }
-    const userReserveBalances = new Map<string, ReserveBalance>();
-    for (const reserve of reserves) {
-      let userAssetBalance = await getTokenBalance(
-        stellar,
-        network.passphrase,
-        reserve.assetId,
-        Address.fromString(user)
-      );
-      userReserveBalances.set(reserve.assetId, {
-        asset: userAssetBalance,
-        collateral: user_reserve_positions.collateral.get(reserve.config.index) ?? BigInt(0),
-        liability: user_reserve_positions.liabilities.get(reserve.config.index) ?? BigInt(0),
-      });
-    }
-
-    let total_user_emissions = BigInt(0);
-    let userEmissions = new PoolUserEmissions(new Map());
-    try {
-      userEmissions = await PoolUserEmissions.load(
-        network,
-        pool_id,
-        user,
-        reserves.map((reserve) => {
-          return reserve.config.index;
-        })
-      );
-      for (let entry of Array.from(userEmissions.emissions.entries())) {
-        total_user_emissions += entry[1].accrued;
+      if (!reserves) {
+        throw Error('unknown pool');
       }
-    } catch (e) {
-      console.error('Unable to refresh user emissions');
-    }
+      let user_reserve_positions: UserPositions = new UserPositions(
+        new Map(),
+        new Map(),
+        new Map()
+      );
+      // TODO: make changes once sdk has been updated to handle UserPosition not existing
+      try {
+        user_reserve_positions = await UserPositions.load(network, pool_id, user);
+      } catch (e: any) {
+        if (e.message != "Unable to load user's positions") {
+          throw Error(e);
+        }
+      }
+      const userReserveBalances = new Map<string, ReserveBalance>();
+      for (const reserve of reserves) {
+        let userAssetBalance = await getTokenBalance(
+          stellar,
+          network.passphrase,
+          reserve.assetId,
+          Address.fromString(user)
+        );
+        userReserveBalances.set(reserve.assetId, {
+          asset: userAssetBalance,
+          collateral: user_reserve_positions.collateral.get(reserve.config.index) ?? BigInt(0),
+          liability: user_reserve_positions.liabilities.get(reserve.config.index) ?? BigInt(0),
+        });
+      }
 
-    useStore.setState((prev) => ({
-      poolUserData: new Map(prev.poolUserData).set(pool_id, {
-        reserveBalances: userReserveBalances,
-        emissionsData: userEmissions.emissions,
-        totalEmissions: total_user_emissions,
-        lastUpdated: latest_ledger_close,
-      }),
-    }));
+      let total_user_emissions = BigInt(0);
+      let userEmissions = new PoolUserEmissions(new Map());
+      try {
+        userEmissions = await PoolUserEmissions.load(
+          network,
+          pool_id,
+          user,
+          reserves.map((reserve) => {
+            return reserve.config.index;
+          })
+        );
+        for (let entry of Array.from(userEmissions.emissions.entries())) {
+          total_user_emissions += entry[1].accrued;
+        }
+      } catch (e) {
+        console.error('Unable to refresh user emissions');
+      }
+
+      useStore.setState((prev) => ({
+        poolUserData: new Map(prev.poolUserData).set(pool_id, {
+          reserveBalances: userReserveBalances,
+          emissionsData: userEmissions.emissions,
+          totalEmissions: total_user_emissions,
+          lastUpdated: latest_ledger_close,
+        }),
+      }));
+    } catch (e) {
+      console.error('Unable to refresh user data', e);
+    }
   },
 });
 
