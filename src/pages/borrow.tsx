@@ -29,7 +29,6 @@ const Borrow: NextPage = () => {
       return reserve.assetId == safeAssetId;
     })
   );
-  console.log(JSON.stringify(reserve));
   const reserve_est = useStore((state) =>
     state.pool_est.get(safePoolId)?.reserve_est?.find((res) => res.id === safeAssetId)
   );

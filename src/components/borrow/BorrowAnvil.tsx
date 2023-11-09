@@ -20,7 +20,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const { connected, walletAddress, poolSubmit } = useWallet();
 
   const reserve = useStore((state) =>
-    state.poolData.get(poolId)?.reserves.find((reserve) => (reserve.assetId = assetId))
+    state.poolData.get(poolId)?.reserves.find((reserve) => reserve.assetId == assetId)
   );
   const assetToBase = useStore((state) => state.poolData.get(poolId)?.poolPrices.get(assetId) ?? 1);
   const user_est = useStore((state) => state.pool_user_est.get(poolId));
@@ -31,6 +31,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     state.pool_est.get(poolId)?.reserve_est?.find((res) => res.id === assetId)
   );
   const loadPoolData = useStore((state) => state.loadPoolData);
+
   const [toBorrow, setToBorrow] = useState<string | undefined>(undefined);
   const [newEffectiveLiabilities, setNewEffectiveLiabilities] = useState<number>(
     user_est?.e_liabilities_base ?? 0

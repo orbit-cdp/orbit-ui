@@ -75,7 +75,6 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
         let reserve = await Reserve.load(network, pool_id, assetId);
         reserve.tokenMetadata.symbol =
           reserve.tokenMetadata.symbol == 'native' ? 'XLM' : reserve.tokenMetadata.symbol;
-        // console.log('Loaded reserve: ', JSON.stringify(reserve.tokenMetadata));
         pool_reserves.push(reserve);
       }
       if (set_pool) {
