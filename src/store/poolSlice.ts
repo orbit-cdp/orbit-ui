@@ -5,7 +5,7 @@ import {
   Reserve,
   UserPositions,
 } from '@blend-capital/blend-sdk';
-import { Address, Server, nativeToScVal, scValToBigInt, scValToNative, xdr } from 'soroban-client';
+import { Address, nativeToScVal, scValToBigInt, scValToNative, Server, xdr } from 'soroban-client';
 import { StateCreator } from 'zustand';
 import { getTokenBalance } from '../external/token';
 import { DataStore, useStore } from './store';
@@ -73,7 +73,9 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
       const pool_reserves: Reserve[] = [];
       for (const assetId of pool.reserveList) {
         let reserve = await Reserve.load(network, pool_id, assetId);
-        reserve.symbol = reserve.symbol == 'native' ? 'XLM' : reserve.symbol;
+        reserve.tokenMetadata.symbol =
+          reserve.tokenMetadata.symbol == 'native' ? 'XLM' : reserve.tokenMetadata.symbol;
+        // console.log('Loaded reserve: ', JSON.stringify(reserve.tokenMetadata));
         pool_reserves.push(reserve);
       }
       if (set_pool) {

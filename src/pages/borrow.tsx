@@ -26,9 +26,10 @@ const Borrow: NextPage = () => {
   const loadPoolData = useStore((state) => state.loadPoolData);
   const reserve = useStore((state) =>
     state.poolData.get(safePoolId)?.reserves?.find((reserve) => {
-      reserve.assetId == safeAssetId;
+      return reserve.assetId == safeAssetId;
     })
   );
+  console.log(JSON.stringify(reserve));
   const reserve_est = useStore((state) =>
     state.pool_est.get(safePoolId)?.reserve_est?.find((res) => res.id === safeAssetId)
   );
@@ -80,7 +81,7 @@ const Borrow: NextPage = () => {
             </Box>
             <Box>
               <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-                {reserve?.symbol ?? '--'}
+                {reserve?.tokenMetadata?.symbol ?? '--'}
               </Typography>
             </Box>
           </Box>

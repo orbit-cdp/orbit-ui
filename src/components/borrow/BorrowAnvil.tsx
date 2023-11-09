@@ -37,7 +37,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   );
 
   const decimals = reserve?.config.decimals ?? 7;
-  const symbol = reserve?.symbol ?? '';
+  const symbol = reserve?.tokenMetadata?.symbol ?? '';
   const baseToAsset = 1 / assetToBase;
   const oldBorrowCapAsset =
     user_est && reserveEstimate
