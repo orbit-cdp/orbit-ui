@@ -6,11 +6,14 @@ import {
   PoolClient,
   Positions,
   Q4W,
+  Resources,
+  SorobanResponse,
   SubmitArgs,
   TxOptions,
 } from '@blend-capital/blend-sdk';
 import { getPublicKey, signTransaction } from '@stellar/freighter-api';
 import React, { useContext, useEffect, useState } from 'react';
+import { Transaction } from 'soroban-client';
 import { useStore } from '../store/store';
 
 export interface IWalletContext {
@@ -35,6 +38,7 @@ export interface IWalletContext {
   backstopQueueWithdrawal(args: PoolBackstopActionArgs, sim: boolean): Promise<Q4W | undefined>;
   backstopDequeueWithdrawal(args: PoolBackstopActionArgs, sim: boolean): Promise<undefined>;
   backstopClaim(args: BackstopClaimArgs, sim: boolean): Promise<bigint | undefined>;
+  faucet(tx: Transaction): Promise<undefined>;
 }
 
 export enum TxStatus {
@@ -49,6 +53,7 @@ const WalletContext = React.createContext<IWalletContext | undefined>(undefined)
 
 export const WalletProvider = ({ children = null as any }) => {
   const network = useStore((state) => state.network);
+  const rpc = useStore((state) => state.rpcServer());
   const backstopClient = useStore((state) => state.backstopContract);
   const loadAccount = useStore((state) => state.loadAccount);
   const removeUserState = useStore((state) => state.removeUserData);
@@ -344,6 +349,52 @@ export const WalletProvider = ({ children = null as any }) => {
     }
   }
 
+  async function faucet(tx: Transaction): Promise<undefined> {
+    if (tx.operations.length > 0) {
+      let signedTx = new Transaction(await sign(tx.toXDR()), network.passphrase);
+      let response: SorobanResponse = await rpc.sendTransaction(signedTx);
+      let status: string = response.status;
+      const resources = new Resources(0, 0, 0, 0, 0, 0, 0);
+      const tx_hash = response.hash;
+
+      // Poll this until the status is not "NOT_FOUND"
+      const pollingStartTime = Date.now();
+      while (status === 'PENDING' || status === 'NOT_FOUND') {
+        if (pollingStartTime + 15000 < Date.now()) {
+          console.error(`Transaction timed out with status ${status}`);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // See if the transaction is complete
+        response = await rpc.getTransaction(tx_hash);
+        status = response.status;
+      }
+      const result = ContractResult.fromResponse(tx_hash, resources, response, () => undefined);
+      try {
+        // submission calls `sign` internally which handles setting TxStatus
+        if (result.ok) {
+          console.log('Successfully submitted transaction: ', result.hash);
+          setTxStatus(TxStatus.SUCCESS);
+        } else {
+          console.log('Failed submitted transaction: ', result.hash);
+          setTxStatus(TxStatus.FAIL);
+        }
+
+        // reload Horizon account after submission
+        try {
+          await loadAccount(walletAddress);
+        } catch {
+          console.error('Failed loading account: ', walletAddress);
+        }
+
+        return result.unwrap();
+      } catch (e) {
+        console.error('Failed submitting transaction: ', e);
+        setTxStatus(TxStatus.FAIL);
+        return undefined;
+      }
+    }
+  }
+
   return (
     <WalletContext.Provider
       value={{
@@ -360,6 +411,7 @@ export const WalletProvider = ({ children = null as any }) => {
         backstopQueueWithdrawal,
         backstopDequeueWithdrawal,
         backstopClaim,
+        faucet,
       }}
     >
       {children}
