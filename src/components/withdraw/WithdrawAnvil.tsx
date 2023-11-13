@@ -36,7 +36,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   );
 
   const decimals = reserve?.config.decimals ?? 7;
-  const symbol = reserve?.symbol ?? '';
+  const symbol = reserve?.tokenMetadata?.symbol ?? '';
   const oldBorrowCap = user_est
     ? user_est.e_collateral_base - user_est.e_liabilities_base
     : undefined;
@@ -116,7 +116,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
             }}
           >
             <InputBar
-              symbol={reserve?.symbol ?? ''}
+              symbol={reserve?.tokenMetadata?.symbol ?? ''}
               value={toWithdraw}
               onValueChange={handleWithdrawAmountChange}
               onSetMax={handleWithdrawMax}

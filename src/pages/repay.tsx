@@ -26,7 +26,7 @@ const Repay: NextPage = () => {
   const loadPoolData = useStore((state) => state.loadPoolData);
   const reserve = useStore((state) =>
     state.poolData.get(safePoolId)?.reserves.find((reserve) => {
-      reserve.assetId == safeAssetId;
+      return reserve.assetId == safeAssetId;
     })
   );
   const reserve_est = useStore((state) =>
@@ -84,7 +84,7 @@ const Repay: NextPage = () => {
             </Box>
             <Box>
               <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-                {reserve?.symbol ?? ''}
+                {reserve?.tokenMetadata?.symbol ?? ''}
               </Typography>
             </Box>
           </Box>

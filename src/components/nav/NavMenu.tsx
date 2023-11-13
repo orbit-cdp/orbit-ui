@@ -1,25 +1,28 @@
 import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded';
-import { IconButton, Menu, MenuItem, useTheme } from '@mui/material';
+import { Alert, IconButton, Menu, MenuItem, Snackbar, useTheme } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { Asset, Transaction, xdr } from 'soroban-client';
-import { ViewType, useSettings } from '../../contexts';
+import { useSettings, ViewType } from '../../contexts';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
+import { requiresTrustline } from '../../utils/horizon';
 import { NavItem } from './NavItem';
 
 export const NavMenu = () => {
   const theme = useTheme();
-  const network = useStore((state) => state.network);
-  let account = useStore((state) => state.account);
-  const hasTrustline = useStore((state) => state.hasTrustline);
-  const loadAccount = useStore((state) => state.loadAccount);
-  const loadPoolData = useStore((state) => state.loadPoolData);
   const { viewType, lastPool } = useSettings();
-  const rewardZone = useStore((state) => state.backstopConfig.rewardZone);
-  const [poolId, setPoolId] = useState<string>(lastPool ?? '');
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
   const { connected, faucet, walletAddress } = useWallet();
+
+  const network = useStore((state) => state.network);
+  const account = useStore((state) => state.account);
+  const rewardZone = useStore((state) => state.backstopConfig.rewardZone);
+  const loadPoolData = useStore((state) => state.loadPoolData);
+
+  const [poolId, setPoolId] = useState<string>(lastPool ?? '');
+  const [openCon, setOpenCon] = React.useState(false);
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  const open = Boolean(anchorEl);
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -27,6 +30,10 @@ export const NavMenu = () => {
 
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleSnackClose = () => {
+    setOpenCon(false);
   };
 
   useEffect(() => {
@@ -40,18 +47,15 @@ export const NavMenu = () => {
   const handleFaucet = async () => {
     if (connected) {
       const url = `https://ewqw4hx7oa.execute-api.us-east-1.amazonaws.com/getAssets?userId=${walletAddress}`;
-      if (account == undefined) {
-        account = await loadAccount(walletAddress);
-      }
       try {
         if (
-          !hasTrustline(
-            new Asset('USDC', 'GCDUQQ2LP2M32Q563YOJOG36KXO5T635FKSWG4IQWYFE2FQHMMQKYK3S'),
-            account
+          requiresTrustline(
+            account,
+            new Asset('USDC', 'GCDUQQ2LP2M32Q563YOJOG36KXO5T635FKSWG4IQWYFE2FQHMMQKYK3S')
           ) ||
-          !hasTrustline(
-            new Asset('BLND', 'GCDUQQ2LP2M32Q563YOJOG36KXO5T635FKSWG4IQWYFE2FQHMMQKYK3S'),
-            account
+          requiresTrustline(
+            account,
+            new Asset('BLND', 'GCDUQQ2LP2M32Q563YOJOG36KXO5T635FKSWG4IQWYFE2FQHMMQKYK3S')
           )
         ) {
           const resp = await fetch(url, { method: 'GET' });
@@ -62,7 +66,8 @@ export const NavMenu = () => {
               network.passphrase
             )
           );
-          await loadPoolData(poolId, walletAddress, true);
+        } else {
+          setOpenCon(true);
         }
       } catch (e) {
         console.error('Faucet Failed', e);
@@ -134,8 +139,31 @@ export const NavMenu = () => {
           <MenuItem onClick={handleClose}>Docs</MenuItem>
           <MenuItem onClick={handleClose}>User agreement</MenuItem>
           <MenuItem onClick={handleClose}>Privacy policy</MenuItem>
+          <MenuItem onClick={handleFaucet}>Faucet</MenuItem>
         </Menu>
       )}
+
+      <Snackbar
+        open={openCon}
+        autoHideDuration={4000}
+        onClose={handleSnackClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+      >
+        <Alert
+          onClose={handleClose}
+          severity="info"
+          sx={{
+            backgroundColor: theme.palette.info.opaque,
+            alignItems: 'center',
+            width: '100%',
+          }}
+        >
+          Wallet already received funds.
+        </Alert>
+      </Snackbar>
     </>
   );
 };
