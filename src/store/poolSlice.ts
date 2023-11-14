@@ -105,21 +105,11 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
     const stellar = get().rpcServer();
     try {
       if (!reserves) {
-        throw Error('unknown pool');
+        console.error('Unable to refresh data for user without pool data');
+        return;
       }
-      let user_reserve_positions: UserPositions = new UserPositions(
-        new Map(),
-        new Map(),
-        new Map()
-      );
-      // TODO: make changes once sdk has been updated to handle UserPosition not existing
-      try {
-        user_reserve_positions = await UserPositions.load(network, pool_id, user);
-      } catch (e: any) {
-        if (e.message != "Unable to load user's positions") {
-          throw Error(e);
-        }
-      }
+
+      let user_reserve_positions = await UserPositions.load(network, pool_id, user);
       const userReserveBalances = new Map<string, ReserveBalance>();
       for (const reserve of reserves) {
         let userAssetBalance = await getTokenBalance(
