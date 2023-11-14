@@ -1,13 +1,15 @@
 import {
+  Network,
   PoolConfig,
   PoolUserEmissionData,
   PoolUserEmissions,
   Reserve,
   UserPositions,
 } from '@blend-capital/blend-sdk';
-import { Address, nativeToScVal, scValToBigInt, scValToNative, Server, xdr } from 'soroban-client';
+import { Address, Server } from 'soroban-client';
 import { StateCreator } from 'zustand';
 import { getTokenBalance } from '../external/token';
+import { getOraclePrice } from '../utils/stellar_rpc';
 import { DataStore, useStore } from './store';
 
 export type ReserveBalance = {
@@ -68,7 +70,7 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
         pool = await PoolConfig.load(network, pool_id);
         set_pool = true;
       }
-      const prices = await loadOraclePrices(stellar, pool_id, pool);
+      const prices = await loadOraclePrices(stellar, network, pool.reserveList, pool.oracle);
       const pool_reserves: Reserve[] = [];
       for (const assetId of pool.reserveList) {
         let reserve = await Reserve.load(network, pool_id, assetId);
@@ -154,102 +156,18 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
 
 async function loadOraclePrices(
   stellar: Server,
-  poolId: string,
-  pool: PoolConfig
+  network: Network,
+  assets: string[],
+  oracle_id: string
 ): Promise<Map<string, number>> {
   let price_map = new Map<string, number>();
-  let decimals: number;
-  const oracleInstanceDataKey = xdr.LedgerKey.contractData(
-    new xdr.LedgerKeyContractData({
-      contract: Address.fromString(pool.oracle).toScAddress(),
-      key: xdr.ScVal.scvLedgerKeyContractInstance(),
-      durability: xdr.ContractDataDurability.persistent(),
-    })
-  );
-  let oracleInstanceEntries = (await stellar.getLedgerEntries(oracleInstanceDataKey)).entries ?? [];
 
-  let priceLedgerKeys: xdr.LedgerKey[] = [];
-  let indexToAssetIdMapping: Map<number, string> = new Map();
-  for (const entry of oracleInstanceEntries) {
-    const ledgerData = xdr.LedgerEntryData.fromXDR(entry.xdr, 'base64').contractData();
-    let key: string;
-    switch (ledgerData.key().switch()) {
-      // Key is a ScVec[ScvSym, ScVal]
-      case xdr.ScValType.scvVec():
-        key = ledgerData.key().vec()?.at(0)?.sym().toString() ?? 'Void';
-        break;
-      case xdr.ScValType.scvSymbol():
-        key = ledgerData.key().sym().toString();
-        break;
-      case xdr.ScValType.scvLedgerKeyContractInstance():
-        key = 'ContractInstance';
-        break;
-      case xdr.ScValType.scvAddress():
-        key = Address.fromScVal(ledgerData.key()).toString();
-        break;
-      default:
-        key = 'Void';
-    }
-    switch (key) {
-      case 'ContractInstance':
-        ledgerData
-          .val()
-          .instance()
-          .storage()
-          ?.map((entry) => {
-            let instanceKey: string;
-            switch (ledgerData.key().switch()) {
-              // Key is a ScVec[ScvSym, ScVal]
-              case xdr.ScValType.scvVec():
-                instanceKey = entry.val().vec()?.at(0)?.sym().toString() ?? 'Void';
-                break;
-              case xdr.ScValType.scvSymbol():
-                instanceKey = entry.val().sym().toString();
-                break;
-              case xdr.ScValType.scvAddress():
-                instanceKey = Address.fromScVal(ledgerData.key()).toString();
-                break;
-              default:
-                instanceKey = 'Void';
-            }
-            switch (instanceKey) {
-              case 'assets':
-                entry
-                  .val()
-                  .vec()
-                  ?.forEach((vec, index) => {
-                    let address = scValToNative(vec)[1];
-                    if (address != undefined && pool.reserveList.includes(address)) {
-                      indexToAssetIdMapping.set(index, address);
-                      priceLedgerKeys.push(
-                        xdr.LedgerKey.contractData(
-                          new xdr.LedgerKeyContractData({
-                            contract: Address.fromString(pool.oracle).toScAddress(),
-                            key: nativeToScVal(index, { type: 'u128' }),
-                            durability: xdr.ContractDataDurability.temporary(),
-                          })
-                        )
-                      );
-                    }
-                  });
-                break;
-              case 'decimals':
-                decimals = entry.val().u32();
-            }
-          });
-        break;
-    }
-  }
+  // TODO: add decimal support before switching to Reflector and package available
+  let pricePromises = assets.map(async (assetId) => {
+    let price = await getOraclePrice(stellar, network.passphrase, oracle_id, assetId, 7);
+    price_map.set(assetId, price);
+  });
+  await Promise.all(pricePromises);
 
-  let priceLedgerEntries = (await stellar.getLedgerEntries(...priceLedgerKeys)).entries ?? [];
-  for (const entry of priceLedgerEntries) {
-    const ledgerData = xdr.LedgerEntryData.fromXDR(entry.xdr, 'base64').contractData();
-    let index = scValToBigInt(ledgerData.key());
-    let price = scValToBigInt(ledgerData.val());
-    let assetId = indexToAssetIdMapping.get(Number(index)) ?? undefined;
-    if (assetId != undefined) {
-      price_map.set(assetId, Number(price) / 10 ** 7);
-    }
-  }
   return price_map;
 }
