@@ -1,10 +1,4 @@
-import {
-  PoolConfig,
-  Q4W,
-  Reserve,
-  ReserveEmissionConfig,
-  ReserveEmissionData,
-} from '@blend-capital/blend-sdk';
+import { PoolConfig, Q4W, Reserve } from '@blend-capital/blend-sdk';
 import { StateCreator } from 'zustand';
 import { BackstopPoolData, BackstopUserData } from './backstopSlice';
 import { PoolData, PoolUserData, ReserveBalance } from './poolSlice';
@@ -353,42 +347,40 @@ function buildPoolUserEstimate(
 }
 
 function estimatePoolUserEmissionBalance(
-  userData: PoolUserData,
+  poolUserData: PoolUserData,
   poolData: PoolData,
-  latestLedgerClose: number
+  latestLedgerTime: number
 ): number {
-  let userEmissionBal = userData.totalEmissions;
+  let totalEmissions = 0;
   for (const reserve of poolData.reserves) {
-    const supply_bal = userData.reserveBalances.get(reserve.assetId)?.collateral ?? BigInt(0);
-    const liability_bal = userData.reserveBalances.get(reserve.assetId)?.liability ?? BigInt(0);
-    const reserveEmissionConfig: ReserveEmissionConfig | undefined = reserve.emissionConfig;
-    const reserveEmissionData: ReserveEmissionData | undefined = reserve.emissionData;
-    const user_liability_emission = userData.emissionsData.get(reserve.config.index * 2);
-    const user_supply_emission = userData.emissionsData.get(reserve.config.index * 2 + 1);
+    const dTokenIndex = reserve.config.index * 2;
+    const bTokenIndex = reserve.config.index * 2 + 1;
 
-    if (user_liability_emission && reserveEmissionData && reserveEmissionConfig) {
-      userEmissionBal +=
-        liability_bal * (reserveEmissionData?.index - user_liability_emission.index);
-      if (reserve.data.dSupply > 0) {
-        userEmissionBal +=
-          (liability_bal *
-            reserveEmissionConfig.eps *
-            (BigInt(latestLedgerClose) - BigInt(poolData.lastUpdated))) /
-          reserve.data.dSupply;
-      }
+    // find estimated accrual for dTokens, if any
+    const dTokenUserData = poolUserData.emissionsData.get(dTokenIndex);
+    const dTokenBalance = poolUserData.reserveBalances.get(reserve.assetId)?.liability;
+    if (dTokenUserData && reserve.borrowEmissions && dTokenBalance) {
+      totalEmissions += dTokenUserData.estimateData(
+        latestLedgerTime,
+        reserve.borrowEmissions,
+        reserve.data.dSupply,
+        dTokenBalance
+      );
     }
-    if (user_supply_emission && reserveEmissionData && reserveEmissionConfig) {
-      userEmissionBal += supply_bal * (reserveEmissionData?.index - user_supply_emission.index);
-      if (reserve.data.bSupply > 0) {
-        userEmissionBal +=
-          (supply_bal *
-            reserveEmissionConfig.eps *
-            (BigInt(latestLedgerClose) - BigInt(poolData.lastUpdated))) /
-          reserve.data.bSupply;
-      }
+
+    // find estimated accrual for bTokens, if any
+    const bTokenUserData = poolUserData.emissionsData.get(bTokenIndex);
+    const bTokenBalance = poolUserData.reserveBalances.get(reserve.assetId)?.collateral;
+    if (bTokenUserData && reserve.supplyEmissions && bTokenBalance) {
+      totalEmissions += bTokenUserData.estimateData(
+        latestLedgerTime,
+        reserve.supplyEmissions,
+        reserve.data.bSupply,
+        bTokenBalance
+      );
     }
   }
-  return Number(userEmissionBal) / 1e7;
+  return totalEmissions;
 }
 
 function buildBackstopUserEstimate(

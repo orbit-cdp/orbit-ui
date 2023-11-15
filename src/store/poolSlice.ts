@@ -25,7 +25,6 @@ export type PoolData = {
 export type PoolUserData = {
   reserveBalances: Map<string, ReserveBalance>;
   emissionsData: Map<number, PoolUserEmissionData>;
-  totalEmissions: bigint;
   lastUpdated: number;
 };
 
@@ -106,21 +105,11 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
     const stellar = get().rpcServer();
     try {
       if (!reserves) {
-        throw Error('unknown pool');
+        console.error('Unable to refresh data for user without pool data');
+        return;
       }
-      let user_reserve_positions: UserPositions = new UserPositions(
-        new Map(),
-        new Map(),
-        new Map()
-      );
-      // TODO: make changes once sdk has been updated to handle UserPosition not existing
-      try {
-        user_reserve_positions = await UserPositions.load(network, pool_id, user);
-      } catch (e: any) {
-        if (e.message != "Unable to load user's positions") {
-          throw Error(e);
-        }
-      }
+
+      let user_reserve_positions = await UserPositions.load(network, pool_id, user);
       const userReserveBalances = new Map<string, ReserveBalance>();
       for (const reserve of reserves) {
         let userAssetBalance = await getTokenBalance(
@@ -136,7 +125,6 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
         });
       }
 
-      let total_user_emissions = BigInt(0);
       let userEmissions = new PoolUserEmissions(new Map());
       try {
         userEmissions = await PoolUserEmissions.load(
@@ -147,9 +135,6 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
             return reserve.config.index;
           })
         );
-        for (let entry of Array.from(userEmissions.emissions.entries())) {
-          total_user_emissions += entry[1].accrued;
-        }
       } catch (e) {
         console.error('Unable to refresh user emissions');
       }
@@ -158,7 +143,6 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
         poolUserData: new Map(prev.poolUserData).set(pool_id, {
           reserveBalances: userReserveBalances,
           emissionsData: userEmissions.emissions,
-          totalEmissions: total_user_emissions,
           lastUpdated: latest_ledger_close,
         }),
       }));

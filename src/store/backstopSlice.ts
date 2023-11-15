@@ -68,8 +68,7 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
           lastUpdated: latest_ledger_close,
           poolBalance: backstopPoolData.poolBalance,
           poolEps: backstopPoolData.poolEps,
-          emissionConfig: backstopPoolData.emissionConfig,
-          emissionData: backstopPoolData.emissionData,
+          emissions: backstopPoolData.emissions,
         });
       });
       set({
@@ -129,8 +128,7 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
             lastUpdated: latest_ledger_close,
             poolBalance: backstopPoolData.poolBalance,
             poolEps: backstopPoolData.poolEps,
-            emissionConfig: backstopPoolData.emissionConfig,
-            emissionData: backstopPoolData.emissionData,
+            emissions: backstopPoolData.emissions,
           }),
         }));
       } else {
@@ -139,8 +137,7 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
             lastUpdated: latest_ledger_close,
             poolBalance: backstopPoolData.poolBalance,
             poolEps: backstopPoolData.poolEps,
-            emissionConfig: backstopPoolData.emissionConfig,
-            emissionData: backstopPoolData.emissionData,
+            emissions: backstopPoolData.emissions,
           }),
         }));
       }
