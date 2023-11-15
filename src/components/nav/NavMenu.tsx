@@ -2,7 +2,7 @@ import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded';
 import { Alert, IconButton, Menu, MenuItem, Snackbar, useTheme } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { Asset, Transaction, xdr } from 'soroban-client';
-import { useSettings, ViewType } from '../../contexts';
+import { ViewType, useSettings } from '../../contexts';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { requiresTrustline } from '../../utils/horizon';
@@ -66,6 +66,7 @@ export const NavMenu = () => {
               network.passphrase
             )
           );
+          loadPoolData(poolId, walletAddress, true);
         } else {
           setOpenCon(true);
         }
