@@ -2,7 +2,6 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import WaterDropOutlinedIcon from '@mui/icons-material/WaterDropOutlined';
 import { Alert, Box, Snackbar, Typography, useTheme } from '@mui/material';
 import React from 'react';
-import { Asset, Transaction, xdr } from 'soroban-client';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { requiresTrustline } from '../../utils/horizon';
@@ -14,46 +13,34 @@ interface FaucetBannerParams {
 
 export const FaucetBanner = ({ poolId }: FaucetBannerParams) => {
   const theme = useTheme();
-  const { faucet, connected, walletAddress } = useWallet();
+  const { faucet, connected } = useWallet();
   const [openCon, setOpenCon] = React.useState(false);
   const account = useStore((state) => state.account);
-  const network = useStore((state) => state.network);
-  const loadPoolData = useStore((state) => state.loadPoolData);
+  const poolData = useStore((state) => state.poolData.get(poolId));
+
+  let needsFaucet = false;
+  if (connected && poolData) {
+    poolData.reserves.map((reserve) => {
+      if (reserve.tokenMetadata.asset && !needsFaucet) {
+        needsFaucet = requiresTrustline(account, reserve.tokenMetadata.asset);
+      }
+    });
+  }
 
   const handleSnackClose = () => {
     setOpenCon(false);
   };
+
   const handleFaucet = async () => {
     if (connected) {
-      const url = `https://ewqw4hx7oa.execute-api.us-east-1.amazonaws.com/getAssets?userId=${walletAddress}`;
-      try {
-        const resp = await fetch(url, { method: 'GET' });
-        const txEnvelopeXDR = (await resp.json()) as { type: string; data: number[] };
-        await faucet(
-          new Transaction(
-            xdr.TransactionEnvelope.fromXDR(Buffer.from(txEnvelopeXDR.data)),
-            network.passphrase
-          )
-        );
-        setOpenCon(true);
-        loadPoolData(poolId, walletAddress, true);
-      } catch (e) {
-        console.error('Faucet Failed', e);
-      }
+      await faucet();
+      setOpenCon(true);
     }
   };
 
   return (
     <>
-      {(connected &&
-        requiresTrustline(
-          account,
-          new Asset('USDC', 'GCDUQQ2LP2M32Q563YOJOG36KXO5T635FKSWG4IQWYFE2FQHMMQKYK3S')
-        )) ||
-      requiresTrustline(
-        account,
-        new Asset('BLND', 'GCDUQQ2LP2M32Q563YOJOG36KXO5T635FKSWG4IQWYFE2FQHMMQKYK3S')
-      ) ? (
+      {needsFaucet ? (
         <OpaqueButton
           onClick={() => {
             handleFaucet();
