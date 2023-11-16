@@ -1,6 +1,6 @@
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
-import { Box, CircularProgress, useTheme } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 import { useSettings, ViewType } from '../../contexts';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
@@ -10,6 +10,7 @@ import { LinkBox } from '../common/LinkBox';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { StackedText } from '../common/StackedText';
+import { BorrowCapRing } from './BorrowCapRing';
 
 export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
@@ -75,13 +76,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
                 textColor="inherit"
                 type="large"
               />
-              <CircularProgress
-                sx={{ color: theme.palette.primary.main, marginLeft: '18px' }}
-                size="30px"
-                thickness={4.5}
-                variant="determinate"
-                value={borrow_capacity_fill}
-              />
+              <BorrowCapRing status="Active" poolId={''} />
             </Box>
           </Box>
           <LinkBox
@@ -175,13 +170,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
                 textColor="inherit"
                 type="large"
               />
-              <CircularProgress
-                sx={{ color: theme.palette.primary.main, marginLeft: '18px' }}
-                size="30px"
-                thickness={4.5}
-                variant="determinate"
-                value={borrow_capacity_fill}
-              />
+              <BorrowCapRing status="Active" poolId={''} />
             </Box>
           </Box>
           <LinkBox
