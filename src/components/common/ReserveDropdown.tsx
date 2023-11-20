@@ -18,7 +18,7 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
   const router = useRouter();
 
   const reserves = useStore((state) => state.poolData.get(poolId)?.reserves);
-  const activeReserve = reserves?.get(activeReserveId);
+  const activeReserve = reserves?.find((reserve) => reserve.assetId == activeReserveId);
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -56,11 +56,11 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
           }}
         >
           <TokenIcon
-            symbol={activeReserve?.symbol ?? 'unknown'}
+            symbol={activeReserve?.tokenMetadata?.symbol ?? 'unknown'}
             sx={{ height: '30px', width: '30px' }}
           />
           <Typography variant="h3" sx={{ marginLeft: '12px' }}>
-            {`${capitalizedAction} ${activeReserve?.symbol ?? 'unknown'}`}
+            {`${capitalizedAction} ${activeReserve?.tokenMetadata?.symbol ?? 'unknown'}`}
           </Typography>
         </Box>
         <ArrowDropDownIcon sx={{ color: theme.palette.text.secondary }} />
@@ -77,8 +77,8 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
       >
         {Array.from(reserves?.values() ?? []).map((reserve) => (
           <MenuItem
-            key={reserve.asset_id}
-            onClick={() => handleClickReserve(reserve.asset_id)}
+            key={reserve.assetId}
+            onClick={() => handleClickReserve(reserve.assetId)}
             sx={{
               display: 'flex',
               flexDirection: 'row',
@@ -89,11 +89,11 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
             }}
           >
             <TokenIcon
-              symbol={reserve?.symbol ?? 'unknown'}
+              symbol={reserve?.tokenMetadata?.symbol ?? 'unknown'}
               sx={{ height: '30px', width: '30px' }}
             />
             <Typography variant="h3" sx={{ marginLeft: '12px' }}>
-              {`${capitalizedAction} ${reserve?.symbol ?? 'unknown'}`}
+              {`${capitalizedAction} ${reserve?.tokenMetadata?.symbol ?? 'unknown'}`}
             </Typography>
           </MenuItem>
         ))}

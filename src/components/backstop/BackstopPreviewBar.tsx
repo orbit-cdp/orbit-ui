@@ -19,10 +19,10 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
 
   const backstopPoolEstimate = useStore((state) => state.backstop_pool_est.get(poolId));
   const backstopUserEstimate = useStore((state) => state.backstop_user_est.get(poolId));
-  const backstopTokenToBase = useStore((state) => state.backstopData.backstopTokenPrice);
-  const tokenToBase = Number(backstopTokenToBase) / 1e7;
+  //TODO
+  const backstopTokenToBase = 0.75; //useStore((state) => state.backstopData.backstopTokenPrice);
   const userBalance = backstopUserEstimate
-    ? Number(backstopUserEstimate.depositBalance) * tokenToBase
+    ? Number(backstopUserEstimate.depositBalance) * backstopTokenToBase
     : undefined;
 
   return (

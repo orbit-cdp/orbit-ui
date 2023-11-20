@@ -1,9 +1,8 @@
+import { SubmitArgs } from '@blend-capital/blend-sdk';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
-import { Pool } from 'blend-sdk';
 import { useState } from 'react';
-import { xdr } from 'soroban-client';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
@@ -18,9 +17,13 @@ import { ValueChange } from '../common/ValueChange';
 
 export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, submitTransaction } = useWallet();
+  const { connected, walletAddress, poolSubmit } = useWallet();
 
-  const reserve = useStore((state) => state.poolData.get(poolId)?.reserves.get(assetId));
+  const reserve = useStore((state) =>
+    state.poolData.get(poolId)?.reserves.find((reserve) => {
+      reserve.assetId == assetId;
+    })
+  );
   const assetToBase = useStore((state) => state.poolData.get(poolId))?.poolPrices.get(assetId) ?? 1;
   const user_est = useStore((state) => state.pool_user_est.get(poolId));
   const user_bal_est = useStore((state) =>
@@ -33,7 +36,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   );
 
   const decimals = reserve?.config.decimals ?? 7;
-  const symbol = reserve?.symbol ?? '';
+  const symbol = reserve?.tokenMetadata?.symbol ?? '';
   const oldBorrowCap = user_est
     ? user_est.e_collateral_base - user_est.e_liabilities_base
     : undefined;
@@ -66,25 +69,20 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   };
 
   const handleSubmitTransaction = async () => {
-    // TODO: Revalidate?
     if (toWithdraw && connected && reserve) {
-      let pool = new Pool.PoolOpBuilder(poolId);
-      let withdraw_op = xdr.Operation.fromXDR(
-        pool.submit({
-          from: walletAddress,
-          spender: walletAddress,
-          to: walletAddress,
-          requests: [
-            {
-              amount: scaleInputToBigInt(toWithdraw, decimals),
-              request_type: 3,
-              address: reserve.asset_id,
-            },
-          ],
-        }),
-        'base64'
-      );
-      await submitTransaction(withdraw_op);
+      let submitArgs: SubmitArgs = {
+        from: walletAddress,
+        to: walletAddress,
+        spender: walletAddress,
+        requests: [
+          {
+            amount: scaleInputToBigInt(toWithdraw, decimals),
+            request_type: 3,
+            address: reserve.assetId,
+          },
+        ],
+      };
+      await poolSubmit(poolId, submitArgs, false);
       await loadPoolData(poolId, walletAddress, true);
     }
   };
@@ -118,7 +116,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
             }}
           >
             <InputBar
-              symbol={reserve?.symbol ?? ''}
+              symbol={reserve?.tokenMetadata?.symbol ?? ''}
               value={toWithdraw}
               onValueChange={handleWithdrawAmountChange}
               onSetMax={handleWithdrawMax}

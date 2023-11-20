@@ -1,9 +1,8 @@
+import { SubmitArgs } from '@blend-capital/blend-sdk';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
-import { Pool } from 'blend-sdk';
 import { useState } from 'react';
-import { xdr } from 'soroban-client';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
@@ -18,9 +17,11 @@ import { ValueChange } from '../common/ValueChange';
 
 export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, submitTransaction } = useWallet();
+  const { connected, walletAddress, poolSubmit } = useWallet();
 
-  const reserve = useStore((state) => state.poolData.get(poolId)?.reserves.get(assetId));
+  const reserve = useStore((state) =>
+    state.poolData.get(poolId)?.reserves.find((reserve) => reserve.assetId == assetId)
+  );
   const assetToBase = useStore((state) => state.poolData.get(poolId)?.poolPrices.get(assetId) ?? 1);
   const user_est = useStore((state) => state.pool_user_est.get(poolId));
   const user_bal_est = useStore((state) =>
@@ -30,13 +31,14 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     state.pool_est.get(poolId)?.reserve_est?.find((res) => res.id === assetId)
   );
   const loadPoolData = useStore((state) => state.loadPoolData);
+
   const [toBorrow, setToBorrow] = useState<string | undefined>(undefined);
   const [newEffectiveLiabilities, setNewEffectiveLiabilities] = useState<number>(
     user_est?.e_liabilities_base ?? 0
   );
 
   const decimals = reserve?.config.decimals ?? 7;
-  const symbol = reserve?.symbol ?? '';
+  const symbol = reserve?.tokenMetadata?.symbol ?? '';
   const baseToAsset = 1 / assetToBase;
   const oldBorrowCapAsset =
     user_est && reserveEstimate
@@ -80,25 +82,20 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   };
 
   const handleSubmitTransaction = async () => {
-    // TODO: Revalidate?
     if (toBorrow && connected && reserve) {
-      let pool = new Pool.PoolOpBuilder(poolId);
-      let borrow_op = xdr.Operation.fromXDR(
-        pool.submit({
-          from: walletAddress,
-          to: walletAddress,
-          spender: walletAddress,
-          requests: [
-            {
-              amount: scaleInputToBigInt(toBorrow, reserve.config.decimals),
-              address: reserve.asset_id,
-              request_type: 4,
-            },
-          ],
-        }),
-        'base64'
-      );
-      await submitTransaction(borrow_op);
+      let submitArgs: SubmitArgs = {
+        from: walletAddress,
+        to: walletAddress,
+        spender: walletAddress,
+        requests: [
+          {
+            amount: scaleInputToBigInt(toBorrow, reserve.config.decimals),
+            address: reserve.assetId,
+            request_type: 4,
+          },
+        ],
+      };
+      await poolSubmit(poolId, submitArgs, false);
       await loadPoolData(poolId, walletAddress, true);
     }
   };

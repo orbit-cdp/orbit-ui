@@ -22,7 +22,7 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
   const [expand, setExpand] = useState(false);
 
   const loadPoolData = useStore((state) => state.loadPoolData);
-  const pool = useStore((state) => state.pools.get(poolId));
+  const pool = useStore((state) => state.poolData.get(poolId));
   const poolEst = useStore((state) => state.pool_est.get(poolId));
   const backstopPoolEstimate = useStore((state) => state.backstop_pool_est.get(poolId));
 
@@ -36,11 +36,7 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
       }
     };
 
-    if (isMounted.current) {
-      refreshAndEstimate();
-    } else {
-      isMounted.current = true;
-    }
+    refreshAndEstimate();
   }, [loadPoolData, poolEst, poolId]);
 
   return (
@@ -122,8 +118,11 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
             <Box sx={{ margin: '6px', height: '30px' }}>
               {pool ? (
                 pool.reserves.map((reserveId) => {
-                  const code = TOKEN_META[reserveId as keyof typeof TOKEN_META]?.code ?? 'unknown';
-                  return <TokenIcon key={reserveId} symbol={code} sx={{ marginRight: '6px' }} />;
+                  const code =
+                    TOKEN_META[reserveId.assetId as keyof typeof TOKEN_META]?.code ?? 'unknown';
+                  return (
+                    <TokenIcon key={reserveId.assetId} symbol={code} sx={{ marginRight: '6px' }} />
+                  );
                 })
               ) : (
                 <></>

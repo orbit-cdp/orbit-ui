@@ -17,14 +17,14 @@ export interface CloseableOverlayProps {
 
 export const OverlayModal: React.FC<OverlayModalProps> = ({ poolId, type }) => {
   const router = useRouter();
-  const { txStatus, setTxStatus } = useWallet();
+  const { txStatus, clearTxStatus } = useWallet();
 
   const display = txStatus !== TxStatus.NONE ? 'flex' : 'none';
 
   const pathname = type == 'backstop' ? '/backstop' : '/dashboard';
 
   const handleReturn = () => {
-    setTxStatus(TxStatus.NONE);
+    clearTxStatus();
     router.push({ pathname: pathname, query: { poolId: poolId } });
   };
 

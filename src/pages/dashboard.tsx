@@ -6,6 +6,8 @@ import { BackstopPreviewBar } from '../components/backstop/BackstopPreviewBar';
 import { BorrowMarketList } from '../components/borrow/BorrowMarketList';
 import { BorrowPositions } from '../components/borrow/BorrowPositions';
 import { Divider } from '../components/common/Divider';
+import { FaucetBanner } from '../components/common/FaucetBanner';
+import { OverlayModal } from '../components/common/OverlayModal';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { ToggleButton } from '../components/common/ToggleButton';
@@ -65,6 +67,9 @@ const Dashboard: NextPage = () => {
       <Row>
         <WalletWarning />
       </Row>
+      <Row>
+        <FaucetBanner poolId={safePoolId} />
+      </Row>
       <PoolExploreBar poolId={safePoolId} />
       <BackstopPreviewBar poolId={safePoolId} />
       <PositionOverview poolId={safePoolId} />
@@ -110,6 +115,7 @@ const Dashboard: NextPage = () => {
       </Row>
       <Divider />
       {showLend ? <LendMarketList poolId={safePoolId} /> : <BorrowMarketList poolId={safePoolId} />}
+      <OverlayModal poolId={safePoolId} type="dashboard" />
     </>
   );
 };

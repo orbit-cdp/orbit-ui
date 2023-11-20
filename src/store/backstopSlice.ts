@@ -1,32 +1,30 @@
-import { Backstop, data_entry_converter } from 'blend-sdk';
-import { Address, Server, xdr } from 'soroban-client';
+import * as BlendSdk from '@blend-capital/blend-sdk';
+import { Address } from 'soroban-client';
 import { StateCreator } from 'zustand';
-import { getTokenBalance } from '../utils/stellar_rpc';
+import { getTokenBalance } from '../external/token';
 import { DataStore, useStore } from './store';
-export interface PoolBalance extends Backstop.PoolBalance {
+
+export interface BackstopPoolData extends BlendSdk.BackstopPoolData {
   lastUpdated: number;
 }
 
-export interface UserBalance extends Backstop.UserBalance {
-  tokens: bigint;
+export interface BackstopUserData extends BlendSdk.BackstopUserData {
+  walletBalance: bigint;
   lastUpdated: number;
 }
 
-export type BackstopData = {
-  backstopToken: string;
-  backstopTokenPrice: bigint;
-  rewardZone: string[];
+export interface BackstopConfig extends BlendSdk.BackstopConfig {
   lastUpdated: number;
-};
+}
 
 /**
  * Ledger state for the backstop
  */
 export interface BackstopSlice {
-  backstopContract: Backstop.BackstopOpBuilder;
-  backstopData: BackstopData;
-  backstopPoolData: Map<string, PoolBalance>;
-  backstopUserData: Map<string, UserBalance>;
+  backstopContract: BlendSdk.BackstopClient;
+  backstopConfig: BackstopConfig;
+  backstopPoolData: Map<string, BackstopPoolData>;
+  backstopUserData: Map<string, BackstopUserData>;
   refreshBackstopData: (latest_ledger_close: number) => Promise<void>;
   refreshBackstopPoolData: (
     pool_id: string,
@@ -36,38 +34,55 @@ export interface BackstopSlice {
 }
 
 export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice> = (set, get) => ({
-  backstopContract: new Backstop.BackstopOpBuilder(
-    'CA4H6BQI3PRFLZTMLDZNWO2TC2N7QQA34JGH52VNCORWMF2RLW6GDVJR'
+  backstopContract: new BlendSdk.BackstopClient(
+    'CA47F2MX5KPXSFYLCOFVBDIM7O57IEMFXQHW6KTUZAJ4UP2FXPPNLHCA'
   ),
-  backstopData: {
-    backstopToken: 'CANAYUWHRELN7KIDB6O35ZLFJBX6PJHJKZBUCXRZMZTYI2SBQFGAQSGK',
-    backstopTokenPrice: BigInt(0.05e7),
+  backstopConfig: {
+    blndTkn: 'NULL',
+    usdcTkn: 'NULL',
+    backstopTkn: 'NULL',
+    poolFactory: 'NULL',
     rewardZone: [],
+    lpValue: {
+      blndPerShare: BigInt(0),
+      usdcPerShare: BigInt(0),
+    },
     lastUpdated: 0,
   },
-  backstopPoolData: new Map<string, PoolBalance>(),
-  backstopUserData: new Map<string, UserBalance>(),
+  backstopPoolData: new Map<string, BackstopPoolData>(),
+  backstopUserData: new Map<string, BackstopUserData>(),
 
   refreshBackstopData: async (latest_ledger_close: number) => {
     try {
+      const network = get().network;
       const contract = get().backstopContract;
-      const stellar = get().rpcServer();
-
-      let rz_datakey = Backstop.BackstopDataKeyToXDR({ tag: 'RewardZone' });
-      rz_datakey = xdr.ScVal.fromXDR(rz_datakey.toXDR());
-      let rz_dataEntry = await stellar.getContractData(contract._contract.contractId(), rz_datakey);
-      let rz = data_entry_converter.toStringArray(rz_dataEntry.xdr, 'hex');
-      const poolBackstopBalMap = new Map<string, PoolBalance>();
-      for (const rz_pool of rz) {
-        const pool_balance = await loadPoolBackstopBalance(stellar, contract, rz_pool);
-        pool_balance.lastUpdated = latest_ledger_close;
-        poolBackstopBalMap.set(rz_pool, pool_balance);
-      }
-      let backstopData = get().backstopData;
-      backstopData.rewardZone = rz;
-      backstopData.lastUpdated = latest_ledger_close;
-
-      set({ backstopData: backstopData });
+      const backstopConfig = await BlendSdk.BackstopConfig.load(network, contract.address);
+      const poolData = new Map<string, BackstopPoolData>();
+      backstopConfig.rewardZone.forEach(async (poolId) => {
+        const backstopPoolData = await BlendSdk.BackstopPoolData.load(
+          network,
+          contract.address,
+          poolId
+        );
+        poolData.set(poolId, {
+          lastUpdated: latest_ledger_close,
+          poolBalance: backstopPoolData.poolBalance,
+          poolEps: backstopPoolData.poolEps,
+          emissions: backstopPoolData.emissions,
+        });
+      });
+      set({
+        backstopPoolData: poolData,
+        backstopConfig: {
+          blndTkn: backstopConfig.blndTkn,
+          usdcTkn: backstopConfig.usdcTkn,
+          backstopTkn: backstopConfig.backstopTkn,
+          poolFactory: backstopConfig.poolFactory,
+          rewardZone: backstopConfig.rewardZone,
+          lpValue: backstopConfig.lpValue,
+          lastUpdated: latest_ledger_close,
+        },
+      });
     } catch (e) {
       console.error('unable to refresh backstop data:', e);
     }
@@ -78,30 +93,52 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
     latest_ledger_close: number
   ) => {
     try {
+      const network = get().network;
       const contract = get().backstopContract;
       const stellar = get().rpcServer();
-      const network = get().passphrase;
-      const backstopData = get().backstopData;
+      const backstopConfig = get().backstopConfig;
 
-      let pool_backstop_balance = await loadPoolBackstopBalance(stellar, contract, pool_id);
-      pool_backstop_balance.lastUpdated = latest_ledger_close;
+      let backstopPoolData = await BlendSdk.BackstopPoolData.load(
+        network,
+        contract.address,
+        pool_id
+      );
+
       if (user_id) {
-        let user_balance = await loadUserBalance(stellar, contract, pool_id, user_id);
-        let token_balance = await getTokenBalance(
-          stellar,
+        let userData = await BlendSdk.BackstopUserData.load(
           network,
-          backstopData.backstopToken,
+          contract.address,
+          pool_id,
+          user_id
+        );
+        let userBackstopWalletBalance = await getTokenBalance(
+          stellar,
+          network.passphrase,
+          backstopConfig.backstopTkn,
           Address.fromString(user_id)
         );
-        user_balance.tokens = token_balance;
-        user_balance.lastUpdated = latest_ledger_close;
         useStore.setState((prev) => ({
-          backstopUserData: new Map(prev.backstopUserData).set(pool_id, user_balance),
-          backstopPoolData: new Map(prev.backstopPoolData).set(pool_id, pool_backstop_balance),
+          backstopUserData: new Map(prev.backstopUserData).set(pool_id, {
+            userBalance: userData.userBalance,
+            walletBalance: userBackstopWalletBalance,
+            userEmissions: userData.userEmissions,
+            lastUpdated: latest_ledger_close,
+          }),
+          backstopPoolData: new Map(prev.backstopPoolData).set(pool_id, {
+            lastUpdated: latest_ledger_close,
+            poolBalance: backstopPoolData.poolBalance,
+            poolEps: backstopPoolData.poolEps,
+            emissions: backstopPoolData.emissions,
+          }),
         }));
       } else {
         useStore.setState((prev) => ({
-          backstopPoolData: new Map(prev.backstopPoolData).set(pool_id, pool_backstop_balance),
+          backstopPoolData: new Map(prev.backstopPoolData).set(pool_id, {
+            lastUpdated: latest_ledger_close,
+            poolBalance: backstopPoolData.poolBalance,
+            poolEps: backstopPoolData.poolEps,
+            emissions: backstopPoolData.emissions,
+          }),
         }));
       }
     } catch (e) {
@@ -109,72 +146,3 @@ export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice>
     }
   },
 });
-
-/********** Contract Data Helpers **********/
-
-async function loadUserBalance(
-  stellar: Server,
-  contract: Backstop.BackstopOpBuilder,
-  pool_id: string,
-  user_id: string
-): Promise<UserBalance> {
-  try {
-    let user_balance_datakey = Backstop.BackstopDataKeyToXDR({
-      tag: 'UserBalance',
-      values: [{ pool: pool_id, user: user_id }],
-    });
-    user_balance_datakey = xdr.ScVal.fromXDR(user_balance_datakey.toXDR());
-    let user_balance_dataEntry = await stellar.getContractData(
-      contract._contract.contractId(),
-      user_balance_datakey
-    );
-    let user_balance = Backstop.UserBalanceFromXDR(user_balance_dataEntry.xdr);
-    return {
-      shares: user_balance.shares,
-      q4w: user_balance.q4w,
-      lastUpdated: 0,
-      tokens: BigInt(0),
-    };
-  } catch (e: any) {
-    if (e?.message?.includes('not found') === false) {
-      console.error('unable to fetch shares for: ', pool_id);
-      console.error(e);
-    }
-    // user balance not found, can assume a deposit of zero
-    return { shares: BigInt(0), q4w: [], lastUpdated: 0, tokens: BigInt(0) };
-  }
-}
-
-async function loadPoolBackstopBalance(
-  stellar: Server,
-  contract: Backstop.BackstopOpBuilder,
-  pool_id: string
-): Promise<PoolBalance> {
-  try {
-    let pool_balance_datakey = Backstop.BackstopDataKeyToXDR({
-      tag: 'PoolBalance',
-      values: [pool_id],
-    });
-    pool_balance_datakey = xdr.ScVal.fromXDR(pool_balance_datakey.toXDR());
-    let pool_balance_entry = await stellar.getContractData(
-      contract._contract.contractId(),
-      pool_balance_datakey
-    );
-    const pool_balance = Backstop.PoolBalanceFromXDR(pool_balance_entry.xdr);
-    return {
-      shares: pool_balance.shares,
-      tokens: pool_balance.tokens,
-      q4w: pool_balance.q4w,
-      lastUpdated: 0,
-    };
-  } catch (e: any) {
-    console.error(`unable to load backstop pool data for ${pool_id}:`, e);
-    console.error(`unable to load backstop pool data for ${pool_id}:`, e);
-    return {
-      shares: BigInt(0),
-      tokens: BigInt(0),
-      q4w: BigInt(0),
-      lastUpdated: 0,
-    };
-  }
-}

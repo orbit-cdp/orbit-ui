@@ -1,6 +1,19 @@
+import {
+  BackstopClaimArgs,
+  ContractResult,
+  PoolBackstopActionArgs,
+  PoolClaimArgs,
+  PoolClient,
+  Positions,
+  Q4W,
+  Resources,
+  SorobanResponse,
+  SubmitArgs,
+  TxOptions,
+} from '@blend-capital/blend-sdk';
 import { getPublicKey, signTransaction } from '@stellar/freighter-api';
 import React, { useContext, useEffect, useState } from 'react';
-import { Operation, Transaction, TransactionBuilder, xdr } from 'soroban-client';
+import { Transaction } from 'soroban-client';
 import { useStore } from '../store/store';
 
 export interface IWalletContext {
@@ -9,9 +22,23 @@ export interface IWalletContext {
   txStatus: TxStatus;
   connect: () => void;
   disconnect: () => void;
-  setTxStatus: (newTxStatus: TxStatus) => void;
-  userSignTransaction: (xdr: string, network: string, signWith: string) => Promise<string>;
-  submitTransaction: (operation: xdr.Operation<Operation.InvokeHostFunction>) => Promise<void>;
+  clearTxStatus: () => void;
+  poolSubmit: (
+    poolId: string,
+    submitArgs: SubmitArgs,
+    sim: boolean
+  ) => Promise<Positions | undefined>;
+  poolClaim: (
+    poolId: string,
+    claimArgs: PoolClaimArgs,
+    sim: boolean
+  ) => Promise<bigint | undefined>;
+  backstopDeposit(args: PoolBackstopActionArgs, sim: boolean): Promise<bigint | undefined>;
+  backstopWithdraw(args: PoolBackstopActionArgs, sim: boolean): Promise<bigint | undefined>;
+  backstopQueueWithdrawal(args: PoolBackstopActionArgs, sim: boolean): Promise<Q4W | undefined>;
+  backstopDequeueWithdrawal(args: PoolBackstopActionArgs, sim: boolean): Promise<undefined>;
+  backstopClaim(args: BackstopClaimArgs, sim: boolean): Promise<bigint | undefined>;
+  faucet(tx: Transaction): Promise<undefined>;
 }
 
 export enum TxStatus {
@@ -25,8 +52,10 @@ export enum TxStatus {
 const WalletContext = React.createContext<IWalletContext | undefined>(undefined);
 
 export const WalletProvider = ({ children = null as any }) => {
-  const rpcServer = useStore((state) => state.rpcServer);
-  const passphrase = useStore((state) => state.passphrase);
+  const network = useStore((state) => state.network);
+  const rpc = useStore((state) => state.rpcServer());
+  const backstopClient = useStore((state) => state.backstopContract);
+  const loadAccount = useStore((state) => state.loadAccount);
   const removeUserState = useStore((state) => state.removeUserData);
 
   const [connected, setConnected] = useState<boolean>(false);
@@ -54,6 +83,7 @@ export const WalletProvider = ({ children = null as any }) => {
       publicKey = await getPublicKey();
       setWalletAddress(publicKey);
       setConnected(true);
+      await loadAccount(publicKey);
     } catch (e: any) {
       error = e?.message ?? 'Failed to connect wallet.';
     }
@@ -70,76 +100,297 @@ export const WalletProvider = ({ children = null as any }) => {
   }
 
   /**
-   * Signs a transaction with a connected wallet.
-   * param xdr = The xdr-encoded transaction envelope to sign.
-   * returns The signed_xdr of the transaction
+   * Sign an XDR string with the connected user's wallet
+   * @param xdr - The XDR to sign
+   * @param networkPassphrase - The network passphrase
+   * @returns - The signed XDR as a base64 string
    */
+  async function sign(xdr: string): Promise<string> {
+    if (connected) {
+      setTxStatus(TxStatus.SIGNING);
+      let result = await signTransaction(xdr, { networkPassphrase: network.passphrase });
+      setTxStatus(TxStatus.SUBMITTING);
+      return result;
+    } else {
+      throw new Error('Not connected to a wallet');
+    }
+  }
 
-  async function userSignTransaction(xdr: string, network: string, signWith: string) {
-    let signedTransaction = '';
-    let error = '';
-
+  async function submitTransaction<T>(
+    submission: Promise<ContractResult<T>>
+  ): Promise<T | undefined> {
     try {
-      signedTransaction = await signTransaction(xdr, {
-        network,
-        accountToSign: signWith,
-      });
-    } catch (e: any) {
-      error = e?.message ?? 'Failed to sign transaction.';
+      // submission calls `sign` internally which handles setting TxStatus
+      let result = await submission;
+      if (result.ok) {
+        console.log('Successfully submitted transaction: ', result.hash);
+        setTxStatus(TxStatus.SUCCESS);
+      } else {
+        console.log('Failed submitted transaction: ', result.hash);
+        setTxStatus(TxStatus.FAIL);
+      }
+
+      // reload Horizon account after submission
+      try {
+        await loadAccount(walletAddress);
+      } catch {
+        console.error('Failed loading account: ', walletAddress);
+      }
+
+      return result.unwrap();
+    } catch (e) {
+      console.error('Failed submitting transaction: ', e);
+      setTxStatus(TxStatus.FAIL);
+      return undefined;
     }
-    if (error) {
-      return error;
+  }
+
+  //********** Pool Functions ***********/
+
+  /**
+   * Submit a request to the pool
+   * @param poolId - The contract address of the pool
+   * @param submitArgs - The "submit" function args
+   * @param sim - "true" if simulating the transaction, "false" if submitting
+   * @returns The Positions, or undefined
+   */
+  async function poolSubmit(
+    poolId: string,
+    submitArgs: SubmitArgs,
+    sim: boolean
+  ): Promise<Positions | undefined> {
+    if (connected) {
+      let txOptions: TxOptions = {
+        sim,
+        pollingInterval: 1000,
+        timeout: 15000,
+        builderOptions: {
+          fee: '10000',
+          timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
+          networkPassphrase: network.passphrase,
+        },
+      };
+      let pool = new PoolClient(poolId);
+      let submission = pool.submit(walletAddress, sign, network, txOptions, submitArgs);
+      return submitTransaction<Positions>(submission);
     }
-    return signedTransaction;
   }
 
   /**
-   * Submits tx
-   * Returns txStatus and hash
+   * Claim emissions from the pool
+   * @param poolId - The contract address of the pool
+   * @param claimArgs - The "claim" function args
+   * @param sim - "true" if simulating the transaction, "false" if submitting
+   * @returns The Positions, or undefined
    */
-  async function submitTransaction(operation: xdr.Operation<Operation.InvokeHostFunction>) {
+  async function poolClaim(
+    poolId: string,
+    claimArgs: PoolClaimArgs,
+    sim: boolean
+  ): Promise<bigint | undefined> {
     if (connected) {
-      try {
-        let stellar = rpcServer();
-        let account = await stellar.getAccount(walletAddress);
-
-        let txBuilder = new TransactionBuilder(account, {
+      let txOptions: TxOptions = {
+        sim,
+        pollingInterval: 1000,
+        timeout: 15000,
+        builderOptions: {
           fee: '10000',
           timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
-          networkPassphrase: passphrase,
-        });
-        txBuilder.addOperation(operation);
-        // simulate and rebuild tx
-        let tx_no_footprint = txBuilder.build();
-        let tx_footprint = await stellar.prepareTransaction(tx_no_footprint, passphrase);
-        // fetch signature from wallet
-        setTxStatus(TxStatus.SIGNING);
-        let tx_signed = await signTransaction(tx_footprint.toXDR(), {
-          networkPassphrase: passphrase,
-        });
-        setTxStatus(TxStatus.SUBMITTING);
-        let response = await stellar.sendTransaction(new Transaction(tx_signed, passphrase));
-        console.log('tx_resp: ', JSON.stringify(response));
-        let status = response.status as string;
-        let tx_hash = response.hash;
-        // Poll this until the status is not "pending"
-        while (status === 'PENDING' || status == 'NOT_FOUND') {
-          // See if the transaction is complete
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          console.log('checking tx...');
-          let getResponse = await stellar.getTransaction(tx_hash);
-          status = getResponse.status;
-        }
+          networkPassphrase: network.passphrase,
+        },
+      };
+      let pool = new PoolClient(poolId);
+      let submission = pool.claim(walletAddress, sign, network, txOptions, claimArgs);
+      return submitTransaction<bigint>(submission);
+    }
+  }
 
-        if (status === 'SUCCESS') {
+  //********** Backstop Functions ***********/
+
+  /**
+   * Execute an deposit against the backstop
+   * @param args - The args of the deposit
+   * @param sim - "true" if simulating the transaction, "false" if submitting
+   * @returns The Positions, or undefined
+   */
+  async function backstopDeposit(
+    args: PoolBackstopActionArgs,
+    sim: boolean
+  ): Promise<bigint | undefined> {
+    if (connected) {
+      let txOptions: TxOptions = {
+        sim,
+        pollingInterval: 1000,
+        timeout: 15000,
+        builderOptions: {
+          fee: '10000',
+          timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
+          networkPassphrase: network.passphrase,
+        },
+      };
+      let submission = backstopClient.deposit(walletAddress, sign, network, txOptions, args);
+      return submitTransaction<bigint>(submission);
+    }
+  }
+
+  /**
+   * Execute an withdraw against the backstop
+   * @param args - The args of the withdraw
+   * @param sim - "true" if simulating the transaction, "false" if submitting
+   * @returns The Positions, or undefined
+   */
+  async function backstopWithdraw(
+    args: PoolBackstopActionArgs,
+    sim: boolean
+  ): Promise<bigint | undefined> {
+    if (connected) {
+      let txOptions: TxOptions = {
+        sim,
+        pollingInterval: 1000,
+        timeout: 15000,
+        builderOptions: {
+          fee: '10000',
+          timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
+          networkPassphrase: network.passphrase,
+        },
+      };
+      let submission = backstopClient.withdraw(walletAddress, sign, network, txOptions, args);
+      return submitTransaction<bigint>(submission);
+    }
+  }
+
+  /**
+   * Execute an queue withdrawal against the backstop
+   * @param args - The args of the queue withdrawal
+   * @param sim - "true" if simulating the transaction, "false" if submitting
+   * @returns The Positions, or undefined
+   */
+  async function backstopQueueWithdrawal(
+    args: PoolBackstopActionArgs,
+    sim: boolean
+  ): Promise<Q4W | undefined> {
+    if (connected) {
+      let txOptions: TxOptions = {
+        sim,
+        pollingInterval: 1000,
+        timeout: 15000,
+        builderOptions: {
+          fee: '10000',
+          timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
+          networkPassphrase: network.passphrase,
+        },
+      };
+      let submission = backstopClient.queueWithdrawal(
+        walletAddress,
+        sign,
+        network,
+        txOptions,
+        args
+      );
+      return submitTransaction<Q4W>(submission);
+    }
+  }
+
+  /**
+   * Execute an dequeue withdrawal against the backstop
+   * @param args - The args of the queue withdrawal
+   * @param sim - "true" if simulating the transaction, "false" if submitting
+   * @returns The Positions, or undefined
+   */
+  async function backstopDequeueWithdrawal(
+    args: PoolBackstopActionArgs,
+    sim: boolean
+  ): Promise<undefined> {
+    if (connected) {
+      let txOptions: TxOptions = {
+        sim,
+        pollingInterval: 1000,
+        timeout: 15000,
+        builderOptions: {
+          fee: '10000',
+          timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
+          networkPassphrase: network.passphrase,
+        },
+      };
+      let submission = backstopClient.dequeueWithdrawal(
+        walletAddress,
+        sign,
+        network,
+        txOptions,
+        args
+      );
+      return submitTransaction<undefined>(submission);
+    }
+  }
+
+  /**
+   * Claim emissions from the backstop
+   * @param claimArgs - The "claim" function args
+   * @param sim - "true" if simulating the transaction, "false" if submitting
+   * @returns The claimed amount
+   */
+  async function backstopClaim(
+    claimArgs: BackstopClaimArgs,
+    sim: boolean
+  ): Promise<bigint | undefined> {
+    if (connected) {
+      let txOptions: TxOptions = {
+        sim,
+        pollingInterval: 1000,
+        timeout: 15000,
+        builderOptions: {
+          fee: '10000',
+          timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
+          networkPassphrase: network.passphrase,
+        },
+      };
+      let submission = backstopClient.claim(walletAddress, sign, network, txOptions, claimArgs);
+      return submitTransaction<bigint>(submission);
+    }
+  }
+
+  async function faucet(tx: Transaction): Promise<undefined> {
+    if (tx.operations.length > 0) {
+      let signedTx = new Transaction(await sign(tx.toXDR()), network.passphrase);
+      let response: SorobanResponse = await rpc.sendTransaction(signedTx);
+      let status: string = response.status;
+      const resources = new Resources(0, 0, 0, 0, 0, 0, 0);
+      const tx_hash = response.hash;
+
+      // Poll this until the status is not "NOT_FOUND"
+      const pollingStartTime = Date.now();
+      while (status === 'PENDING' || status === 'NOT_FOUND') {
+        if (pollingStartTime + 15000 < Date.now()) {
+          console.error(`Transaction timed out with status ${status}`);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // See if the transaction is complete
+        response = await rpc.getTransaction(tx_hash);
+        status = response.status;
+      }
+      const result = ContractResult.fromResponse(tx_hash, resources, response, () => undefined);
+      try {
+        // submission calls `sign` internally which handles setting TxStatus
+        if (result.ok) {
+          console.log('Successfully submitted transaction: ', result.hash);
           setTxStatus(TxStatus.SUCCESS);
         } else {
-          console.log('Transaction failed: ', status);
+          console.log('Failed submitted transaction: ', result.hash);
           setTxStatus(TxStatus.FAIL);
         }
+
+        // reload Horizon account after submission
+        try {
+          await loadAccount(walletAddress);
+        } catch {
+          console.error('Failed loading account: ', walletAddress);
+        }
+
+        return result.unwrap();
       } catch (e) {
         console.error('Failed submitting transaction: ', e);
         setTxStatus(TxStatus.FAIL);
+        return undefined;
       }
     }
   }
@@ -152,9 +403,15 @@ export const WalletProvider = ({ children = null as any }) => {
         txStatus,
         connect,
         disconnect,
-        setTxStatus,
-        userSignTransaction,
-        submitTransaction,
+        clearTxStatus: () => setTxStatus(TxStatus.NONE),
+        poolSubmit,
+        poolClaim,
+        backstopDeposit,
+        backstopWithdraw,
+        backstopQueueWithdrawal,
+        backstopDequeueWithdrawal,
+        backstopClaim,
+        faucet,
       }}
     >
       {children}

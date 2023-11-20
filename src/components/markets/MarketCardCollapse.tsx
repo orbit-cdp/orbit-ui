@@ -13,7 +13,7 @@ import { MarketsList } from './MarketsList';
 export const MarketCardCollapse: React.FC<PoolComponentProps> = ({ poolId, sx, ...props }) => {
   const theme = useTheme();
 
-  const pool = useStore((state) => state.pools.get(poolId));
+  const poolConfig = useStore((state) => state.pools.get(poolId));
   const backstopPoolEstimate = useStore((state) => state.backstop_pool_est.get(poolId));
 
   return (
@@ -41,7 +41,7 @@ export const MarketCardCollapse: React.FC<PoolComponentProps> = ({ poolId, sx, .
           </Box>
           <Box sx={{ padding: '6px', display: 'flex', flexDirection: 'row', height: '30px' }}>
             <Box sx={{ paddingRight: '12px', lineHeight: '100%' }}>{`Oracle ${toCompactAddress(
-              pool?.config.oracle
+              poolConfig?.oracle
             )}`}</Box>
             <Box>
               <ArrowForwardIcon fontSize="inherit" />
