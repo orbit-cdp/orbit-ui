@@ -1,5 +1,6 @@
-import { Box, Typography } from '@mui/material';
-import { ViewType, useSettings } from '../../contexts';
+import HelpOutline from '@mui/icons-material/HelpOutline';
+import { Box, Tooltip, Typography } from '@mui/material';
+import { useSettings, ViewType } from '../../contexts';
 import { useStore } from '../../store/store';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { LendMarketCard } from './LendMarketCard';
@@ -53,14 +54,24 @@ export const LendMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
           APY
         </Typography>
         {headerNum >= 5 && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            sx={{ width: headerWidth }}
-          >
-            Collateral Factor
-          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+            <Typography variant="body2" color="text.secondary" align="center">
+              Collateral Factor
+            </Typography>
+            <Tooltip
+              title="The percent of this asset's value added to your borrow capacity."
+              placement="top"
+            >
+              <HelpOutline
+                sx={{
+                  color: 'text.secondary',
+                  width: '15px',
+                  marginTop: '-4px',
+                  marginLeft: '4px',
+                }}
+              />
+            </Tooltip>
+          </Box>
         )}
 
         <Box sx={{ width: headerWidth }} />
