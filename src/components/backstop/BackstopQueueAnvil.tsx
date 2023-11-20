@@ -1,6 +1,4 @@
 import { PoolBackstopActionArgs } from '@blend-capital/blend-sdk';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
@@ -125,7 +123,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
           >
             Transaction Overview
           </Typography>
-          <Box
+          {/* <Box
             sx={{
               marginLeft: '24px',
               marginBottom: '12px',
@@ -145,7 +143,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
               $1.88
             </Typography>
             <HelpOutlineIcon fontSize="inherit" sx={{ color: theme.palette.text.secondary }} />
-          </Box>
+          </Box> */}
           <Value title="Amount to queue" value={`${toQueue ?? '0'} BLND-USDC LP`} />
           <Value
             title="New queue expiration"

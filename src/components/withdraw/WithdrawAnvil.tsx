@@ -1,6 +1,4 @@
 import { SubmitArgs } from '@blend-capital/blend-sdk';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
@@ -153,7 +151,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
           >
             Transaction Overview
           </Typography>
-          <Box
+          {/* <Box
             sx={{
               marginLeft: '24px',
               marginBottom: '12px',
@@ -173,7 +171,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
               $1.88
             </Typography>
             <HelpOutlineIcon fontSize="inherit" sx={{ color: theme.palette.text.secondary }} />
-          </Box>
+          </Box> */}
           <Value title="Amount to withdraw" value={`${toWithdraw ?? '0'} ${symbol}`} />
           <ValueChange
             title="Your total supplied"
