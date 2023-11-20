@@ -364,9 +364,9 @@ export const WalletProvider = ({ children = null as any }) => {
       try {
         setTxStatus(TxStatus.SUBMITTING);
         const resp = await fetch(url, { method: 'GET' });
-        const txEnvelopeXDR = (await resp.json()) as { type: string; data: number[] };
+        const txEnvelopeXDR = await resp.text();
         let transaction = new Transaction(
-          xdr.TransactionEnvelope.fromXDR(Buffer.from(txEnvelopeXDR.data)),
+          xdr.TransactionEnvelope.fromXDR(txEnvelopeXDR, 'base64'),
           network.passphrase
         );
 
