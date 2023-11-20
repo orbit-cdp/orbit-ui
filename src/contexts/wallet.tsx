@@ -13,7 +13,7 @@ import {
 } from '@blend-capital/blend-sdk';
 import { getPublicKey, signTransaction } from '@stellar/freighter-api';
 import React, { useContext, useEffect, useState } from 'react';
-import { Transaction, xdr } from 'soroban-client';
+import { Transaction, xdr } from 'stellar-sdk';
 import { useStore } from '../store/store';
 
 export interface IWalletContext {

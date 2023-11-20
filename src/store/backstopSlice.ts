@@ -1,5 +1,5 @@
 import * as BlendSdk from '@blend-capital/blend-sdk';
-import { Address } from 'soroban-client';
+import { Address } from 'stellar-sdk';
 import { StateCreator } from 'zustand';
 import { getTokenBalance } from '../external/token';
 import { DataStore, useStore } from './store';

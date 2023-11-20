@@ -6,7 +6,7 @@ import {
   Reserve,
   UserPositions,
 } from '@blend-capital/blend-sdk';
-import { Address, Server } from 'soroban-client';
+import { Address, SorobanRpc } from 'stellar-sdk';
 import { StateCreator } from 'zustand';
 import { getTokenBalance } from '../external/token';
 import { getOraclePrice } from '../utils/stellar_rpc';
@@ -155,7 +155,7 @@ export const createPoolSlice: StateCreator<DataStore, [], [], PoolSlice> = (set,
 });
 
 async function loadOraclePrices(
-  stellar: Server,
+  stellar: SorobanRpc.Server,
   network: Network,
   assets: string[],
   oracle_id: string

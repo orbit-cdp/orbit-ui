@@ -1,11 +1,10 @@
 //! Collection of utility functions to help with Horizon data
 
 import { Reserve } from '@blend-capital/blend-sdk';
-import { Asset } from 'soroban-client';
-import { AccountResponse } from 'stellar-sdk';
+import { Asset, Horizon } from 'stellar-sdk';
 
 export function requiresTrustlineReserve(
-  account: AccountResponse | undefined,
+  account: Horizon.AccountResponse | undefined,
   reserve: Reserve | undefined
 ): boolean {
   let asset = reserve?.tokenMetadata?.asset;
@@ -13,7 +12,7 @@ export function requiresTrustlineReserve(
 }
 
 export function requiresTrustline(
-  account: AccountResponse | undefined,
+  account: Horizon.AccountResponse | undefined,
   asset: Asset | undefined
 ): boolean {
   // no trustline required for unloaded account or asset
