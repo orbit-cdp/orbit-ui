@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import { ViewType, useSettings } from '../../contexts';
+import { useSettings, ViewType } from '../../contexts';
 import { useStore } from '../../store/store';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { MarketsListItem } from './MarketsListItem';

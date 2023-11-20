@@ -1,5 +1,6 @@
+import { HelpOutline } from '@mui/icons-material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { Box, useTheme } from '@mui/material';
+import { Box, Tooltip, useTheme } from '@mui/material';
 import { useSettings, ViewType } from '../../contexts';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
@@ -74,13 +75,18 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                 alignItems: 'center',
               }}
             >
-              <StackedText
-                title="Total Backstop Size"
-                titleColor="inherit"
-                text={`$${toBalance(backstopPoolEstimate?.backstopSize)}`}
-                textColor="inherit"
-                type="large"
-              />
+              <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                <StackedText
+                  title="Total Backstop Size"
+                  titleColor="inherit"
+                  text={`$${toBalance(backstopPoolEstimate?.backstopSize)}`}
+                  textColor="inherit"
+                  type="large"
+                />
+                <Tooltip title="The amount of capital insuring this pool." placement="top">
+                  <HelpOutline sx={{ width: '15px', marginLeft: '4px', marginTop: '-4px' }} />
+                </Tooltip>
+              </Box>
               <Icon
                 src={'/icons/dashboard/bkstp_size.svg'}
                 alt={`backstop size icon`}
@@ -159,13 +165,18 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                 alignItems: 'center',
               }}
             >
-              <StackedText
-                title="Total Backstop Size"
-                titleColor="inherit"
-                text={`$${toBalance(backstopPoolEstimate?.backstopSize)}`}
-                textColor="inherit"
-                type="large"
-              />
+              <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                <StackedText
+                  title="Total Backstop Size"
+                  titleColor="inherit"
+                  text={`$${toBalance(backstopPoolEstimate?.backstopSize)}`}
+                  textColor="inherit"
+                  type="large"
+                />
+                <Tooltip title="The amount of capital insuring this pool." placement="top">
+                  <HelpOutline sx={{ width: '15px', marginLeft: '4px', marginTop: '-4px' }} />
+                </Tooltip>
+              </Box>
               <Icon
                 src={'/icons/dashboard/bkstp_size.svg'}
                 alt={`backstop size icon`}

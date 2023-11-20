@@ -1,3 +1,5 @@
+import HelpOutline from '@mui/icons-material/HelpOutline';
+import { Box, Tooltip } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
@@ -57,18 +59,34 @@ const Backstop: NextPage = () => {
       <Divider />
       <Row>
         <Section width={SectionSize.THIRD}>
-          <StackedText
-            title="Backstop APY"
-            text={toPercentage(backstopEstimates?.backstopApy)}
-            sx={{ width: '100%', padding: '6px' }}
-          ></StackedText>
+          <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+            <StackedText
+              title="Backstop APY"
+              text={toPercentage(backstopEstimates?.backstopApy)}
+              sx={{ width: '100%', padding: '6px' }}
+            ></StackedText>
+            <Tooltip
+              title="Estimated APY based on backstop emissions and pool interest sharing."
+              placement="top"
+            >
+              <HelpOutline sx={{ width: '15px', color: 'text.secondary' }} />
+            </Tooltip>
+          </Box>
         </Section>
         <Section width={SectionSize.THIRD}>
-          <StackedText
-            title="Q4W"
-            text={toPercentage(backstopEstimates?.q4wRate)}
-            sx={{ width: '100%', padding: '6px' }}
-          ></StackedText>
+          <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+            <StackedText
+              title="Q4W"
+              text={toPercentage(backstopEstimates?.q4wRate)}
+              sx={{ width: '100%', padding: '6px' }}
+            ></StackedText>
+            <Tooltip
+              title="Percent of capital insuring this pool queued for withdrawal (Q4W). A higher percent indicates potential risks."
+              placement="top"
+            >
+              <HelpOutline sx={{ marginLeft: '-20px', width: '15px', color: 'text.secondary' }} />
+            </Tooltip>
+          </Box>
         </Section>
         <Section width={SectionSize.THIRD}>
           <StackedText
