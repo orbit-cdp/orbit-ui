@@ -18,9 +18,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   const { connected, walletAddress, poolSubmit } = useWallet();
 
   const reserve = useStore((state) =>
-    state.poolData.get(poolId)?.reserves.find((reserve) => {
-      reserve.assetId == assetId;
-    })
+    state.poolData.get(poolId)?.reserves.find((reserve) => reserve.assetId == assetId)
   );
   const assetToBase = useStore((state) => state.poolData.get(poolId))?.poolPrices.get(assetId) ?? 1;
   const user_est = useStore((state) => state.pool_user_est.get(poolId));
