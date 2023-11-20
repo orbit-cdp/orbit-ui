@@ -70,6 +70,18 @@ export const WalletProvider = ({ children = null as any }) => {
   // wallet state
   const [walletAddress, setWalletAddress] = useState<string>('');
 
+  function setFailureMessage(message: string | undefined) {
+    if (message) {
+      // some contract failures include diagnostic information. If so, try and remove it.
+      let substrings = message.split('Event log (newest first):');
+      if (substrings.length > 1) {
+        setTxFailure(substrings[0].trimEnd());
+        return;
+      }
+    }
+    setTxFailure('Unkown error occurred.');
+  }
+
   useEffect(() => {
     if (autoConnect) {
       setAutoConnect(false);
@@ -130,11 +142,11 @@ export const WalletProvider = ({ children = null as any }) => {
       setTxHash(result.hash);
       if (result.ok) {
         console.log('Successfully submitted transaction: ', result.hash);
-        setTxFailure('');
+        setFailureMessage('');
         setTxStatus(TxStatus.SUCCESS);
       } else {
         console.log('Failed submitted transaction: ', result.hash);
-        setTxFailure(result.error?.message ?? 'Unknown error occurred');
+        setFailureMessage(result.error?.message);
         setTxStatus(TxStatus.FAIL);
       }
 
@@ -148,7 +160,7 @@ export const WalletProvider = ({ children = null as any }) => {
       return result.unwrap();
     } catch (e: any) {
       console.error('Failed submitting transaction: ', e);
-      setTxFailure(e?.message ?? 'Unknown error occurred');
+      setFailureMessage(e?.message);
       setTxStatus(TxStatus.FAIL);
       return undefined;
     }
@@ -392,11 +404,11 @@ export const WalletProvider = ({ children = null as any }) => {
         try {
           if (result.ok) {
             console.log('Successfully submitted transaction: ', result.hash);
-            setTxFailure('');
+            setFailureMessage('');
             setTxStatus(TxStatus.SUCCESS);
           } else {
             console.log('Failed submitted transaction: ', result.hash);
-            setTxFailure(result.error?.message ?? 'Unknown error occurred');
+            setFailureMessage(result.error?.message);
             setTxStatus(TxStatus.FAIL);
           }
 
@@ -410,7 +422,7 @@ export const WalletProvider = ({ children = null as any }) => {
           return result.unwrap();
         } catch (e: any) {
           console.error('Failed submitting transaction: ', e);
-          setTxFailure(e?.message ?? 'Unknown error occurred');
+          setFailureMessage(e?.message);
           setTxStatus(TxStatus.FAIL);
           return undefined;
         }

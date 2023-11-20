@@ -13,10 +13,11 @@ interface FaucetBannerParams {
 
 export const FaucetBanner = ({ poolId }: FaucetBannerParams) => {
   const theme = useTheme();
-  const { faucet, connected } = useWallet();
+  const { faucet, connected, walletAddress } = useWallet();
   const [openCon, setOpenCon] = React.useState(false);
   const account = useStore((state) => state.account);
   const poolData = useStore((state) => state.poolData.get(poolId));
+  const loadPoolData = useStore((state) => state.loadPoolData);
 
   let needsFaucet = false;
   if (connected && poolData) {
@@ -35,6 +36,9 @@ export const FaucetBanner = ({ poolId }: FaucetBannerParams) => {
     if (connected) {
       await faucet();
       setOpenCon(true);
+      if (poolId) {
+        await loadPoolData(poolId, walletAddress, true);
+      }
     }
   };
 

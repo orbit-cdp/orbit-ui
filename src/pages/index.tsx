@@ -1,6 +1,7 @@
 import type { NextPage } from 'next';
 import { useEffect } from 'react';
 import { Divider } from '../components/common/Divider';
+import { FaucetBanner } from '../components/common/FaucetBanner';
 import { Row } from '../components/common/Row';
 import { SectionBase } from '../components/common/SectionBase';
 import { WalletWarning } from '../components/common/WalletWarning';
@@ -31,6 +32,9 @@ const Markets: NextPage = () => {
     <>
       <Row>
         <WalletWarning />
+      </Row>
+      <Row>
+        <FaucetBanner poolId={rewardZone[0]} />
       </Row>
       <Row>
         <SectionBase type="alt" sx={{ margin: '6px', padding: '6px' }}>

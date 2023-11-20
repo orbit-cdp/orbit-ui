@@ -30,7 +30,7 @@ export const OverlayModalSuccess: React.FC<CloseableOverlayProps> = ({ handleClo
           display: 'flex',
           flexWrap: 'wrap',
           flexDirection: 'column',
-          marginTop: '23vh',
+          marginTop: '18vh',
           alignItems: 'center',
           justifyContent: 'center',
         }}

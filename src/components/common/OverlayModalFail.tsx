@@ -30,14 +30,17 @@ export const OverlayModalFail: React.FC<CloseableOverlayProps> = ({ handleCloseO
           display: 'flex',
           flexWrap: 'wrap',
           flexDirection: 'column',
-          marginTop: '23vh',
+          marginTop: '18vh',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
         <ErrorOutlineIcon sx={{ fontSize: '80px', color: '#E7424C' }} />
         <Typography variant="h2" sx={{ margin: '12px' }}>
-          {`Transaction submission unsuccessful. Reason: ${lastTxFailure}`}
+          {`Transaction submission failed!`}
+        </Typography>
+        <Typography variant="h2" sx={{ margin: '12px' }}>
+          {lastTxFailure}
         </Typography>
         <Link
           target="_blank"
