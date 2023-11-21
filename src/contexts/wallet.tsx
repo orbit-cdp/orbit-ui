@@ -138,6 +138,7 @@ export const WalletProvider = ({ children = null as any }) => {
   ): Promise<T | undefined> {
     try {
       // submission calls `sign` internally which handles setting TxStatus
+      setTxStatus(TxStatus.BUILDING);
       let result = await submission;
       setTxHash(result.hash);
       if (result.ok) {
@@ -374,7 +375,7 @@ export const WalletProvider = ({ children = null as any }) => {
     if (connected) {
       const url = `https://ewqw4hx7oa.execute-api.us-east-1.amazonaws.com/getAssets?userId=${walletAddress}`;
       try {
-        setTxStatus(TxStatus.SUBMITTING);
+        setTxStatus(TxStatus.BUILDING);
         const resp = await fetch(url, { method: 'GET' });
         const txEnvelopeXDR = await resp.text();
         let transaction = new Transaction(

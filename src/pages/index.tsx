@@ -2,6 +2,7 @@ import type { NextPage } from 'next';
 import { useEffect } from 'react';
 import { Divider } from '../components/common/Divider';
 import { FaucetBanner } from '../components/common/FaucetBanner';
+import { OverlayModal } from '../components/common/OverlayModal';
 import { Row } from '../components/common/Row';
 import { SectionBase } from '../components/common/SectionBase';
 import { WalletWarning } from '../components/common/WalletWarning';
@@ -45,6 +46,7 @@ const Markets: NextPage = () => {
       {rewardZone.map((poolId) => (
         <MarketCard key={poolId} poolId={poolId}></MarketCard>
       ))}
+      <OverlayModal poolId={''} type="market" />
     </>
   );
 };

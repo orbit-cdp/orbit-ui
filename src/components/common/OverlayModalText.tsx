@@ -1,7 +1,11 @@
 import { Box, Typography, useTheme } from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
 
-export const OverlayModalSign: React.FC = () => {
+export interface OverlayModalTextProps {
+  message: string;
+}
+
+export const OverlayModalText: React.FC<OverlayModalTextProps> = ({ message }) => {
   const theme = useTheme();
 
   return (
@@ -32,7 +36,7 @@ export const OverlayModalSign: React.FC = () => {
       >
         <CircularProgress size={70} sx={{ color: theme.palette.primary.main }} />
         <Typography variant="h2" sx={{ margin: '12px' }}>
-          Please confirm the transaction in your wallet.
+          {message}
         </Typography>
       </Box>
     </Box>
