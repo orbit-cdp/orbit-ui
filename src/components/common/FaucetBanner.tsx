@@ -63,7 +63,7 @@ export const FaucetBanner = ({ poolId }: FaucetBannerParams) => {
           <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
             <WaterDropOutlinedIcon sx={{ marginRight: '6px' }} />
             <Typography variant="body2">
-              Tap the faucet to receive assets for the Blend private test network.
+              Click here to receive assets for the Blend test network.
             </Typography>
           </Box>
           <ArrowForwardIcon fontSize="inherit" />

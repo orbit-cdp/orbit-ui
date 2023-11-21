@@ -1,7 +1,7 @@
 import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded';
 import { Alert, IconButton, Menu, MenuItem, Snackbar, useTheme } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import { useSettings, ViewType } from '../../contexts';
+import { ViewType, useSettings } from '../../contexts';
 import { useStore } from '../../store/store';
 import { NavItem } from './NavItem';
 
@@ -60,9 +60,11 @@ export const NavMenu = () => {
             backgroundColor: theme.palette.menu.main,
           }}
         >
-          <MenuItem onClick={handleClose}>Docs</MenuItem>
-          <MenuItem onClick={handleClose}>User agreement</MenuItem>
-          <MenuItem onClick={handleClose}>Privacy policy</MenuItem>
+          <a href="https://docs.blend.capital/" target="_blank" rel="noreferrer">
+            <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
+              Docs
+            </MenuItem>
+          </a>
         </Menu>
       )}
       {viewType !== ViewType.REGULAR && (
@@ -97,9 +99,11 @@ export const NavMenu = () => {
             title="Backstop"
             sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
           />
-          <MenuItem onClick={handleClose}>Docs</MenuItem>
-          <MenuItem onClick={handleClose}>User agreement</MenuItem>
-          <MenuItem onClick={handleClose}>Privacy policy</MenuItem>
+          <a href="https://docs.blend.capital/" target="_blank" rel="noreferrer">
+            <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
+              Docs
+            </MenuItem>
+          </a>
         </Menu>
       )}
 
