@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
+import { getAssetReserve } from '../../utils/horizon';
 import { scaleInputToBigInt } from '../../utils/scval';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
@@ -29,8 +30,9 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   const reserve_est = useStore((state) =>
     state.pool_est.get(poolId)?.reserve_est?.find((res) => res.id === assetId)
   );
-  const [toRepay, setToRepay] = useState<string | undefined>(undefined);
+  const account = useStore((state) => state.account);
 
+  const [toRepay, setToRepay] = useState<string | undefined>(undefined);
   const [newEffectiveLiabilities, setNewEffectiveLiabilities] = useState<number>(
     user_est?.e_liabilities_base ?? 0
   );
@@ -45,6 +47,8 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
     : undefined;
   const borrowCap = user_est ? user_est.e_collateral_base - newEffectiveLiabilities : undefined;
   const borrowLimit = user_est ? newEffectiveLiabilities / user_est.e_collateral_base : undefined;
+
+  let stellar_reserve_amount = getAssetReserve(account, reserve?.tokenMetadata?.asset);
 
   const handleRepayAmountChange = (repayInput: string) => {
     let regex = new RegExp(`^[0-9]*\.?[0-9]{0,${decimals}}$`);
@@ -62,10 +66,9 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
 
   const handleRepayMax = () => {
     if (user_bal_est) {
+      let free_amount = user_bal_est.asset - stellar_reserve_amount;
       let maxRepay =
-        user_bal_est.asset < user_bal_est.borrowed
-          ? user_bal_est.asset
-          : user_bal_est.borrowed * 1.0001;
+        free_amount < user_bal_est.borrowed ? free_amount : user_bal_est.borrowed * 1.0001;
       handleRepayAmountChange(maxRepay.toFixed(decimals));
     }
   };
@@ -181,7 +184,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
             title="Your total borrowed"
             curValue={`${toBalance(user_bal_est?.borrowed, decimals)} ${symbol}`}
             newValue={`${toBalance(
-              (user_bal_est?.borrowed ?? 0) - Number(toRepay),
+              Math.max((user_bal_est?.borrowed ?? 0) - Number(toRepay ?? '0'), 0),
               decimals
             )} ${symbol}`}
           />
