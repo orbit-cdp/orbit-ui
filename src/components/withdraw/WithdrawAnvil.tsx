@@ -26,12 +26,13 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
     state.pool_user_est.get(poolId)?.reserve_estimates.get(assetId)
   );
   const loadPoolData = useStore((state) => state.loadPoolData);
+  const [toWithdrawSubmit, setToWithdrawSubmit] = useState<string | undefined>(undefined);
   const [toWithdraw, setToWithdraw] = useState<string | undefined>(undefined);
   const [newEffectiveCollateral, setNewEffectiveCollateral] = useState<number>(
     user_est?.e_collateral_base ?? 0
   );
-
   const decimals = reserve?.config.decimals ?? 7;
+
   const symbol = reserve?.tokenMetadata?.symbol ?? '';
   const oldBorrowCap = user_est
     ? user_est.e_collateral_base - user_est.e_liabilities_base
@@ -45,11 +46,19 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   const handleWithdrawAmountChange = (withdrawInput: string) => {
     let regex = new RegExp(`^[0-9]*\.?[0-9]{0,${decimals}}$`);
     if (regex.test(withdrawInput) && user_est && user_bal_est) {
+      let realWithdraw = withdrawInput;
       let num_withdraw = Number(withdrawInput);
+      if (num_withdraw > user_bal_est.supplied) {
+        // truncate to supplied, but store full amount to avoid dust
+        // and allow contract to pull down to real supplied amount
+        realWithdraw = user_bal_est.supplied.toFixed(decimals);
+        num_withdraw = Number(realWithdraw);
+      }
       let withdraw_base = num_withdraw * assetToBase * (Number(reserve?.config.c_factor) / 1e7);
       let tempEffectiveCollateral = user_est.e_collateral_base - withdraw_base;
-      if (tempEffectiveCollateral >= user_est.e_liabilities_base * 1.02) {
-        setToWithdraw(withdrawInput);
+      if (tempEffectiveCollateral >= user_est.e_liabilities_base * 1.019) {
+        setToWithdraw(realWithdraw);
+        setToWithdrawSubmit(withdrawInput);
         setNewEffectiveCollateral(tempEffectiveCollateral);
       }
     }
@@ -57,22 +66,27 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
 
   const handleWithdrawMax = () => {
     if (user_est && user_bal_est) {
-      let to_bounded_hf = (user_est.e_collateral_base - user_est.e_liabilities_base) / 1.025;
-      let to_wd = to_bounded_hf / (assetToBase * (Number(reserve?.config.c_factor) / 1e7));
-      let withdrawAmount = Math.min(to_wd, user_bal_est.supplied) + 1 / 10 ** decimals;
-      handleWithdrawAmountChange(withdrawAmount.toFixed(decimals));
+      if (user_est.e_liabilities_base == 0) {
+        handleWithdrawAmountChange((user_bal_est.supplied * 1.05).toFixed(decimals));
+      } else {
+        let to_bounded_hf =
+          (user_est.e_collateral_base - user_est.e_liabilities_base * 1.02) / 1.02;
+        let to_wd = to_bounded_hf / (assetToBase * (Number(reserve?.config.c_factor) / 1e7));
+        let withdrawAmount = Math.min(to_wd, user_bal_est.supplied) + 1 / 10 ** decimals;
+        handleWithdrawAmountChange(withdrawAmount.toFixed(decimals));
+      }
     }
   };
 
   const handleSubmitTransaction = async () => {
-    if (toWithdraw && connected && reserve) {
+    if (toWithdrawSubmit && connected && reserve) {
       let submitArgs: SubmitArgs = {
         from: walletAddress,
         to: walletAddress,
         spender: walletAddress,
         requests: [
           {
-            amount: scaleInputToBigInt(toWithdraw, decimals),
+            amount: scaleInputToBigInt(toWithdrawSubmit, decimals),
             request_type: 3,
             address: reserve.assetId,
           },

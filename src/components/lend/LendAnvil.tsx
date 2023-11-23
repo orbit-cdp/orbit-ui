@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
+import { getAssetReserve } from '../../utils/horizon';
 import { scaleInputToBigInt } from '../../utils/scval';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
@@ -25,6 +26,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   const user_bal_est = useStore((state) =>
     state.pool_user_est.get(poolId)?.reserve_estimates.get(assetId)
   );
+  const account = useStore((state) => state.account);
   const loadPoolData = useStore((state) => state.loadPoolData);
   const [toLend, setToLend] = useState<string | undefined>(undefined);
   const [newEffectiveCollateral, setNewEffectiveCollateral] = useState<number>(
@@ -43,6 +45,8 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   const borrowCap = user_est ? newEffectiveCollateral - user_est.e_liabilities_base : undefined;
   const borrowLimit = user_est ? user_est.e_liabilities_base / newEffectiveCollateral : undefined;
 
+  let stellar_reserve_amount = getAssetReserve(account, reserve?.tokenMetadata?.asset);
+
   const handleLendAmountChange = (lendInput: string) => {
     let regex = new RegExp(`^[0-9]*\.?[0-9]{0,${decimals}}$`);
     if (regex.test(lendInput) && user_est && user_bal_est) {
@@ -58,7 +62,10 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
 
   const handleLendMax = () => {
     if (user_bal_est) {
-      handleLendAmountChange(user_bal_est.asset.toFixed(decimals));
+      let free_amount = user_bal_est.asset - stellar_reserve_amount;
+      if (free_amount > 0) {
+        handleLendAmountChange(free_amount.toFixed(decimals));
+      }
     }
   };
 
