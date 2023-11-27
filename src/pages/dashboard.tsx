@@ -73,6 +73,7 @@ const Dashboard: NextPage = () => {
       <PoolExploreBar poolId={safePoolId} />
       <BackstopPreviewBar poolId={safePoolId} />
       <PositionOverview poolId={safePoolId} />
+      {showLend ? <LendPositions poolId={safePoolId} /> : <BorrowPositions poolId={safePoolId} />}
       <Row>
         <Section width={SectionSize.FULL} sx={{ padding: '0px' }}>
           <ToggleButton
@@ -93,7 +94,6 @@ const Dashboard: NextPage = () => {
           </ToggleButton>
         </Section>
       </Row>
-      {showLend ? <LendPositions poolId={safePoolId} /> : <BorrowPositions poolId={safePoolId} />}
       <Row sx={{ padding: '6px', justifyContent: 'space-between' }}>
         <Typography variant="body1" sx={{ margin: '6px' }}>{`Assets to ${
           showLend ? 'supply' : 'borrow'
