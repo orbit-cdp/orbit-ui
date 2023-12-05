@@ -1,6 +1,4 @@
 import { SubmitArgs } from '@blend-capital/blend-sdk';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
@@ -62,8 +60,11 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     if (regex.test(borrowInput) && user_est && reserveEstimate) {
       let num_borrow = Number(borrowInput);
       let borrow_base = (num_borrow * assetToBase) / reserveEstimate.l_factor;
+      console.log('borrow_base: ', borrow_base);
       let tempNewLiabilities = user_est.e_liabilities_base + borrow_base;
-      if (tempNewLiabilities * 1.02 < user_est.e_collateral_base) {
+      console.log('temp_new: ', tempNewLiabilities * 1.02);
+      console.log('collat: ', user_est.e_collateral_base);
+      if (tempNewLiabilities * 1.019 < user_est.e_collateral_base) {
         setToBorrow(borrowInput);
         setNewEffectiveLiabilities(tempNewLiabilities);
       }
@@ -72,7 +73,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
 
   const handleBorrowMax = () => {
     if (oldBorrowCapAsset && user_est && reserveEstimate && reserve) {
-      let to_bounded_hf = (user_est.e_collateral_base - user_est.e_liabilities_base) / 1.025;
+      let to_bounded_hf = (user_est.e_collateral_base - user_est.e_liabilities_base * 1.02) / 1.02;
       let to_borrow = Math.min(
         to_bounded_hf / (assetToBase / reserveEstimate.l_factor),
         reserveEstimate.supplied * (reserve.config.max_util / 1e7) - reserveEstimate.borrowed
@@ -166,7 +167,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           >
             Transaction Overview
           </Typography>
-          <Box
+          {/* <Box
             sx={{
               marginLeft: '24px',
               marginBottom: '12px',
@@ -186,7 +187,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
               $1.88
             </Typography>
             <HelpOutlineIcon fontSize="inherit" sx={{ color: theme.palette.text.secondary }} />
-          </Box>
+          </Box> */}
           <Value title="Amount to borrow" value={`${toBorrow ?? '0'} ${symbol}`} />
           <ValueChange
             title="Your total borrowed"

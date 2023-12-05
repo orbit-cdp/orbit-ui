@@ -2,13 +2,12 @@ import { Box } from '@mui/material';
 import { useRouter } from 'next/router';
 import { TxStatus, useWallet } from '../../contexts/wallet';
 import { OverlayModalFail } from './OverlayModalFail';
-import { OverlayModalSign } from './OverlayModalSign';
-import { OverlayModalSubmit } from './OverlayModalSubmit';
 import { OverlayModalSuccess } from './OverlayModalSuccess';
+import { OverlayModalText } from './OverlayModalText';
 import { PoolComponentProps } from './PoolComponentProps';
 
 export interface OverlayModalProps extends PoolComponentProps {
-  type: 'backstop' | 'dashboard';
+  type: 'backstop' | 'dashboard' | 'market';
 }
 
 export interface CloseableOverlayProps {
@@ -21,12 +20,18 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({ poolId, type }) => {
 
   const display = txStatus !== TxStatus.NONE ? 'flex' : 'none';
 
-  const pathname = type == 'backstop' ? '/backstop' : '/dashboard';
-
   const handleReturn = () => {
     clearTxStatus();
-    router.push({ pathname: pathname, query: { poolId: poolId } });
+    if (type == 'market') {
+      router.push({ pathname: '/' });
+    } else {
+      router.push({ pathname: `/${type}`, query: { poolId: poolId } });
+    }
   };
+
+  if (txStatus === TxStatus.NONE) {
+    return <></>;
+  }
 
   return (
     <Box
@@ -45,8 +50,15 @@ export const OverlayModal: React.FC<OverlayModalProps> = ({ poolId, type }) => {
         backgroundColor: 'rgba(25, 27, 31, 0.9)',
       }}
     >
-      {txStatus === TxStatus.SIGNING && <OverlayModalSign />}
-      {txStatus === TxStatus.SUBMITTING && <OverlayModalSubmit />}
+      {txStatus === TxStatus.BUILDING && (
+        <OverlayModalText message="Preparing your transaction..." />
+      )}
+      {txStatus === TxStatus.SIGNING && (
+        <OverlayModalText message="Please confirm the transaction in your wallet." />
+      )}
+      {txStatus === TxStatus.SUBMITTING && (
+        <OverlayModalText message="Submitting your transaction..." />
+      )}
       {txStatus === TxStatus.SUCCESS && <OverlayModalSuccess handleCloseOverlay={handleReturn} />}
       {txStatus === TxStatus.FAIL && <OverlayModalFail handleCloseOverlay={handleReturn} />}
     </Box>

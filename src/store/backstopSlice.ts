@@ -1,5 +1,5 @@
 import * as BlendSdk from '@blend-capital/blend-sdk';
-import { Address } from 'soroban-client';
+import { Address } from 'stellar-sdk';
 import { StateCreator } from 'zustand';
 import { getTokenBalance } from '../external/token';
 import { DataStore, useStore } from './store';
@@ -35,7 +35,7 @@ export interface BackstopSlice {
 
 export const createBackstopSlice: StateCreator<DataStore, [], [], BackstopSlice> = (set, get) => ({
   backstopContract: new BlendSdk.BackstopClient(
-    'CA47F2MX5KPXSFYLCOFVBDIM7O57IEMFXQHW6KTUZAJ4UP2FXPPNLHCA'
+    'CDTPZ5PCK5COX73S5MABIZ3G3A6CLC3HDYQOHSXH6ZMN2VWHVRXAJO74'
   ),
   backstopConfig: {
     blndTkn: 'NULL',

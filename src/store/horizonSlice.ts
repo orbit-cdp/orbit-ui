@@ -1,26 +1,26 @@
-import { AccountResponse, Server as Horizon } from 'stellar-sdk';
+import { Horizon } from 'stellar-sdk';
 import { StateCreator } from 'zustand';
 import { DataStore } from './store';
 
 export interface HorizonSlice {
   horizon: {
     url: string;
-    opts?: Horizon.Options;
+    opts?: Horizon.Server.Options;
   };
-  horizonServer: () => Horizon;
-  setHorizon: (url: string, opts?: Horizon.Options) => void;
-  account: AccountResponse | undefined;
-  loadAccount: (id: string) => Promise<AccountResponse>;
+  horizonServer: () => Horizon.Server;
+  setHorizon: (url: string, opts?: Horizon.Server.Options) => void;
+  account: Horizon.AccountResponse | undefined;
+  loadAccount: (id: string) => Promise<Horizon.AccountResponse>;
 }
 
 export const createHorizonSlice: StateCreator<DataStore, [], [], HorizonSlice> = (set, get) => ({
   horizon: {
-    url: 'https://horizon-futurenet.stellar.org',
+    url: 'https://horizon-testnet.stellar.org',
     opts: undefined,
   },
   horizonServer: () => {
     let horizon = get().horizon;
-    return new Horizon(horizon.url, horizon.opts);
+    return new Horizon.Server(horizon.url, horizon.opts);
   },
   setHorizon: (newUrl, newOpts) => {
     set({ horizon: { url: newUrl, opts: newOpts } });

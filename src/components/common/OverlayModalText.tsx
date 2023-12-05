@@ -1,7 +1,11 @@
 import { Box, Typography, useTheme } from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
 
-export const OverlayModalSubmit: React.FC = () => {
+export interface OverlayModalTextProps {
+  message: string;
+}
+
+export const OverlayModalText: React.FC<OverlayModalTextProps> = ({ message }) => {
   const theme = useTheme();
 
   return (
@@ -25,14 +29,14 @@ export const OverlayModalSubmit: React.FC = () => {
           display: 'flex',
           flexWrap: 'wrap',
           flexDirection: 'column',
-          marginTop: '23vh',
+          marginTop: '18vh',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
         <CircularProgress size={70} sx={{ color: theme.palette.primary.main }} />
         <Typography variant="h2" sx={{ margin: '12px' }}>
-          Submitting the transaction...
+          {message}
         </Typography>
       </Box>
     </Box>

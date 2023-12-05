@@ -2,14 +2,13 @@ import {
   Account,
   Address,
   Contract,
-  Server,
   SorobanRpc,
   TransactionBuilder,
   scValToNative,
-} from 'soroban-client';
+} from 'stellar-sdk';
 
 export async function getTokenBalance(
-  stellar_rpc: Server,
+  stellar_rpc: SorobanRpc.Server,
   network_passphrase: string,
   token_id: string,
   address: Address
@@ -22,15 +21,15 @@ export async function getTokenBalance(
     networkPassphrase: network_passphrase,
   });
   tx_builder.addOperation(new Contract(token_id).call('balance', address.toScVal()));
-  const result: SorobanRpc.SimulateTransactionResponse = await stellar_rpc.simulateTransaction(
+  const result: SorobanRpc.Api.SimulateTransactionResponse = await stellar_rpc.simulateTransaction(
     tx_builder.build()
   );
   const scval_result = result;
   if (scval_result == undefined) {
     console.error(`Error: unable to fetch balance for token: ${token_id}`);
   }
-  if (SorobanRpc.isSimulationSuccess(result)) {
-    let resultScVal = (scval_result as SorobanRpc.SimulateTransactionSuccessResponse).result
+  if (SorobanRpc.Api.isSimulationSuccess(result)) {
+    let resultScVal = (scval_result as SorobanRpc.Api.SimulateTransactionSuccessResponse).result
       ?.retval;
     if (resultScVal == undefined) {
       console.error(`Error: unable to fetch balance for token: ${token_id}`);
