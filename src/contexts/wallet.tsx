@@ -7,13 +7,12 @@ import {
   Positions,
   Q4W,
   Resources,
-  SorobanResponse,
   SubmitArgs,
   TxOptions,
 } from '@blend-capital/blend-sdk';
 import { getPublicKey, signTransaction } from '@stellar/freighter-api';
 import React, { useContext, useEffect, useState } from 'react';
-import { Transaction, xdr } from 'stellar-sdk';
+import { SorobanRpc, Transaction, xdr } from 'stellar-sdk';
 import { useStore } from '../store/store';
 
 export interface IWalletContext {
@@ -384,7 +383,9 @@ export const WalletProvider = ({ children = null as any }) => {
         );
 
         let signedTx = new Transaction(await sign(transaction.toXDR()), network.passphrase);
-        let response: SorobanResponse = await rpc.sendTransaction(signedTx);
+        let response:
+          | SorobanRpc.Api.SendTransactionResponse
+          | SorobanRpc.Api.GetTransactionResponse = await rpc.sendTransaction(signedTx);
         let status: string = response.status;
         const resources = new Resources(0, 0, 0, 0, 0, 0, 0);
         const tx_hash = response.hash;
@@ -401,6 +402,7 @@ export const WalletProvider = ({ children = null as any }) => {
           response = await rpc.getTransaction(tx_hash);
           status = response.status;
         }
+        // @ts-ignore
         const result = ContractResult.fromResponse(tx_hash, resources, response, () => undefined);
         try {
           if (result.ok) {

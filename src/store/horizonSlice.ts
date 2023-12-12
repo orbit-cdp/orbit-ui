@@ -15,7 +15,7 @@ export interface HorizonSlice {
 
 export const createHorizonSlice: StateCreator<DataStore, [], [], HorizonSlice> = (set, get) => ({
   horizon: {
-    url: 'https://horizon-testnet.stellar.org',
+    url: 'https://horizon-futurenet.stellar.org',
     opts: undefined,
   },
   horizonServer: () => {
