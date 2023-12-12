@@ -11,8 +11,8 @@ export interface RPCSlice {
 
 export const createRPCSlice: StateCreator<DataStore, [], [], RPCSlice> = (set, get) => ({
   network: {
-    rpc: 'https://soroban-testnet.stellar.org',
-    passphrase: 'Test SDF Network ; September 2015',
+    rpc: 'https://rpc-futurenet.stellar.org',
+    passphrase: 'Test SDF Future Network ; October 2022',
     opts: undefined,
   },
   rpcServer: () => {
