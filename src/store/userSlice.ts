@@ -28,11 +28,15 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
       const network = get().network;
       const rpc = get().rpcServer();
 
+      if (get().latestLedgerTimestamp == 0) {
+        await get().loadBlendData(true);
+      }
+
       const backstop = get().backstop;
       const pools = get().pools;
 
       if (backstop == undefined || pools.size == 0) {
-        throw new Error('Backstop or pool data not loaded');
+        throw new Error('Unable to fetch backstop or pool data');
       }
 
       // load horizon account
@@ -65,7 +69,9 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
               }
               return (
                 // @ts-ignore
-                balance.asset_code === asset.getCode() && balance.asset_issuer === asset.getIssuer()
+                balance.asset_code === reserve.tokenMetadata.asset.getCode() &&
+                // @ts-ignore
+                balance.asset_issuer === reserve.tokenMetadata.asset.getIssuer()
               );
             });
             let balance_string = balance_line ? balance_line.balance.replace('.', '') : '0';

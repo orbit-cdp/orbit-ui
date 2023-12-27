@@ -2,7 +2,7 @@ import { Backstop, Pool } from '@blend-capital/blend-sdk';
 import { StateCreator } from 'zustand';
 import { DataStore } from './store';
 
-const BACKSTOP_ID = 'CCK5UFOXYMP4YP2YCMTT3EWW262Z4BUQASWHA6J7ZGVEARRFTH4EQXJ5';
+export const BACKSTOP_ID = 'CCK5UFOXYMP4YP2YCMTT3EWW262Z4BUQASWHA6J7ZGVEARRFTH4EQXJ5';
 
 /**
  * Ledger state for the Blend protocol
@@ -31,12 +31,13 @@ export const createBlendSlice: StateCreator<DataStore, [], [], BlendSlice> = (se
       let tx_response = await rpc.getTransaction(
         '0000000000000000000000000000000000000000000000000000000000000000'
       );
-      let latest_ledger_close = tx_response.latestLedgerCloseTime;
+      let latest_ledger = Number(tx_response.latestLedger);
+      let latest_ledger_close = Number(tx_response.latestLedgerCloseTime);
 
       if (
         !force_update &&
         get().backstop !== undefined &&
-        latest_ledger_close < get().latestLedgerTimestamp + 55
+        latest_ledger_close < get().latestLedgerTimestamp + 30
       ) {
         return;
       }
@@ -64,8 +65,8 @@ export const createBlendSlice: StateCreator<DataStore, [], [], BlendSlice> = (se
       set({
         backstop,
         pools,
-        latestLedger: latest_ledger_close,
-        latestLedgerTimestamp: Date.now(),
+        latestLedger: latest_ledger,
+        latestLedgerTimestamp: latest_ledger_close,
       });
 
       // load data into user slice after an updated, if a user is specified

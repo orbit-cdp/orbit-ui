@@ -1,7 +1,7 @@
 import { HelpOutline } from '@mui/icons-material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { Box, Tooltip, useTheme } from '@mui/material';
-import { useSettings, ViewType } from '../../contexts';
+import { Box, Skeleton, Tooltip, useTheme } from '@mui/material';
+import { ViewType, useSettings } from '../../contexts';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
@@ -17,13 +17,16 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
   const { viewType } = useSettings();
   const theme = useTheme();
 
-  const backstopPoolEstimate = useStore((state) => state.backstop_pool_est.get(poolId));
-  const backstopUserEstimate = useStore((state) => state.backstop_user_est.get(poolId));
-  //TODO
-  const backstopTokenToBase = 0.75; //useStore((state) => state.backstopData.backstopTokenPrice);
-  const userBalance = backstopUserEstimate
-    ? Number(backstopUserEstimate.depositBalance) * backstopTokenToBase
-    : undefined;
+  const backstopPoolData = useStore((state) => state.backstop?.pools.get(poolId));
+  const backstopUserData = useStore((state) => state.backstopUserData?.estimates.get(poolId));
+
+  if (backstopPoolData == undefined) {
+    return (
+      <Section width={SectionSize.FULL}>
+        <Skeleton variant="rectangular" />
+      </Section>
+    );
+  }
 
   return (
     <Row>
@@ -51,7 +54,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                 <StackedText
                   title="Your Backstop Balance"
                   titleColor="inherit"
-                  text={userBalance ? `$${toBalance(userBalance)}` : '--'}
+                  text={backstopUserData ? `$${toBalance(backstopUserData.totalSpotValue)}` : '--'}
                   textColor="inherit"
                   type="large"
                 />
@@ -79,7 +82,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                 <StackedText
                   title="Total Backstop Size"
                   titleColor="inherit"
-                  text={`$${toBalance(backstopPoolEstimate?.backstopSize)}`}
+                  text={`$${toBalance(backstopPoolData.estimates.totalSpotValue)}`}
                   textColor="inherit"
                   type="large"
                 />
@@ -140,7 +143,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                 <StackedText
                   title="Your Backstop Balance"
                   titleColor="inherit"
-                  text={userBalance ? `$${toBalance(userBalance)}` : '--'}
+                  text={backstopUserData ? `$${toBalance(backstopUserData.totalSpotValue)}` : '--'}
                   textColor="inherit"
                   type="large"
                 />
@@ -169,7 +172,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                 <StackedText
                   title="Total Backstop Size"
                   titleColor="inherit"
-                  text={`$${toBalance(backstopPoolEstimate?.backstopSize)}`}
+                  text={`$${toBalance(backstopPoolData.estimates.totalSpotValue)}`}
                   textColor="inherit"
                   type="large"
                 />

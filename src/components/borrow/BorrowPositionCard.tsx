@@ -1,7 +1,7 @@
+import { PoolUser, Reserve } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
-import { useSettings, ViewType } from '../../contexts';
-import { ReserveEstimates, UserReserveEstimates } from '../../store/estimationSlice';
+import { ViewType, useSettings } from '../../contexts';
 import * as formatter from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
 import { LinkBox } from '../common/LinkBox';
@@ -10,19 +10,21 @@ import { SectionBase } from '../common/SectionBase';
 import { TokenHeader } from '../common/TokenHeader';
 
 export interface BorrowPositionCardProps extends PoolComponentProps {
-  reserveData: ReserveEstimates;
-  userResData: UserReserveEstimates;
+  reserve: Reserve;
+  userPoolData: PoolUser;
 }
 
 export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
   poolId,
-  reserveData,
-  userResData,
+  reserve,
+  userPoolData,
   sx,
   ...props
 }) => {
   const theme = useTheme();
   const { viewType } = useSettings();
+
+  const userBorrowEst = userPoolData.estimates.liabilities.get(reserve.assetId) ?? 0;
 
   const tableNum = viewType === ViewType.REGULAR ? 5 : 4;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
@@ -39,7 +41,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
     >
       <LinkBox
         sx={{ width: '100%' }}
-        to={{ pathname: '/repay', query: { poolId: poolId, assetId: reserveData.id } }}
+        to={{ pathname: '/repay', query: { poolId: poolId, assetId: reserve.assetId } }}
       >
         <CustomButton
           sx={{
@@ -51,7 +53,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
             },
           }}
         >
-          <TokenHeader id={reserveData.id} sx={{ width: tableWidth }} />
+          <TokenHeader id={reserve.assetId} sx={{ width: tableWidth }} />
           <Box
             sx={{
               width: tableWidth,
@@ -61,7 +63,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
             }}
           >
             <Typography variant="body1">
-              {formatter.toBalance(userResData.borrowed, reserveData.decimals)}
+              {formatter.toBalance(userBorrowEst, reserve.config.decimals)}
             </Typography>
           </Box>
           <Box
@@ -72,7 +74,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
               alignItems: 'center',
             }}
           >
-            <Typography variant="body1">{formatter.toPercentage(reserveData.apy)}</Typography>
+            <Typography variant="body1">{formatter.toPercentage(reserve.estimates.apy)}</Typography>
           </Box>
           {tableNum >= 5 && <Box sx={{ width: tableWidth }} />}
           <Box

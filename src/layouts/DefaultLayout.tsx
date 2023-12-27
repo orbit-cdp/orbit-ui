@@ -18,6 +18,7 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const update = async () => {
+      console.log('update');
       await loadBlendData(false, undefined, connected ? walletAddress : undefined);
     };
     update();

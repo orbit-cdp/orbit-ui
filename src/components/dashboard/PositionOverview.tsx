@@ -2,7 +2,7 @@ import { PoolClaimArgs } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import { Box, useTheme } from '@mui/material';
-import { useSettings, ViewType } from '../../contexts';
+import { ViewType, useSettings } from '../../contexts';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
@@ -19,21 +19,26 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
   const { connected, walletAddress, poolClaim } = useWallet();
 
-  const poolUserEstimate = useStore((state) => state.pool_user_est.get(poolId));
-  const poolUserData = useStore((state) => state.poolUserData.get(poolId));
-  const loadPoolData = useStore((state) => state.loadPoolData);
+  const poolData = useStore((state) => state.pools.get(poolId));
+  const userPoolData = useStore((state) => state.userPoolData.get(poolId));
+  const loadBlendData = useStore((state) => state.loadBlendData);
 
-  const borrow_capacity = poolUserEstimate
-    ? poolUserEstimate.e_collateral_base - poolUserEstimate.e_liabilities_base
+  const borrow_capacity = userPoolData
+    ? userPoolData.estimates.totalEffectiveCollateral -
+      userPoolData.estimates.totalEffectiveLiabilities
     : 0;
-  const borrow_capacity_fill = poolUserEstimate
-    ? (poolUserEstimate.e_liabilities_base / poolUserEstimate.e_collateral_base) * 100
+  const borrow_capacity_fill = userPoolData
+    ? (userPoolData.estimates.totalEffectiveLiabilities /
+        userPoolData.estimates.totalEffectiveCollateral) *
+      100
     : 100;
-  const net_apy = Number.isFinite(poolUserEstimate?.net_apy) ? poolUserEstimate?.net_apy : 0;
+  const net_apy = Number.isFinite(userPoolData?.estimates?.netApy)
+    ? userPoolData?.estimates?.netApy
+    : 0;
 
   const handleSubmitTransaction = async () => {
-    if (connected && poolUserData) {
-      let reserves_to_claim = Array.from(poolUserData.emissionsData.entries()).map(
+    if (connected && userPoolData) {
+      let reserves_to_claim = Array.from(userPoolData.emissions.entries()).map(
         (emission) => emission[0]
       );
       if (reserves_to_claim.length > 0) {
@@ -43,7 +48,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
           to: walletAddress,
         };
         await poolClaim(poolId, claimArgs, false);
-        await loadPoolData(poolId, walletAddress, true);
+        await loadBlendData(true, poolId, walletAddress);
       }
     }
   };
@@ -98,7 +103,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
                 textColor="inherit"
                 type="large"
               />
-              <BorrowCapRing status="Active" poolId={''} />
+              <BorrowCapRing poolId={poolId} />
             </Box>
           </Box>
           <Box sx={{ width: '45%', marginRight: '12px' }}>
@@ -132,7 +137,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
                 <StackedText
                   title="Claim Pool Emissions"
                   titleColor="inherit"
-                  text={`${toBalance(poolUserEstimate?.emission_balance)} BLND`}
+                  text={`${toBalance(userPoolData?.estimates?.totalEmissions ?? 0)} BLND`}
                   textColor="inherit"
                   type="large"
                 />
@@ -190,7 +195,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
                 textColor="inherit"
                 type="large"
               />
-              <BorrowCapRing status="Active" poolId={''} />
+              <BorrowCapRing poolId={poolId} />
             </Box>
           </Box>
           <LinkBox
@@ -226,7 +231,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
                 <StackedText
                   title="Claim Pool Emissions"
                   titleColor="inherit"
-                  text={`${toBalance(poolUserEstimate?.emission_balance)} BLND`}
+                  text={`${toBalance(userPoolData?.estimates?.totalEmissions ?? 0)} BLND`}
                   textColor="inherit"
                   type="large"
                   onClick={handleSubmitTransaction}

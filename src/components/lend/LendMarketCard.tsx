@@ -1,7 +1,8 @@
+import { Reserve } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
-import { useSettings, ViewType } from '../../contexts';
-import { ReserveEstimates } from '../../store/estimationSlice';
+import { ViewType, useSettings } from '../../contexts';
+import { useStore } from '../../store/store';
 import * as formatter from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
 import { LinkBox } from '../common/LinkBox';
@@ -10,19 +11,20 @@ import { SectionBase } from '../common/SectionBase';
 import { TokenHeader } from '../common/TokenHeader';
 
 export interface LendMarketCardProps extends PoolComponentProps {
-  reserveData: ReserveEstimates;
-  balance: number;
+  reserve: Reserve;
 }
 
 export const LendMarketCard: React.FC<LendMarketCardProps> = ({
-  reserveData,
   poolId,
-  balance,
+  reserve,
   sx,
   ...props
 }) => {
   const theme = useTheme();
   const { viewType } = useSettings();
+
+  const userBalanceBigInt = useStore((state) => state.balances.get(reserve.assetId)) ?? BigInt(0);
+  const useBalanceAsNum = Number(userBalanceBigInt) / 10 ** reserve.config.decimals;
 
   const tableNum = viewType === ViewType.REGULAR ? 5 : 4;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
@@ -40,7 +42,7 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
     >
       <LinkBox
         sx={{ width: '100%' }}
-        to={{ pathname: '/supply', query: { poolId: poolId, assetId: reserveData.id } }}
+        to={{ pathname: '/supply', query: { poolId: poolId, assetId: reserve.assetId } }}
       >
         <CustomButton
           sx={{
@@ -50,7 +52,7 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
             },
           }}
         >
-          <TokenHeader id={reserveData.id} sx={{ width: tableWidth }} />
+          <TokenHeader id={reserve.assetId} sx={{ width: tableWidth }} />
           <Box
             sx={{
               width: tableWidth,
@@ -60,7 +62,7 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
             }}
           >
             <Typography variant="body1">
-              {formatter.toBalance(balance, reserveData.decimals)}
+              {formatter.toBalance(useBalanceAsNum, reserve.config.decimals)}
             </Typography>
           </Box>
           <Box
@@ -72,7 +74,7 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
             }}
           >
             <Typography variant="body1">
-              {formatter.toPercentage(reserveData.supply_apy)}
+              {formatter.toPercentage(reserve.estimates.supplyApy)}
             </Typography>
           </Box>
           {tableNum >= 5 && (
@@ -85,7 +87,7 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
               }}
             >
               <Typography variant="body1">
-                {formatter.toPercentage(reserveData.c_factor)}
+                {formatter.toPercentage(reserve.getCollateralFactor())}
               </Typography>
             </Box>
           )}
