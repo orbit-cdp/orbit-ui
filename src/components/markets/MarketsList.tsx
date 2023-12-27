@@ -1,13 +1,14 @@
-import { Box, Typography } from '@mui/material';
-import { useSettings, ViewType } from '../../contexts';
-import { useStore } from '../../store/store';
-import { PoolComponentProps } from '../common/PoolComponentProps';
+import { Pool } from '@blend-capital/blend-sdk';
+import { Box, BoxProps, Typography } from '@mui/material';
+import { ViewType, useSettings } from '../../contexts';
 import { MarketsListItem } from './MarketsListItem';
 
-export const MarketsList: React.FC<PoolComponentProps> = ({ poolId }) => {
-  const { viewType } = useSettings();
+export interface MarketListProps extends BoxProps {
+  poolData: Pool;
+}
 
-  const poolReserveEstimates = useStore((state) => state.pool_est.get(poolId)?.reserve_est);
+export const MarketsList: React.FC<MarketListProps> = ({ poolData }) => {
+  const { viewType } = useSettings();
 
   const headerNum = viewType == ViewType.REGULAR ? 6 : 3;
   const headerWidth = `${(100 / headerNum).toFixed(2)}%`;
@@ -84,13 +85,10 @@ export const MarketsList: React.FC<PoolComponentProps> = ({ poolId }) => {
           </>
         )}
       </Box>
-      {poolReserveEstimates ? (
-        poolReserveEstimates.map((reserve) => (
-          <MarketsListItem key={reserve.id} reserveData={reserve} />
-        ))
-      ) : (
-        <></>
-      )}
+      {poolData.reserves.size > 0 &&
+        Array.from(poolData.reserves.values()).map((reserve) => (
+          <MarketsListItem key={reserve.assetId} reserveData={reserve} />
+        ))}
     </Box>
   );
 };

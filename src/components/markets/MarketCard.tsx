@@ -1,7 +1,7 @@
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { Box, Collapse, useTheme } from '@mui/material';
-import { useEffect, useRef, useState } from 'react';
+import { Box, Collapse, Skeleton, useTheme } from '@mui/material';
+import { useState } from 'react';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
 import { TOKEN_META } from '../../utils/token_display';
@@ -17,27 +17,25 @@ import { MarketCardCollapse } from './MarketCardCollapse';
 
 export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
   const theme = useTheme();
-  const isMounted = useRef(false);
+
+  const poolData = useStore((state) => state.pools.get(poolId));
+  const backstopPoolData = useStore((state) => state.backstop?.pools.get(poolId));
 
   const [expand, setExpand] = useState(false);
-
-  const loadPoolData = useStore((state) => state.loadPoolData);
-  const pool = useStore((state) => state.poolData.get(poolId));
-  const poolEst = useStore((state) => state.pool_est.get(poolId));
-  const backstopPoolEstimate = useStore((state) => state.backstop_pool_est.get(poolId));
-
   const [rotateArrow, setRotateArrow] = useState(false);
+
   const rotate = rotateArrow ? 'rotate(180deg)' : 'rotate(0)';
 
-  useEffect(() => {
-    const refreshAndEstimate = async () => {
-      if (poolEst == undefined) {
-        await loadPoolData(poolId, undefined);
-      }
-    };
-
-    refreshAndEstimate();
-  }, [loadPoolData, poolEst, poolId]);
+  if (!poolData || !backstopPoolData) {
+    return (
+      <Section
+        width={SectionSize.FULL}
+        sx={{ flexDirection: 'column', marginBottom: '12px', ...sx }}
+      >
+        <Skeleton variant="rectangular" />
+      </Section>
+    );
+  }
 
   return (
     <Section width={SectionSize.FULL} sx={{ flexDirection: 'column', marginBottom: '12px', ...sx }}>
@@ -55,7 +53,7 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
         }}
       >
         <Row>
-          <PoolHeader poolId={poolId} sx={{ margin: '6px', padding: '6px' }} />
+          <PoolHeader name={poolData.config.name} sx={{ margin: '6px', padding: '6px' }} />
           <Box
             sx={{
               margin: '6px',
@@ -82,19 +80,19 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
         <Row>
           <StackedTextHLBox
             name="Supplied"
-            text={poolEst ? `$${toBalance(poolEst.total_supply_base)}` : '--'}
+            text={`$${toBalance(poolData.estimates.totalSupply)}`}
             palette={theme.palette.lend}
             sx={{ width: '33.33%' }}
           ></StackedTextHLBox>
           <StackedTextHLBox
             name="Borrowed"
-            text={poolEst ? `$${toBalance(poolEst.total_liabilities_base)}` : '--'}
+            text={`$${toBalance(poolData.estimates.totalBorrow)}`}
             palette={theme.palette.borrow}
             sx={{ width: '33.33%' }}
           ></StackedTextHLBox>
           <StackedTextHLBox
             name="Backstop"
-            text={`$${toBalance(backstopPoolEstimate?.backstopSize)}`}
+            text={`$${toBalance(backstopPoolData.estimates.totalSpotValue)}`}
             palette={theme.palette.backstop}
             sx={{ width: '33.33%' }}
           ></StackedTextHLBox>
@@ -116,17 +114,10 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
             }}
           >
             <Box sx={{ margin: '6px', height: '30px' }}>
-              {pool ? (
-                pool.reserves.map((reserveId) => {
-                  const code =
-                    TOKEN_META[reserveId.assetId as keyof typeof TOKEN_META]?.code ?? 'unknown';
-                  return (
-                    <TokenIcon key={reserveId.assetId} symbol={code} sx={{ marginRight: '6px' }} />
-                  );
-                })
-              ) : (
-                <></>
-              )}
+              {poolData.config.reserveList.map((reserveId) => {
+                const code = TOKEN_META[reserveId as keyof typeof TOKEN_META]?.code ?? 'unknown';
+                return <TokenIcon key={reserveId} symbol={code} sx={{ marginRight: '6px' }} />;
+              })}
             </Box>
             <Box sx={{ padding: '6px', display: 'flex', flexDirection: 'row', height: '30px' }}>
               <Box sx={{ paddingRight: '12px', lineHeight: '100%' }}>Dashboard</Box>
@@ -138,7 +129,10 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
         </LinkBox>
       </Row>
       <Collapse in={expand} sx={{ width: '100%' }}>
-        <MarketCardCollapse poolId={poolId}></MarketCardCollapse>
+        <MarketCardCollapse
+          poolData={poolData}
+          backstopPoolData={backstopPoolData}
+        ></MarketCardCollapse>
       </Collapse>
     </Section>
   );
