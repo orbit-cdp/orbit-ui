@@ -16,6 +16,7 @@ import React, { useContext, useState } from 'react';
 import { SorobanRpc, Transaction, xdr } from 'stellar-sdk';
 import { BACKSTOP_ID } from '../store/blendSlice';
 import { useStore } from '../store/store';
+import { useSettings } from './settings';
 
 export interface IWalletContext {
   connected: boolean;
@@ -56,8 +57,11 @@ export enum TxStatus {
 const WalletContext = React.createContext<IWalletContext | undefined>(undefined);
 
 export const WalletProvider = ({ children = null as any }) => {
+  const { lastPool } = useSettings();
+
   const network = useStore((state) => state.network);
   const rpc = useStore((state) => state.rpcServer());
+  const loadBlendData = useStore((state) => state.loadBlendData);
   const loadUserData = useStore((state) => state.loadUserData);
   const clearUserData = useStore((state) => state.clearUserData);
 
@@ -151,11 +155,11 @@ export const WalletProvider = ({ children = null as any }) => {
         setTxStatus(TxStatus.FAIL);
       }
 
-      // reload Horizon account after submission
+      // reload data after submission
       try {
-        await loadUserData(walletAddress);
+        await loadBlendData(true, lastPool, walletAddress);
       } catch {
-        console.error('Failed loading account: ', walletAddress);
+        console.error('Failed reloading blend data for account: ', walletAddress);
       }
 
       return result.unwrap();

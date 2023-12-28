@@ -10,7 +10,7 @@ import { useWallet } from '../contexts/wallet';
 import { useStore } from '../store/store';
 
 export default function DefaultLayout({ children }: { children: ReactNode }) {
-  const { viewType, lastPool } = useSettings();
+  const { viewType } = useSettings();
   const { connected, walletAddress } = useWallet();
 
   const loadBlendData = useStore((state) => state.loadBlendData);
@@ -28,7 +28,7 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
     return () => clearInterval(refreshInterval);
   }, [loadBlendData, connected, walletAddress]);
 
-  const faucet_pool = lastPool ? lastPool : rewardZone.length > 0 ? rewardZone[0] : undefined;
+  const faucet_pool = rewardZone.length > 0 ? rewardZone[0] : undefined;
 
   const mainWidth = viewType <= ViewType.COMPACT ? '100%' : '886px';
   const mainMargin = viewType <= ViewType.COMPACT ? '0px' : '62px';

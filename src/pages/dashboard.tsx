@@ -17,13 +17,13 @@ import { useStore } from '../store/store';
 import { toBalance } from '../utils/formatter';
 
 const Dashboard: NextPage = () => {
+  const router = useRouter();
+  const theme = useTheme();
   const { showLend, setShowLend } = useSettings();
 
-  const router = useRouter();
   const { poolId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
 
-  const theme = useTheme();
   const poolData = useStore((state) => state.pools.get(safePoolId));
 
   const handleLendClick = () => {

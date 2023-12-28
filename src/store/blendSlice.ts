@@ -60,8 +60,6 @@ export const createBlendSlice: StateCreator<DataStore, [], [], BlendSlice> = (se
         pools.set(pool, pool_data);
       }
 
-      console.log(Array.from(pools.entries()));
-
       set({
         backstop,
         pools,
