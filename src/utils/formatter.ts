@@ -16,7 +16,7 @@ export function toBalance(
   decimals?: number | undefined
 ): string {
   if (amount == undefined) {
-    return '';
+    return '--';
   }
   let numValue: number;
   if (typeof amount === 'bigint' && decimals !== undefined) {
@@ -66,7 +66,7 @@ export function toBalance(
  */
 export function toPercentage(rate: number | undefined): string {
   if (rate == undefined) {
-    return '';
+    return '--';
   }
 
   const adjRate = rate * 100;

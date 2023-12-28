@@ -1,62 +1,32 @@
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { useEffect } from 'react';
 import { GoBackHeader } from '../components/common/GoBackHeader';
-import { OverlayModal } from '../components/common/OverlayModal';
 import { ReserveDropdown } from '../components/common/ReserveDropdown';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
-import { WalletWarning } from '../components/common/WalletWarning';
 import { WithdrawAnvil } from '../components/withdraw/WithdrawAnvil';
-import { useWallet } from '../contexts/wallet';
 import { useStore } from '../store/store';
 import { toBalance, toPercentage } from '../utils/formatter';
 
 const Withdraw: NextPage = () => {
   const theme = useTheme();
-  const { connected, walletAddress } = useWallet();
 
   const router = useRouter();
   const { poolId, assetId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
   const safeAssetId = typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId) ? assetId : '';
 
-  const loadPoolData = useStore((state) => state.loadPoolData);
-  const reserve = useStore((state) =>
-    state.poolData.get(safePoolId)?.reserves.find((reserve) => {
-      return reserve.assetId == safeAssetId;
-    })
-  );
-  const reserve_est = useStore((state) =>
-    state.pool_est.get(safePoolId)?.reserve_est?.find((res) => res.id === safeAssetId)
-  );
-  const user_bal_est = useStore((state) =>
-    state.pool_user_est.get(safePoolId)?.reserve_estimates.get(safeAssetId)
-  );
-
-  // always re-estimate values to most recent ledger
-  useEffect(() => {
-    const updatePool = async () => {
-      if (safePoolId != '') {
-        await loadPoolData(safePoolId, connected ? walletAddress : undefined, false);
-      }
-    };
-    updatePool();
-    const refreshInterval = setInterval(async () => {
-      await updatePool();
-    }, 30 * 1000);
-    return () => clearInterval(refreshInterval);
-  }, [loadPoolData, safePoolId, reserve, connected, walletAddress]);
+  const poolData = useStore((state) => state.pools.get(safePoolId));
+  const userPoolData = useStore((state) => state.userPoolData.get(safePoolId));
+  const userBalance = useStore((state) => state.balances.get(safeAssetId));
+  const reserve = poolData?.reserves.get(safeAssetId);
 
   return (
     <>
       <Row>
-        <WalletWarning />
-      </Row>
-      <Row>
-        <GoBackHeader poolId={safePoolId} />
+        <GoBackHeader name={poolData?.config.name} />
       </Row>
       <Row>
         <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>
@@ -79,7 +49,10 @@ const Withdraw: NextPage = () => {
                 Available
               </Typography>
               <Typography variant="h4" sx={{ color: theme.palette.lend.main }}>
-                {toBalance(user_bal_est?.supplied ?? 0, reserve?.config.decimals)}
+                {toBalance(
+                  userPoolData?.estimates?.collateral?.get(safeAssetId) ?? 0,
+                  reserve?.config.decimals
+                )}
               </Typography>
             </Box>
             <Box>
@@ -94,21 +67,21 @@ const Withdraw: NextPage = () => {
         <Section width={SectionSize.THIRD}>
           <StackedText
             title="Supply APY"
-            text={reserve_est ? toPercentage(reserve_est.supply_apy) : ''}
+            text={toPercentage(reserve?.estimates?.supplyApy)}
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>
         </Section>
         <Section width={SectionSize.THIRD}>
           <StackedText
             title="Collateral factor"
-            text={reserve_est ? toPercentage(reserve_est.c_factor) : ''}
+            text={toPercentage(reserve?.getCollateralFactor())}
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>
         </Section>
         <Section width={SectionSize.THIRD}>
           <StackedText
             title="Total supplied"
-            text={reserve_est ? toBalance(reserve_est.supplied) : ''}
+            text={toBalance(reserve?.estimates?.supplied)}
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>
         </Section>
@@ -116,8 +89,6 @@ const Withdraw: NextPage = () => {
       <Row>
         <WithdrawAnvil poolId={safePoolId} assetId={safeAssetId} />
       </Row>
-
-      <OverlayModal poolId={safePoolId} type="dashboard" />
     </>
   );
 };

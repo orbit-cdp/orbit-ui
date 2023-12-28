@@ -17,54 +17,54 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const theme = useTheme();
   const { connected, walletAddress, poolSubmit } = useWallet();
 
-  const reserve = useStore((state) =>
-    state.poolData.get(poolId)?.reserves.find((reserve) => reserve.assetId == assetId)
-  );
-  const assetToBase = useStore((state) => state.poolData.get(poolId)?.poolPrices.get(assetId) ?? 1);
-  const user_est = useStore((state) => state.pool_user_est.get(poolId));
-  const user_bal_est = useStore((state) =>
-    state.pool_user_est.get(poolId)?.reserve_estimates.get(assetId)
-  );
-  const reserveEstimate = useStore((state) =>
-    state.pool_est.get(poolId)?.reserve_est?.find((res) => res.id === assetId)
-  );
-  const loadPoolData = useStore((state) => state.loadPoolData);
+  const account = useStore((state) => state.account);
+  const poolData = useStore((state) => state.pools.get(poolId));
+  const userPoolData = useStore((state) => state.userPoolData.get(poolId));
+  const userBalance = useStore((state) => state.balances.get(assetId)) ?? BigInt(0);
+  const reserve = poolData?.reserves.get(assetId);
+  const assetToBase = reserve?.oraclePrice ?? 1;
+  const baseToAsset = 1 / assetToBase;
 
   const [toBorrow, setToBorrow] = useState<string | undefined>(undefined);
   const [newEffectiveLiabilities, setNewEffectiveLiabilities] = useState<number>(
-    user_est?.e_liabilities_base ?? 0
+    userPoolData?.estimates.totalEffectiveLiabilities ?? 0
   );
 
   const decimals = reserve?.config.decimals ?? 7;
+  const scalar = 10 ** decimals;
   const symbol = reserve?.tokenMetadata?.symbol ?? '';
-  const baseToAsset = 1 / assetToBase;
+
+  const curBorrowed = userPoolData?.estimates?.liabilities?.get(assetId) ?? 0;
+
+  const oldBorrowCap = userPoolData
+    ? userPoolData.estimates.totalEffectiveCollateral -
+      userPoolData.estimates.totalEffectiveLiabilities
+    : undefined;
   const oldBorrowCapAsset =
-    user_est && reserveEstimate
-      ? (user_est.e_collateral_base - user_est.e_liabilities_base) *
-        baseToAsset *
-        reserveEstimate.l_factor
-      : undefined;
-  const oldBorrowLimit = user_est
-    ? user_est.e_liabilities_base / user_est.e_collateral_base
+    reserve && oldBorrowCap ? oldBorrowCap * baseToAsset * reserve.getLiabilityFactor() : undefined;
+  const oldBorrowLimit = userPoolData
+    ? userPoolData.estimates.totalEffectiveLiabilities /
+      userPoolData.estimates.totalEffectiveCollateral
+    : undefined;
+  const borrowCap = userPoolData
+    ? userPoolData.estimates.totalEffectiveCollateral - newEffectiveLiabilities
     : undefined;
   const borrowCapAsset =
-    user_est && reserveEstimate
-      ? (user_est.e_collateral_base - newEffectiveLiabilities) *
-        baseToAsset *
-        reserveEstimate.l_factor
-      : undefined;
-  const borrowLimit = user_est ? newEffectiveLiabilities / user_est.e_collateral_base : undefined;
+    reserve && borrowCap ? borrowCap * baseToAsset * reserve.getLiabilityFactor() : undefined;
+  const borrowLimit = userPoolData
+    ? newEffectiveLiabilities / userPoolData.estimates.totalEffectiveCollateral
+    : undefined;
 
   const handleBorrowAmountChange = (borrowInput: string) => {
     let regex = new RegExp(`^[0-9]*\.?[0-9]{0,${decimals}}$`);
-    if (regex.test(borrowInput) && user_est && reserveEstimate) {
+    if (regex.test(borrowInput) && reserve && userPoolData) {
       let num_borrow = Number(borrowInput);
-      let borrow_base = (num_borrow * assetToBase) / reserveEstimate.l_factor;
-      console.log('borrow_base: ', borrow_base);
-      let tempNewLiabilities = user_est.e_liabilities_base + borrow_base;
-      console.log('temp_new: ', tempNewLiabilities * 1.02);
-      console.log('collat: ', user_est.e_collateral_base);
-      if (tempNewLiabilities * 1.019 < user_est.e_collateral_base) {
+      let borrow_base = num_borrow * assetToBase * reserve.getLiabilityFactor();
+      // console.log('borrow_base: ', borrow_base);
+      let tempNewLiabilities = userPoolData.estimates.totalEffectiveLiabilities + borrow_base;
+      // console.log('temp_new: ', tempNewLiabilities * 1.02);
+      // console.log('collat: ', userPoolData.estimates.totalEffectiveCollateral);
+      if (tempNewLiabilities * 1.019 < userPoolData.estimates.totalEffectiveCollateral) {
         setToBorrow(borrowInput);
         setNewEffectiveLiabilities(tempNewLiabilities);
       }
@@ -72,11 +72,14 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   };
 
   const handleBorrowMax = () => {
-    if (oldBorrowCapAsset && user_est && reserveEstimate && reserve) {
-      let to_bounded_hf = (user_est.e_collateral_base - user_est.e_liabilities_base * 1.02) / 1.02;
+    if (oldBorrowCapAsset && reserve && userPoolData) {
+      let to_bounded_hf =
+        (userPoolData.estimates.totalEffectiveCollateral -
+          userPoolData.estimates.totalEffectiveLiabilities * 1.02) /
+        1.02;
       let to_borrow = Math.min(
-        to_bounded_hf / (assetToBase / reserveEstimate.l_factor),
-        reserveEstimate.supplied * (reserve.config.max_util / 1e7) - reserveEstimate.borrowed
+        to_bounded_hf / (assetToBase * reserve.getLiabilityFactor()),
+        reserve.estimates.supplied * (reserve.config.max_util / 1e7) - reserve.estimates.borrowed
       );
       handleBorrowAmountChange(to_borrow.toFixed(7));
     }
@@ -97,7 +100,6 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
         ],
       };
       await poolSubmit(poolId, submitArgs, false);
-      await loadPoolData(poolId, walletAddress, true);
     }
   };
 
@@ -191,11 +193,8 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           <Value title="Amount to borrow" value={`${toBorrow ?? '0'} ${symbol}`} />
           <ValueChange
             title="Your total borrowed"
-            curValue={`${toBalance(user_bal_est?.borrowed, decimals)} ${symbol}`}
-            newValue={`${toBalance(
-              (user_bal_est?.borrowed ?? 0) + Number(toBorrow ?? 0),
-              decimals
-            )} ${symbol}`}
+            curValue={`${toBalance(curBorrowed, decimals)} ${symbol}`}
+            newValue={`${toBalance(curBorrowed + Number(toBorrow ?? 0), decimals)} ${symbol}`}
           />
           <ValueChange
             title="Borrow capacity"

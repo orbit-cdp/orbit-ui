@@ -42,9 +42,6 @@ export const createBlendSlice: StateCreator<DataStore, [], [], BlendSlice> = (se
         return;
       }
 
-      console.time('loadAllData');
-      console.time('loadBlendData');
-
       let backstop = await Backstop.load(
         network,
         BACKSTOP_ID,
@@ -69,11 +66,8 @@ export const createBlendSlice: StateCreator<DataStore, [], [], BlendSlice> = (se
 
       // load data into user slice after an updated, if a user is specified
       if (user_id) {
-        console.time('loadUserData');
         await get().loadUserData(user_id);
-        console.timeEnd('loadUserData');
       }
-      console.timeEnd('loadAllData');
     } catch (e) {
       console.error('Unable to load Blend data');
       console.error(e);

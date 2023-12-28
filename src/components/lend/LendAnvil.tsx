@@ -18,42 +18,50 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   const theme = useTheme();
   const { connected, walletAddress, poolSubmit } = useWallet();
 
-  const reserve = useStore((state) =>
-    state.poolData.get(poolId)?.reserves.find((reserve) => reserve.assetId == assetId)
-  );
-  const assetPrice = useStore((state) => state.poolData.get(poolId))?.poolPrices.get(assetId) ?? 1;
-  const user_est = useStore((state) => state.pool_user_est.get(poolId));
-  const user_bal_est = useStore((state) =>
-    state.pool_user_est.get(poolId)?.reserve_estimates.get(assetId)
-  );
   const account = useStore((state) => state.account);
-  const loadPoolData = useStore((state) => state.loadPoolData);
+  const poolData = useStore((state) => state.pools.get(poolId));
+  const userPoolData = useStore((state) => state.userPoolData.get(poolId));
+  const userBalance = useStore((state) => state.balances.get(assetId)) ?? BigInt(0);
+  const reserve = poolData?.reserves.get(assetId);
+  const assetPrice = reserve?.oraclePrice ?? 1;
+
   const [toLend, setToLend] = useState<string | undefined>(undefined);
   const [newEffectiveCollateral, setNewEffectiveCollateral] = useState<number>(
-    user_est?.e_collateral_base ?? 0
+    userPoolData?.estimates.totalEffectiveCollateral ?? 0
   );
 
   const decimals = reserve?.config.decimals ?? 7;
   const scalar = 10 ** decimals;
   const symbol = reserve?.tokenMetadata?.symbol ?? '';
-  const oldBorrowCap = user_est
-    ? user_est.e_collateral_base - user_est.e_liabilities_base
-    : undefined;
-  const oldBorrowLimit = user_est
-    ? user_est.e_liabilities_base / user_est.e_collateral_base
-    : undefined;
-  const borrowCap = user_est ? newEffectiveCollateral - user_est.e_liabilities_base : undefined;
-  const borrowLimit = user_est ? user_est.e_liabilities_base / newEffectiveCollateral : undefined;
 
+  const curSupplied = userPoolData?.estimates?.collateral?.get(assetId) ?? 0;
+
+  const oldBorrowCap = userPoolData
+    ? userPoolData.estimates.totalEffectiveCollateral -
+      userPoolData.estimates.totalEffectiveLiabilities
+    : undefined;
+  const oldBorrowLimit = userPoolData
+    ? userPoolData.estimates.totalEffectiveLiabilities /
+      userPoolData.estimates.totalEffectiveCollateral
+    : undefined;
+  const borrowCap = userPoolData
+    ? newEffectiveCollateral - userPoolData.estimates.totalEffectiveLiabilities
+    : undefined;
+  const borrowLimit = userPoolData
+    ? userPoolData.estimates.totalEffectiveLiabilities / newEffectiveCollateral
+    : undefined;
+
+  // @ts-ignore
   let stellar_reserve_amount = getAssetReserve(account, reserve?.tokenMetadata?.asset);
+  const freeUserBalanceScaled = Number(userBalance) / scalar - stellar_reserve_amount;
 
   const handleLendAmountChange = (lendInput: string) => {
     let regex = new RegExp(`^[0-9]*\.?[0-9]{0,${decimals}}$`);
-    if (regex.test(lendInput) && user_est && user_bal_est) {
+    if (regex.test(lendInput) && userPoolData && reserve) {
       let num_lend = Number(lendInput);
-      let lend_base = num_lend * assetPrice * (Number(reserve?.config.c_factor) / scalar);
-      let tempEffectiveCollateral = user_est.e_collateral_base + lend_base;
-      if (num_lend <= user_bal_est.asset) {
+      let lend_base = num_lend * assetPrice * reserve.getCollateralFactor();
+      let tempEffectiveCollateral = userPoolData.estimates.totalEffectiveCollateral + lend_base;
+      if (num_lend <= freeUserBalanceScaled) {
         setToLend(lendInput);
         setNewEffectiveCollateral(tempEffectiveCollateral);
       }
@@ -61,10 +69,9 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   };
 
   const handleLendMax = () => {
-    if (user_bal_est) {
-      let free_amount = user_bal_est.asset - stellar_reserve_amount;
-      if (free_amount > 0) {
-        handleLendAmountChange(free_amount.toFixed(decimals));
+    if (userPoolData) {
+      if (freeUserBalanceScaled > 0) {
+        handleLendAmountChange(freeUserBalanceScaled.toFixed(decimals));
       }
     }
   };
@@ -84,7 +91,6 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
         ],
       };
       await poolSubmit(poolId, submitArgs, false);
-      await loadPoolData(poolId, walletAddress, true);
     }
   };
 
@@ -178,11 +184,8 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
           <Value title="Amount to supply" value={`${toLend ?? '0'} ${symbol}`} />
           <ValueChange
             title="Your total supplied"
-            curValue={`${toBalance(user_bal_est?.supplied, decimals)} ${symbol}`}
-            newValue={`${toBalance(
-              (user_bal_est?.supplied ?? 0) + Number(toLend ?? '0'),
-              decimals
-            )} ${symbol}`}
+            curValue={`${toBalance(curSupplied, decimals)} ${symbol}`}
+            newValue={`${toBalance(curSupplied + Number(toLend ?? '0'), decimals)} ${symbol}`}
           />
           <ValueChange
             title="Borrow capacity"

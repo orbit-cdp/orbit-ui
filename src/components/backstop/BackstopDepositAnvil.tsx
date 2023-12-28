@@ -17,23 +17,31 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
   const theme = useTheme();
   const { connected, walletAddress, backstopDeposit } = useWallet();
 
-  const backstopContract = useStore((state) => state.backstopContract);
-  const backstopUserEstimate = useStore((state) => state.backstop_user_est.get(poolId));
-  const backstopConfig = useStore((state) => state.backstopConfig);
-  const loadBackstopData = useStore((state) => state.loadBackstopData);
+  const backstopPoolData = useStore((state) => state.backstop?.pools?.get(poolId));
+  const userBackstopData = useStore((state) => state.backstopUserData);
+  const userPoolBackstopBalance = userBackstopData?.balances.get(poolId);
+
+  const userBalance = Number(userBackstopData?.tokens ?? BigInt(0)) / 1e7;
+
+  const curDeposit =
+    userPoolBackstopBalance && backstopPoolData
+      ? (Number(userPoolBackstopBalance.shares) / 1e7) *
+        (Number(backstopPoolData.poolBalance.tokens) / Number(backstopPoolData.poolBalance.shares))
+      : 0;
+
   const [toDeposit, setToDeposit] = useState<string | undefined>(undefined);
 
   const handleDepositAmountChange = (depositInput: string) => {
-    if (/^[0-9]*\.?[0-9]{0,7}$/.test(depositInput) && backstopUserEstimate != undefined) {
-      if (Number(depositInput) <= backstopUserEstimate.walletBalance) {
+    if (/^[0-9]*\.?[0-9]{0,7}$/.test(depositInput) && userBackstopData) {
+      if (Number(depositInput) <= Number(userBackstopData.tokens)) {
         setToDeposit(depositInput);
       }
     }
   };
 
   const handleDepositMax = () => {
-    if (backstopUserEstimate?.depositBalance) {
-      setToDeposit(backstopUserEstimate.depositBalance.toFixed(7));
+    if (userBackstopData) {
+      setToDeposit(userBalance.toFixed(7));
     }
   };
 
@@ -45,7 +53,6 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
         amount: scaleInputToBigInt(toDeposit, 7),
       };
       await backstopDeposit(depositArgs, false);
-      await loadBackstopData(poolId, walletAddress, true);
     }
   };
 
@@ -139,10 +146,8 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
           <Value title="Amount to deposit" value={`${toDeposit ?? '0'} BLND-USDC LP`} />
           <ValueChange
             title="Your total deposit"
-            curValue={`${toBalance(backstopUserEstimate?.depositBalance)} BLND-USDC LP`}
-            newValue={`${toBalance(
-              backstopUserEstimate?.depositBalance ?? 0 + Number(toDeposit ?? '0')
-            )} BLND-USDC LP`}
+            curValue={`${toBalance(curDeposit)} BLND-USDC LP`}
+            newValue={`${toBalance(curDeposit + Number(toDeposit ?? '0'))} BLND-USDC LP`}
           />
         </Box>
       </Section>

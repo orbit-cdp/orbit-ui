@@ -17,46 +17,53 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   const theme = useTheme();
   const { connected, walletAddress, poolSubmit } = useWallet();
 
-  const reserve = useStore((state) =>
-    state.poolData.get(poolId)?.reserves.find((reserve) => reserve.assetId == assetId)
-  );
-  const assetToBase = useStore((state) => state.poolData.get(poolId))?.poolPrices.get(assetId) ?? 1;
-  const user_est = useStore((state) => state.pool_user_est.get(poolId));
-  const user_bal_est = useStore((state) =>
-    state.pool_user_est.get(poolId)?.reserve_estimates.get(assetId)
-  );
-  const loadPoolData = useStore((state) => state.loadPoolData);
+  const account = useStore((state) => state.account);
+  const poolData = useStore((state) => state.pools.get(poolId));
+  const userPoolData = useStore((state) => state.userPoolData.get(poolId));
+  const userBalance = useStore((state) => state.balances.get(assetId)) ?? BigInt(0);
+  const reserve = poolData?.reserves.get(assetId);
+  const assetPrice = reserve?.oraclePrice ?? 1;
+
   const [toWithdrawSubmit, setToWithdrawSubmit] = useState<string | undefined>(undefined);
   const [toWithdraw, setToWithdraw] = useState<string | undefined>(undefined);
   const [newEffectiveCollateral, setNewEffectiveCollateral] = useState<number>(
-    user_est?.e_collateral_base ?? 0
+    userPoolData?.estimates.totalEffectiveCollateral ?? 0
   );
-  const decimals = reserve?.config.decimals ?? 7;
 
+  const decimals = reserve?.config.decimals ?? 7;
   const symbol = reserve?.tokenMetadata?.symbol ?? '';
-  const oldBorrowCap = user_est
-    ? user_est.e_collateral_base - user_est.e_liabilities_base
+
+  const curSupplied = userPoolData?.estimates?.collateral?.get(assetId) ?? 0;
+
+  const oldBorrowCap = userPoolData
+    ? userPoolData.estimates.totalEffectiveCollateral -
+      userPoolData.estimates.totalEffectiveLiabilities
     : undefined;
-  const oldBorrowLimit = user_est
-    ? user_est.e_liabilities_base / user_est.e_collateral_base
+  const oldBorrowLimit = userPoolData
+    ? userPoolData.estimates.totalEffectiveLiabilities /
+      userPoolData.estimates.totalEffectiveCollateral
     : undefined;
-  const borrowCap = user_est ? newEffectiveCollateral - user_est.e_liabilities_base : undefined;
-  const borrowLimit = user_est ? user_est.e_liabilities_base / newEffectiveCollateral : undefined;
+  const borrowCap = userPoolData
+    ? newEffectiveCollateral - userPoolData.estimates.totalEffectiveLiabilities
+    : undefined;
+  const borrowLimit = userPoolData
+    ? userPoolData.estimates.totalEffectiveLiabilities / newEffectiveCollateral
+    : undefined;
 
   const handleWithdrawAmountChange = (withdrawInput: string) => {
     let regex = new RegExp(`^[0-9]*\.?[0-9]{0,${decimals}}$`);
-    if (regex.test(withdrawInput) && user_est && user_bal_est) {
+    if (regex.test(withdrawInput) && reserve && userPoolData) {
       let realWithdraw = withdrawInput;
       let num_withdraw = Number(withdrawInput);
-      if (num_withdraw > user_bal_est.supplied) {
+      if (num_withdraw > curSupplied) {
         // truncate to supplied, but store full amount to avoid dust
         // and allow contract to pull down to real supplied amount
-        realWithdraw = user_bal_est.supplied.toFixed(decimals);
+        realWithdraw = curSupplied.toFixed(decimals);
         num_withdraw = Number(realWithdraw);
       }
-      let withdraw_base = num_withdraw * assetToBase * (Number(reserve?.config.c_factor) / 1e7);
-      let tempEffectiveCollateral = user_est.e_collateral_base - withdraw_base;
-      if (tempEffectiveCollateral >= user_est.e_liabilities_base * 1.019) {
+      let withdraw_base = num_withdraw * assetPrice * reserve.getCollateralFactor();
+      let tempEffectiveCollateral = userPoolData.estimates.totalEffectiveCollateral - withdraw_base;
+      if (tempEffectiveCollateral >= userPoolData.estimates.totalEffectiveLiabilities * 1.019) {
         setToWithdraw(realWithdraw);
         setToWithdrawSubmit(withdrawInput);
         setNewEffectiveCollateral(tempEffectiveCollateral);
@@ -65,14 +72,16 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   };
 
   const handleWithdrawMax = () => {
-    if (user_est && user_bal_est) {
-      if (user_est.e_liabilities_base == 0) {
-        handleWithdrawAmountChange((user_bal_est.supplied * 1.05).toFixed(decimals));
+    if (reserve && userPoolData) {
+      if (userPoolData.estimates.totalEffectiveLiabilities == 0) {
+        handleWithdrawAmountChange((curSupplied * 1.05).toFixed(decimals));
       } else {
         let to_bounded_hf =
-          (user_est.e_collateral_base - user_est.e_liabilities_base * 1.02) / 1.02;
-        let to_wd = to_bounded_hf / (assetToBase * (Number(reserve?.config.c_factor) / 1e7));
-        let withdrawAmount = Math.min(to_wd, user_bal_est.supplied) + 1 / 10 ** decimals;
+          (userPoolData.estimates.totalEffectiveCollateral -
+            userPoolData.estimates.totalEffectiveLiabilities * 1.02) /
+          1.02;
+        let to_wd = to_bounded_hf / (assetPrice * reserve.getCollateralFactor());
+        let withdrawAmount = Math.min(to_wd, curSupplied) + 1 / 10 ** decimals;
         handleWithdrawAmountChange(withdrawAmount.toFixed(decimals));
       }
     }
@@ -93,7 +102,6 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
         ],
       };
       await poolSubmit(poolId, submitArgs, false);
-      await loadPoolData(poolId, walletAddress, true);
     }
   };
 
@@ -143,7 +151,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toWithdraw ?? 0) * assetToBase, decimals)}`}
+              {`$${toBalance(Number(toWithdraw ?? 0) * assetPrice, decimals)}`}
             </Typography>
           </Box>
         </Box>
@@ -187,11 +195,8 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
           <Value title="Amount to withdraw" value={`${toWithdraw ?? '0'} ${symbol}`} />
           <ValueChange
             title="Your total supplied"
-            curValue={`${toBalance(user_bal_est?.supplied, decimals)} ${symbol}`}
-            newValue={`${toBalance(
-              (user_bal_est?.supplied ?? 0) - Number(toWithdraw ?? '0'),
-              decimals
-            )} ${symbol}`}
+            curValue={`${toBalance(curSupplied, decimals)} ${symbol}`}
+            newValue={`${toBalance(curSupplied - Number(toWithdraw ?? '0'), decimals)} ${symbol}`}
           />
           <ValueChange
             title="Borrow capacity"

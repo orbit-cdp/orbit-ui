@@ -19,13 +19,8 @@ const Backstop: NextPage = () => {
   const { poolId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
 
-  console.log('poolId: ', poolId);
-
   const backstopPoolData = useStore((state) => state.backstop?.pools?.get(safePoolId));
   const poolData = useStore((state) => state.pools.get(safePoolId));
-
-  console.log('backstopPoolData: ', backstopPoolData);
-  console.log('poolData: ', poolData);
 
   const estBackstopApy =
     backstopPoolData && poolData
