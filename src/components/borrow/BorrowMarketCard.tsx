@@ -1,7 +1,7 @@
+import { Reserve } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
-import { useSettings, ViewType } from '../../contexts';
-import { ReserveEstimates } from '../../store/estimationSlice';
+import { ViewType, useSettings } from '../../contexts';
 import * as formatter from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
 import { LinkBox } from '../common/LinkBox';
@@ -10,12 +10,12 @@ import { SectionBase } from '../common/SectionBase';
 import { TokenHeader } from '../common/TokenHeader';
 
 export interface BorrowMarketCardProps extends PoolComponentProps {
-  reserveData: ReserveEstimates;
+  reserve: Reserve;
 }
 
 export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
-  reserveData,
   poolId,
+  reserve,
   sx,
   ...props
 }) => {
@@ -38,7 +38,7 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
     >
       <LinkBox
         sx={{ width: '100%' }}
-        to={{ pathname: '/borrow', query: { poolId: poolId, assetId: reserveData.id } }}
+        to={{ pathname: '/borrow', query: { poolId: poolId, assetId: reserve.assetId } }}
       >
         <CustomButton
           sx={{
@@ -48,7 +48,7 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
             },
           }}
         >
-          <TokenHeader id={reserveData.id} sx={{ width: tableWidth }} />
+          <TokenHeader id={reserve.assetId} sx={{ width: tableWidth }} />
           <Box
             sx={{
               width: tableWidth,
@@ -58,7 +58,7 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
             }}
           >
             <Typography variant="body1">
-              {formatter.toBalance(reserveData.available, reserveData.decimals)}
+              {formatter.toBalance(reserve.poolBalance, reserve.config.decimals)}
             </Typography>
           </Box>
           <Box
@@ -69,7 +69,7 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
               alignItems: 'center',
             }}
           >
-            <Typography variant="body1">{formatter.toPercentage(reserveData.apy)}</Typography>
+            <Typography variant="body1">{formatter.toPercentage(reserve.estimates.apy)}</Typography>
           </Box>
           {tableNum == 5 && (
             <Box
@@ -81,7 +81,7 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
               }}
             >
               <Typography variant="body1">
-                {formatter.toPercentage(1 / reserveData.l_factor)}
+                {formatter.toPercentage(reserve.getLiabilityFactor())}
               </Typography>
             </Box>
           )}

@@ -9,8 +9,6 @@ export interface HorizonSlice {
   };
   horizonServer: () => Horizon.Server;
   setHorizon: (url: string, opts?: Horizon.Server.Options) => void;
-  account: Horizon.AccountResponse | undefined;
-  loadAccount: (id: string) => Promise<Horizon.AccountResponse>;
 }
 
 export const createHorizonSlice: StateCreator<DataStore, [], [], HorizonSlice> = (set, get) => ({
@@ -24,12 +22,5 @@ export const createHorizonSlice: StateCreator<DataStore, [], [], HorizonSlice> =
   },
   setHorizon: (newUrl, newOpts) => {
     set({ horizon: { url: newUrl, opts: newOpts } });
-  },
-  account: undefined,
-  loadAccount: async (id) => {
-    let horizon = get().horizonServer();
-    let account = await horizon.loadAccount(id);
-    set({ account });
-    return account;
   },
 });

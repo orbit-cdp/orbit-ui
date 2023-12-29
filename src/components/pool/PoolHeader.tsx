@@ -1,12 +1,11 @@
-import { Box, Typography } from '@mui/material';
-import { useStore } from '../../store/store';
-import { PoolComponentProps } from '../common/PoolComponentProps';
+import { Box, BoxProps, Typography } from '@mui/material';
 import { PoolIcon } from './PoolIcon';
 
-export const PoolHeader: React.FC<PoolComponentProps> = ({ poolId, sx, ...props }) => {
-  const pool = useStore((state) => state.pools.get(poolId));
+export interface PoolHeaderProps extends BoxProps {
+  name: string;
+}
 
-  const res_name = pool ? pool.name : 'Unknown';
+export const PoolHeader: React.FC<PoolHeaderProps> = ({ name, sx, ...props }) => {
   return (
     <Box
       sx={{
@@ -19,9 +18,9 @@ export const PoolHeader: React.FC<PoolComponentProps> = ({ poolId, sx, ...props 
       }}
       {...props}
     >
-      <PoolIcon name={res_name} sx={{ height: '30px', width: '30px', borderRadius: '50%' }} />
+      <PoolIcon name={name} sx={{ height: '30px', width: '30px', borderRadius: '50%' }} />
       <Typography variant="h3" sx={{ marginLeft: '6px' }}>
-        {`${res_name} Pool`}
+        {`${name} Pool`}
       </Typography>
     </Box>
   );

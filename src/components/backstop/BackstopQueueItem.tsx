@@ -1,4 +1,5 @@
-import { Q4W } from '@blend-capital/blend-sdk';
+import { PoolBackstopActionArgs, Q4W } from '@blend-capital/blend-sdk';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
@@ -12,17 +13,12 @@ import { TokenIcon } from '../common/TokenIcon';
 
 export interface BackstopQueueItemProps extends PoolComponentProps {
   q4w: Q4W;
-  amount: number;
-  handleClickUnqueue: (amount: bigint) => void;
+  inTokens: number;
 }
-export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
-  q4w,
-  amount,
-  handleClickUnqueue,
-  poolId,
-}) => {
-  const { walletAddress } = useWallet();
-  const loadBackstopData = useStore((state) => state.loadBackstopData);
+export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({ q4w, inTokens, poolId }) => {
+  const { connected, walletAddress, backstopDequeueWithdrawal, backstopQueueWithdrawal } =
+    useWallet();
+  const loadUserData = useStore((state) => state.loadUserData);
 
   const NOW_SECONDS = Math.floor(Date.now() / 1000);
   const THIRTY_DAYS_SECONDS = 30 * 24 * 60 * 60;
@@ -37,31 +33,52 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
         setTimeLeft(Math.min(0, NOW_SECONDS - Number(q4w.exp)));
       }, timeInterval);
       return () => clearInterval(refreshInterval);
-    } else if (timeLeft == 0) {
-      // timeExpired - force an update
-      loadBackstopData(poolId, walletAddress);
+    } else if (timeLeft == 0 && connected) {
+      // q4w entry is unlocked, force an update
+      loadUserData(walletAddress);
     }
-  }, [q4w, timeLeft, NOW_SECONDS, loadBackstopData, walletAddress, poolId]);
+  }, [q4w, timeLeft, NOW_SECONDS, loadUserData, walletAddress, connected]);
+
+  const handleClick = async (amount: bigint) => {
+    if (connected) {
+      let actionArgs: PoolBackstopActionArgs = {
+        from: walletAddress,
+        pool_address: poolId,
+        amount: BigInt(amount),
+      };
+      if (timeLeft > 0) {
+        await backstopDequeueWithdrawal(actionArgs, false);
+      } else {
+        await backstopQueueWithdrawal(actionArgs, false);
+      }
+    }
+  };
 
   return (
-    <Row key={Number(q4w.exp)}>
+    <Row>
       <Box sx={{ margin: '6px', padding: '6px', display: 'flex', alignItems: 'center' }}>
-        <CircularProgress
-          sx={{
-            color: theme.palette.backstop.main,
-            marginLeft: '6px',
-            marginRight: '12px',
-          }}
-          size="30px"
-          thickness={4.5}
-          variant="determinate"
-          value={timeWaitedPercentage * 100}
-        />
+        {timeLeft > 0 ? (
+          <CircularProgress
+            sx={{
+              color: theme.palette.backstop.main,
+              marginLeft: '6px',
+              marginRight: '12px',
+            }}
+            size="30px"
+            thickness={4.5}
+            variant="determinate"
+            value={timeWaitedPercentage * 100}
+          />
+        ) : (
+          <CheckCircleOutlineIcon
+            sx={{ color: theme.palette.primary.main, marginRight: '12px', fontSize: '35px' }}
+          />
+        )}
         <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
         <Box>
           <Box sx={{ display: 'flex', flexDirection: 'row' }}>
             <Typography variant="h4" sx={{ marginRight: '6px' }}>
-              {toBalance(amount)}
+              {toBalance(inTokens)}
             </Typography>
             <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
               BLND-USDC LP
@@ -73,11 +90,11 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({
         </Box>
       </Box>
       <OpaqueButton
-        onClick={() => handleClickUnqueue(q4w.amount)}
+        onClick={() => handleClick(q4w.amount)}
         palette={theme.palette.positive}
         sx={{ height: '35px', width: '108px', margin: '12px', padding: '6px' }}
       >
-        Unqueue
+        {timeLeft > 0 ? 'Unqueue' : 'Withdraw'}
       </OpaqueButton>
     </Row>
   );

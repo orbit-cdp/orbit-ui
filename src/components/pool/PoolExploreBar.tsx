@@ -11,6 +11,7 @@ import { PoolMenu } from './PoolMenu';
 export const PoolExploreBar: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
   const theme = useTheme();
+
   return (
     <Row>
       {viewType === ViewType.REGULAR && (

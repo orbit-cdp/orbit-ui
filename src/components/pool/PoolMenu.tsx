@@ -12,7 +12,8 @@ export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
   const router = useRouter();
   const pathname = router.pathname;
 
-  const rewardZone = useStore((state) => state.backstopConfig.rewardZone);
+  const trackedPools = useStore((state) => state.pools);
+  const curPool = trackedPools.get(poolId);
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -37,7 +38,7 @@ export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
         onClick={handleClickDropdown}
         sx={{ width: '100%', '&:hover': { backgroundColor: theme.palette.background.default } }}
       >
-        <PoolHeader poolId={poolId} />
+        <PoolHeader name={curPool?.config?.name ?? 'Unkown'} />
         <ArrowDropDownIcon sx={{ color: theme.palette.text.secondary }} />
       </CustomButton>
       <Menu
@@ -50,11 +51,12 @@ export const PoolMenu: React.FC<PoolComponentProps> = ({ poolId }) => {
           sx: { width: anchorEl && anchorEl.offsetWidth },
         }}
       >
-        {rewardZone.map((rz_poolId) => (
-          <MenuItem onClick={() => handleClickMenuItem(rz_poolId)} key={rz_poolId}>
-            <PoolHeader poolId={rz_poolId} />
-          </MenuItem>
-        ))}
+        {trackedPools.size > 0 &&
+          Array.from(trackedPools.values()).map((pool) => (
+            <MenuItem onClick={() => handleClickMenuItem(pool.id)} key={pool.id}>
+              <PoolHeader name={pool.config.name} />
+            </MenuItem>
+          ))}
       </Menu>
     </>
   );

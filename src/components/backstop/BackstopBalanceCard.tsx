@@ -15,7 +15,7 @@ export interface BackstopBalanceCard extends PoolComponentProps {
 export const BackstopBalanceCard: React.FC<BackstopBalanceCard> = ({ type, poolId, sx }) => {
   const theme = useTheme();
 
-  const backstopUserEstimate = useStore((state) => state.backstop_user_est.get(poolId));
+  const backstopUserData = useStore((state) => state.backstopUserData);
 
   const headerText = type == 'deposit' ? 'Backstop deposit balance' : 'Wallet balance';
   const linkText = type == 'deposit' ? 'Queue for withdrawal' : 'Deposit';
@@ -23,7 +23,7 @@ export const BackstopBalanceCard: React.FC<BackstopBalanceCard> = ({ type, poolI
   const linkPalette = type == 'deposit' ? theme.palette.primary : theme.palette.backstop;
 
   const balance =
-    type == 'deposit' ? backstopUserEstimate?.depositBalance : backstopUserEstimate?.walletBalance;
+    type == 'deposit' ? backstopUserData?.balances?.get(poolId)?.shares : backstopUserData?.tokens;
 
   return (
     <Section
@@ -53,7 +53,7 @@ export const BackstopBalanceCard: React.FC<BackstopBalanceCard> = ({ type, poolI
             <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
             <Box sx={{ display: 'flex', flexDirection: 'row' }}>
               <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                {toBalance(balance)}
+                {toBalance(balance, 7)}
               </Typography>
               <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
                 BLND-USDC LP

@@ -16,12 +16,12 @@ export const FaucetBanner = ({ poolId }: FaucetBannerParams) => {
   const { faucet, connected, walletAddress } = useWallet();
   const [openCon, setOpenCon] = React.useState(false);
   const account = useStore((state) => state.account);
-  const poolData = useStore((state) => state.poolData.get(poolId));
-  const loadPoolData = useStore((state) => state.loadPoolData);
+  const poolData = useStore((state) => state.pools.get(poolId));
+  const loadBlendData = useStore((state) => state.loadBlendData);
 
   let needsFaucet = false;
   if (connected && poolData) {
-    poolData.reserves.map((reserve) => {
+    Array.from(poolData.reserves.values()).map((reserve) => {
       if (reserve.tokenMetadata.asset && !needsFaucet) {
         needsFaucet = requiresTrustline(account, reserve.tokenMetadata.asset);
       }
@@ -37,7 +37,7 @@ export const FaucetBanner = ({ poolId }: FaucetBannerParams) => {
       await faucet();
       setOpenCon(true);
       if (poolId) {
-        await loadPoolData(poolId, walletAddress, true);
+        await loadBlendData(true, poolId, walletAddress);
       }
     }
   };

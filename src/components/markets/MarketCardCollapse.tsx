@@ -1,21 +1,32 @@
+import { BackstopPool, Pool } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { Box, Typography, useTheme } from '@mui/material';
-import { useStore } from '../../store/store';
+import { Box, BoxProps, Typography, useTheme } from '@mui/material';
 import { toCompactAddress, toPercentage } from '../../utils/formatter';
 import { Icon } from '../common/Icon';
 import { LinkBox } from '../common/LinkBox';
 import { OpaqueButton } from '../common/OpaqueButton';
-import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { StackedTextBox } from '../common/StackedTextBox';
 import { MarketsList } from './MarketsList';
 
-export const MarketCardCollapse: React.FC<PoolComponentProps> = ({ poolId, sx, ...props }) => {
+export interface MarketCardCollapseProps extends BoxProps {
+  poolData: Pool;
+  backstopPoolData: BackstopPool;
+}
+
+export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({
+  poolData,
+  backstopPoolData,
+  sx,
+  ...props
+}) => {
   const theme = useTheme();
 
-  const poolConfig = useStore((state) => state.pools.get(poolId));
-  const backstopPoolEstimate = useStore((state) => state.backstop_pool_est.get(poolId));
-
+  const estBackstopApy =
+    ((poolData.config.backstopRate / 1e7) *
+      poolData.estimates.totalBorrowApy *
+      poolData.estimates.totalBorrow) /
+    backstopPoolData.estimates.totalSpotValue;
   return (
     <Box
       sx={{
@@ -41,7 +52,7 @@ export const MarketCardCollapse: React.FC<PoolComponentProps> = ({ poolId, sx, .
           </Box>
           <Box sx={{ padding: '6px', display: 'flex', flexDirection: 'row', height: '30px' }}>
             <Box sx={{ paddingRight: '12px', lineHeight: '100%' }}>{`Oracle ${toCompactAddress(
-              poolConfig?.oracle
+              poolData.config.oracle
             )}`}</Box>
             <Box>
               <ArrowForwardIcon fontSize="inherit" />
@@ -52,7 +63,7 @@ export const MarketCardCollapse: React.FC<PoolComponentProps> = ({ poolId, sx, .
       <Row>
         <LinkBox
           sx={{ width: '100%', marginRight: '12px' }}
-          to={{ pathname: '/backstop', query: { poolId: poolId } }}
+          to={{ pathname: '/backstop', query: { poolId: poolData.id } }}
         >
           <OpaqueButton
             palette={theme.palette.backstop}
@@ -103,12 +114,12 @@ export const MarketCardCollapse: React.FC<PoolComponentProps> = ({ poolId, sx, .
               <Row>
                 <StackedTextBox
                   name="Backstop APY"
-                  text={toPercentage(backstopPoolEstimate?.backstopApy)}
+                  text={toPercentage(estBackstopApy)}
                   sx={{ width: '50%' }}
                 />
                 <StackedTextBox
                   name="Q4W"
-                  text={toPercentage(backstopPoolEstimate?.q4wRate)}
+                  text={toPercentage(backstopPoolData.estimates.q4wPercentage)}
                   sx={{ width: '50%', color: theme.palette.backstop.main }}
                 />
               </Row>
@@ -116,7 +127,7 @@ export const MarketCardCollapse: React.FC<PoolComponentProps> = ({ poolId, sx, .
           </OpaqueButton>
         </LinkBox>
       </Row>
-      <MarketsList poolId={poolId} />
+      <MarketsList poolData={poolData} />
     </Box>
   );
 };

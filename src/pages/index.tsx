@@ -1,42 +1,15 @@
 import type { NextPage } from 'next';
-import { useEffect } from 'react';
 import { Divider } from '../components/common/Divider';
-import { FaucetBanner } from '../components/common/FaucetBanner';
-import { OverlayModal } from '../components/common/OverlayModal';
 import { Row } from '../components/common/Row';
 import { SectionBase } from '../components/common/SectionBase';
-import { WalletWarning } from '../components/common/WalletWarning';
 import { MarketCard } from '../components/markets/MarketCard';
 import { useStore } from '../store/store';
 
 const Markets: NextPage = () => {
-  const loadBackstopData = useStore((state) => state.loadBackstopData);
-  const loadPoolData = useStore((state) => state.loadPoolData);
-  const rewardZone = useStore((state) => state.backstopConfig.rewardZone);
-  useEffect(() => {
-    const updateMarket = async () => {
-      rewardZone.forEach(async (poolId) => {
-        await loadPoolData(poolId);
-        await loadBackstopData(poolId);
-      });
-    };
-    if (rewardZone.length != 0) {
-      updateMarket();
-      const refreshInterval = setInterval(async () => {
-        await updateMarket();
-      }, 30 * 1000);
-      return () => clearInterval(refreshInterval);
-    }
-  }, [loadBackstopData, loadPoolData, rewardZone]);
+  const rewardZone = useStore((state) => state.backstop?.config?.rewardZone ?? []);
 
   return (
     <>
-      <Row>
-        <WalletWarning />
-      </Row>
-      <Row>
-        <FaucetBanner poolId={rewardZone[0]} />
-      </Row>
       <Row>
         <SectionBase type="alt" sx={{ margin: '6px', padding: '6px' }}>
           Markets
@@ -46,7 +19,6 @@ const Markets: NextPage = () => {
       {rewardZone.map((poolId) => (
         <MarketCard key={poolId} poolId={poolId}></MarketCard>
       ))}
-      <OverlayModal poolId={''} type="market" />
     </>
   );
 };

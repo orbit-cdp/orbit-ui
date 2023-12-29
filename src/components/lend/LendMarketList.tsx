@@ -1,16 +1,18 @@
 import HelpOutline from '@mui/icons-material/HelpOutline';
-import { Box, Tooltip, Typography } from '@mui/material';
-import { useSettings, ViewType } from '../../contexts';
+import { Box, Skeleton, Tooltip, Typography } from '@mui/material';
+import { ViewType, useSettings } from '../../contexts';
 import { useStore } from '../../store/store';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { LendMarketCard } from './LendMarketCard';
 
 export const LendMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
-  const poolReserveEstimates = useStore((state) => state.pool_est.get(poolId)?.reserve_est);
-  const userReserveEstimates = useStore(
-    (state) => state.pool_user_est.get(poolId)?.reserve_estimates
-  );
+
+  const poolData = useStore((state) => state.pools.get(poolId));
+
+  if (!poolData) {
+    return <Skeleton variant="rectangular" />;
+  }
 
   const headerNum = viewType === ViewType.REGULAR ? 5 : 4;
   const headerWidth = `${(100 / headerNum).toFixed(2)}%`;
@@ -76,18 +78,9 @@ export const LendMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
 
         <Box sx={{ width: headerWidth }} />
       </Box>
-      {poolReserveEstimates ? (
-        poolReserveEstimates.map((reserve) => (
-          <LendMarketCard
-            key={reserve.id}
-            poolId={poolId}
-            reserveData={reserve}
-            balance={userReserveEstimates?.get(reserve.id)?.asset ?? 0}
-          />
-        ))
-      ) : (
-        <></>
-      )}
+      {Array.from(poolData.reserves.values()).map((reserve) => (
+        <LendMarketCard key={reserve.assetId} poolId={poolId} reserve={reserve} />
+      ))}
     </Box>
   );
 };

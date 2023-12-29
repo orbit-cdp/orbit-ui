@@ -4,21 +4,13 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider } from '@mui/material/styles';
 import { AppProps } from 'next/app';
 import Head from 'next/head';
-import { useEffect } from 'react';
 import { SettingsProvider } from '../contexts';
 import { WalletProvider } from '../contexts/wallet';
 import DefaultLayout from '../layouts/DefaultLayout';
-import { useStore } from '../store/store';
 import theme from '../theme';
 
 export default function MyApp(props: AppProps) {
   const { Component, pageProps } = props;
-
-  const { refreshBackstopData } = useStore();
-
-  useEffect(() => {
-    refreshBackstopData(0);
-  }, [refreshBackstopData]);
 
   return (
     <>

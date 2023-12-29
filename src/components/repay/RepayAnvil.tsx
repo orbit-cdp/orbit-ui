@@ -18,46 +18,50 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   const theme = useTheme();
   const { connected, walletAddress, poolSubmit } = useWallet();
 
-  const reserve = useStore((state) =>
-    state.poolData.get(poolId)?.reserves.find((reserve) => reserve.assetId == assetId)
-  );
-  const assetToBase = useStore((state) => state.poolData.get(poolId))?.poolPrices.get(assetId) ?? 1;
-  const user_est = useStore((state) => state.pool_user_est.get(poolId));
-  const user_bal_est = useStore((state) =>
-    state.pool_user_est.get(poolId)?.reserve_estimates.get(assetId)
-  );
-  const loadPoolData = useStore((state) => state.loadPoolData);
-  const reserve_est = useStore((state) =>
-    state.pool_est.get(poolId)?.reserve_est?.find((res) => res.id === assetId)
-  );
   const account = useStore((state) => state.account);
+  const poolData = useStore((state) => state.pools.get(poolId));
+  const userPoolData = useStore((state) => state.userPoolData.get(poolId));
+  const userBalance = useStore((state) => state.balances.get(assetId)) ?? BigInt(0);
+  const reserve = poolData?.reserves.get(assetId);
+  const assetPrice = reserve?.oraclePrice ?? 1;
 
   const [toRepay, setToRepay] = useState<string | undefined>(undefined);
   const [newEffectiveLiabilities, setNewEffectiveLiabilities] = useState<number>(
-    user_est?.e_liabilities_base ?? 0
+    userPoolData?.estimates.totalEffectiveLiabilities ?? 0
   );
 
   const decimals = reserve?.config.decimals ?? 7;
+  const scalar = 10 ** decimals;
   const symbol = reserve?.tokenMetadata?.symbol ?? '';
-  const oldBorrowCap = user_est
-    ? user_est.e_collateral_base - user_est.e_liabilities_base
-    : undefined;
-  const oldBorrowLimit = user_est
-    ? user_est.e_liabilities_base / user_est.e_collateral_base
-    : undefined;
-  const borrowCap = user_est ? user_est.e_collateral_base - newEffectiveLiabilities : undefined;
-  const borrowLimit = user_est ? newEffectiveLiabilities / user_est.e_collateral_base : undefined;
 
+  const curBorrowed = userPoolData?.estimates?.liabilities?.get(assetId) ?? 0;
+
+  const oldBorrowCap = userPoolData
+    ? userPoolData.estimates.totalEffectiveCollateral -
+      userPoolData.estimates.totalEffectiveLiabilities
+    : undefined;
+  const oldBorrowLimit = userPoolData
+    ? userPoolData.estimates.totalEffectiveLiabilities /
+      userPoolData.estimates.totalEffectiveCollateral
+    : undefined;
+  const borrowCap = userPoolData
+    ? userPoolData.estimates.totalEffectiveCollateral - newEffectiveLiabilities
+    : undefined;
+  const borrowLimit = userPoolData
+    ? newEffectiveLiabilities / userPoolData.estimates.totalEffectiveCollateral
+    : undefined;
+
+  // @ts-ignore
   let stellar_reserve_amount = getAssetReserve(account, reserve?.tokenMetadata?.asset);
+  const freeUserBalanceScaled = Number(userBalance) / scalar - stellar_reserve_amount;
 
   const handleRepayAmountChange = (repayInput: string) => {
     let regex = new RegExp(`^[0-9]*\.?[0-9]{0,${decimals}}$`);
-    if (regex.test(repayInput) && user_est && user_bal_est) {
+    if (regex.test(repayInput) && reserve && userPoolData) {
       let num_repay = Number(repayInput);
-      //TODO: check if setting 0 in the case that reserve_est is undefined is ok
-      let repay_base = reserve_est ? (num_repay * assetToBase) / reserve_est.l_factor : 0;
-      let tempNewLiabilities = user_est.e_liabilities_base - repay_base;
-      if (num_repay <= user_bal_est.asset * 1.1) {
+      let repay_base = num_repay * assetPrice * reserve.getLiabilityFactor();
+      let tempNewLiabilities = userPoolData.estimates.totalEffectiveLiabilities - repay_base;
+      if (num_repay <= freeUserBalanceScaled) {
         setToRepay(repayInput);
         setNewEffectiveLiabilities(tempNewLiabilities);
       }
@@ -65,10 +69,9 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   };
 
   const handleRepayMax = () => {
-    if (user_bal_est) {
-      let free_amount = user_bal_est.asset - stellar_reserve_amount;
+    if (userPoolData) {
       let maxRepay =
-        free_amount < user_bal_est.borrowed ? free_amount : user_bal_est.borrowed * 1.0001;
+        freeUserBalanceScaled < curBorrowed ? freeUserBalanceScaled : curBorrowed * 1.0001;
       handleRepayAmountChange(maxRepay.toFixed(decimals));
     }
   };
@@ -88,7 +91,6 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
         ],
       };
       await poolSubmit(poolId, submitArgs, false);
-      await loadPoolData(poolId, walletAddress, true);
     }
   };
 
@@ -138,7 +140,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toRepay ?? 0) * assetToBase, decimals)}`}
+              {`$${toBalance(Number(toRepay ?? 0) * assetPrice, decimals)}`}
             </Typography>
           </Box>
         </Box>
@@ -182,9 +184,9 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
           <Value title="Amount to repay" value={`${toRepay ?? '0'} ${symbol}`} />
           <ValueChange
             title="Your total borrowed"
-            curValue={`${toBalance(user_bal_est?.borrowed, decimals)} ${symbol}`}
+            curValue={`${toBalance(curBorrowed, decimals)} ${symbol}`}
             newValue={`${toBalance(
-              Math.max((user_bal_est?.borrowed ?? 0) - Number(toRepay ?? '0'), 0),
+              Math.max(curBorrowed - Number(toRepay ?? '0'), 0),
               decimals
             )} ${symbol}`}
           />

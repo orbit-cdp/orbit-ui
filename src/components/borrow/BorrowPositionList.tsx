@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Skeleton, Typography } from '@mui/material';
 import { ViewType, useSettings } from '../../contexts';
 import { useStore } from '../../store/store';
 import { PoolComponentProps } from '../common/PoolComponentProps';
@@ -6,10 +6,13 @@ import { BorrowPositionCard } from './BorrowPositionCard';
 
 export const BorrowPositionList: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
-  const poolReserveEstimates = useStore((state) => state.pool_est.get(poolId)?.reserve_est);
-  const UserReserveEstimates = useStore(
-    (state) => state.pool_user_est.get(poolId)?.reserve_estimates
-  );
+
+  const poolData = useStore((state) => state.pools.get(poolId));
+  const userPoolData = useStore((state) => state.userPoolData.get(poolId));
+
+  if (!poolData || !userPoolData) {
+    return <Skeleton variant="rectangular" />;
+  }
 
   const headerNum = viewType === ViewType.REGULAR ? 5 : 4;
   const headerWidth = `${(100 / headerNum).toFixed(2)}%`;
@@ -55,24 +58,16 @@ export const BorrowPositionList: React.FC<PoolComponentProps> = ({ poolId }) => 
         <Box sx={{ width: headerWidth }} />
         {headerNum >= 5 && <Box sx={{ width: headerWidth }} />}
       </Box>
-      {poolReserveEstimates ? (
-        poolReserveEstimates.flatMap((reserve) => {
-          let user_bal = UserReserveEstimates?.get(reserve.id);
-          if (user_bal && user_bal.borrowed !== 0) {
-            return [
-              <BorrowPositionCard
-                key={reserve.id}
-                poolId={poolId}
-                reserveData={reserve}
-                userResData={user_bal}
-              />,
-            ];
-          }
-          return [];
-        })
-      ) : (
-        <></>
-      )}
+      {Array.from(poolData.reserves.values())
+        .filter((reserve) => userPoolData.estimates.liabilities.get(reserve.assetId) != 0)
+        .map((reserve) => (
+          <BorrowPositionCard
+            key={reserve.assetId}
+            poolId={poolId}
+            reserve={reserve}
+            userPoolData={userPoolData}
+          />
+        ))}
     </Box>
   );
 };

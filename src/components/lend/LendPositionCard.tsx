@@ -1,7 +1,7 @@
+import { PoolUser, Reserve } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
-import { useSettings, ViewType } from '../../contexts';
-import { ReserveEstimates, UserReserveEstimates } from '../../store/estimationSlice';
+import { ViewType, useSettings } from '../../contexts';
 import * as formatter from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
 import { LinkBox } from '../common/LinkBox';
@@ -10,19 +10,23 @@ import { SectionBase } from '../common/SectionBase';
 import { TokenHeader } from '../common/TokenHeader';
 
 export interface LendPositionCardProps extends PoolComponentProps {
-  reserveData: ReserveEstimates;
-  userResData: UserReserveEstimates;
+  reserve: Reserve;
+  userPoolData: PoolUser;
 }
 
 export const LendPositionCard: React.FC<LendPositionCardProps> = ({
   poolId,
-  reserveData,
-  userResData,
+  reserve,
+  userPoolData,
   sx,
   ...props
 }) => {
   const theme = useTheme();
   const { viewType } = useSettings();
+
+  const userSupplyEst = userPoolData.estimates.supply.get(reserve.assetId);
+  const userCollatEst = userPoolData.estimates.collateral.get(reserve.assetId);
+  const totalSupplyEst = userSupplyEst ?? 0 + (userCollatEst ?? 0);
 
   const tableNum = viewType === ViewType.REGULAR ? 5 : 4;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
@@ -39,7 +43,7 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
     >
       <LinkBox
         sx={{ width: '100%' }}
-        to={{ pathname: '/withdraw', query: { poolId: poolId, assetId: reserveData.id } }}
+        to={{ pathname: '/withdraw', query: { poolId: poolId, assetId: reserve.assetId } }}
       >
         <CustomButton
           sx={{
@@ -51,7 +55,7 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
             },
           }}
         >
-          <TokenHeader id={reserveData.id} sx={{ width: tableWidth }} />
+          <TokenHeader id={reserve.assetId} sx={{ width: tableWidth }} />
           <Box
             sx={{
               width: tableWidth,
@@ -60,9 +64,7 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
               alignItems: 'center',
             }}
           >
-            <Typography variant="body1">
-              {formatter.toBalance(userResData.supplied, reserveData.decimals)}
-            </Typography>
+            <Typography variant="body1">{formatter.toBalance(totalSupplyEst)}</Typography>
           </Box>
           <Box
             sx={{
@@ -73,7 +75,7 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
             }}
           >
             <Typography variant="body1">
-              {formatter.toPercentage(reserveData.supply_apy)}
+              {formatter.toPercentage(reserve.estimates.supplyApy)}
             </Typography>
           </Box>
           {tableNum >= 5 && <Box sx={{ width: tableWidth }} />}

@@ -1,52 +1,52 @@
-import { PoolBackstopActionArgs } from '@blend-capital/blend-sdk';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import { Q4W } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
-import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
-import { toBalance } from '../../utils/formatter';
-import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
-import { TokenIcon } from '../common/TokenIcon';
 import { BackstopQueueItem } from './BackstopQueueItem';
 
 export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, backstopWithdraw, backstopDequeueWithdrawal } = useWallet();
 
-  const backstopContract = useStore((state) => state.backstopContract);
-  const backstopUserEstimate = useStore((state) => state.backstop_user_est.get(poolId));
-  const backstopPoolEstimate = useStore((state) => state.backstop_pool_est.get(poolId));
-  const loadBackstopData = useStore((state) => state.loadBackstopData);
+  const latestLedgerTimestamp = useStore((state) => state.latestLedgerTimestamp);
+  const backstopUserData = useStore((state) => state.backstopUserData);
+  const poolBackstopData = useStore((state) => state.backstop?.pools.get(poolId));
+  const poolBackstopUserData = backstopUserData?.balances?.get(poolId);
+  const poolBackstopUserEst = backstopUserData?.estimates?.get(poolId);
 
-  if (backstopUserEstimate?.q4wUnlockedAmount == 0 && backstopUserEstimate.q4w.length == 0) {
+  if (
+    !poolBackstopUserData ||
+    !poolBackstopUserEst ||
+    poolBackstopUserData.q4w == undefined ||
+    poolBackstopUserData.q4w.length == 0
+  ) {
     return <></>;
   }
 
-  const handleClickUnqueue = async (amount: bigint) => {
-    if (connected) {
-      let dequeueArgs: PoolBackstopActionArgs = {
-        from: walletAddress,
-        pool_address: poolId,
-        amount: BigInt(amount),
-      };
-      await backstopDequeueWithdrawal(dequeueArgs, false);
-      await loadBackstopData(poolId, walletAddress, true);
+  const toTokens = (amount: bigint) => {
+    let sharesAsNumber = Number(amount) / 1e7;
+    if (poolBackstopData == undefined) {
+      return sharesAsNumber;
+    } else {
+      let rate =
+        Number(poolBackstopData.poolBalance.tokens) / Number(poolBackstopData.poolBalance.shares);
+      return sharesAsNumber * rate;
     }
   };
 
-  const handleClickWithdrawal = async (amount: bigint) => {
-    if (connected) {
-      let withdrawArgs: PoolBackstopActionArgs = {
-        from: walletAddress,
-        pool_address: poolId,
-        amount: BigInt(amount),
-      };
-      await backstopWithdraw(withdrawArgs, false);
-      await loadBackstopData(poolId, walletAddress, true);
-    }
+  let q4w_locked: Q4W[] = [];
+  let q4w_unlocked: Q4W = {
+    exp: BigInt(0),
+    amount: BigInt(0),
   };
+  for (const q4w of poolBackstopUserData.q4w) {
+    if (Number(q4w.exp) > latestLedgerTimestamp) {
+      q4w_locked.push(q4w);
+    } else {
+      q4w_unlocked.amount += BigInt(q4w.amount);
+    }
+  }
 
   return (
     <Row>
@@ -65,47 +65,22 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
             <Typography sx={{ padding: '6px' }}>Queued for withdrawal (Q4W)</Typography>
           </Box>
         </Row>
-        {backstopUserEstimate?.q4wUnlockedAmount != 0 && (
-          <Row>
-            <Box sx={{ margin: '6px', padding: '6px', display: 'flex', alignItems: 'center' }}>
-              <CheckCircleOutlineIcon
-                sx={{ color: theme.palette.primary.main, marginRight: '12px', fontSize: '35px' }}
-              />
-              <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
-              <Box sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
-                <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                  {toBalance(backstopUserEstimate?.q4wUnlockedAmount)}
-                </Typography>
-                <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                  BLND-USDC LP
-                </Typography>
-              </Box>
-            </Box>
-            <OpaqueButton
-              onClick={() =>
-                handleClickWithdrawal(
-                  BigInt(
-                    ((backstopUserEstimate?.q4wUnlockedAmount ?? 0) * 1e7) /
-                      (backstopPoolEstimate?.shareRate ?? 1)
-                  )
-                )
-              }
-              palette={theme.palette.primary}
-              sx={{ height: '35px', width: '108px', margin: '12px', padding: '6px' }}
-            >
-              Withdraw
-            </OpaqueButton>
-          </Row>
+        {q4w_unlocked.amount != BigInt(0) && (
+          <BackstopQueueItem
+            key={0}
+            poolId={poolId}
+            q4w={q4w_unlocked}
+            inTokens={toTokens(q4w_unlocked.amount)}
+          />
         )}
-        {backstopUserEstimate?.q4w
-          .sort((a, b) => Number(b.amount) - Number(a.amount))
+        {q4w_locked
+          .sort((a, b) => Number(a.exp) - Number(b.exp))
           .map((q4w) => (
             <BackstopQueueItem
               key={Number(q4w.exp)}
               poolId={poolId}
               q4w={q4w}
-              amount={(Number(q4w.amount) / 1e7) * (backstopPoolEstimate?.shareRate ?? 1)}
-              handleClickUnqueue={handleClickUnqueue}
+              inTokens={toTokens(q4w.amount)}
             />
           ))}
       </Section>

@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Skeleton, Typography } from '@mui/material';
 import { ViewType, useSettings } from '../../contexts';
 import { useStore } from '../../store/store';
 import { PoolComponentProps } from '../common/PoolComponentProps';
@@ -6,10 +6,14 @@ import { LendPositionCard } from './LendPositionCard';
 
 export const LendPositionList: React.FC<PoolComponentProps> = ({ poolId }) => {
   const { viewType } = useSettings();
-  const poolReserveEstimates = useStore((state) => state.pool_est.get(poolId)?.reserve_est);
-  const userReserveEstimates = useStore(
-    (state) => state.pool_user_est.get(poolId)?.reserve_estimates
-  );
+
+  const poolData = useStore((state) => state.pools.get(poolId));
+  const userPoolData = useStore((state) => state.userPoolData.get(poolId));
+
+  if (!poolData || !userPoolData) {
+    return <Skeleton variant="rectangular" />;
+  }
+
   const headerNum = viewType === ViewType.REGULAR ? 5 : 4;
   const headerWidth = `${(100 / headerNum).toFixed(2)}%`;
   return (
@@ -54,24 +58,20 @@ export const LendPositionList: React.FC<PoolComponentProps> = ({ poolId }) => {
         <Box sx={{ width: headerWidth }} />
         {headerNum >= 5 && <Box sx={{ width: headerWidth }} />}
       </Box>
-      {poolReserveEstimates ? (
-        poolReserveEstimates.flatMap((reserve) => {
-          let user_bal = userReserveEstimates?.get(reserve.id);
-          if (user_bal && user_bal.supplied !== 0) {
-            return [
-              <LendPositionCard
-                key={reserve.id}
-                poolId={poolId}
-                reserveData={reserve}
-                userResData={user_bal}
-              />,
-            ];
-          }
-          return [];
-        })
-      ) : (
-        <></>
-      )}
+      {Array.from(poolData.reserves.values())
+        .filter(
+          (reserve) =>
+            userPoolData.estimates.collateral.get(reserve.assetId) != 0 ||
+            userPoolData.estimates.supply.get(reserve.assetId) != 0
+        )
+        .map((reserve) => (
+          <LendPositionCard
+            key={reserve.assetId}
+            poolId={poolId}
+            reserve={reserve}
+            userPoolData={userPoolData}
+          />
+        ))}
     </Box>
   );
 };

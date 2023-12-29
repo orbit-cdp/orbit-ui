@@ -1,5 +1,6 @@
 import {
   BackstopClaimArgs,
+  BackstopClient,
   ContractResult,
   PoolBackstopActionArgs,
   PoolClaimArgs,
@@ -11,9 +12,11 @@ import {
   TxOptions,
 } from '@blend-capital/blend-sdk';
 import { getPublicKey, signTransaction } from '@stellar/freighter-api';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { SorobanRpc, Transaction, xdr } from 'stellar-sdk';
+import { BACKSTOP_ID } from '../store/blendSlice';
 import { useStore } from '../store/store';
+import { useSettings } from './settings';
 
 export interface IWalletContext {
   connected: boolean;
@@ -54,11 +57,13 @@ export enum TxStatus {
 const WalletContext = React.createContext<IWalletContext | undefined>(undefined);
 
 export const WalletProvider = ({ children = null as any }) => {
+  const { lastPool } = useSettings();
+
   const network = useStore((state) => state.network);
   const rpc = useStore((state) => state.rpcServer());
-  const backstopClient = useStore((state) => state.backstopContract);
-  const loadAccount = useStore((state) => state.loadAccount);
-  const removeUserState = useStore((state) => state.removeUserData);
+  const loadBlendData = useStore((state) => state.loadBlendData);
+  const loadUserData = useStore((state) => state.loadUserData);
+  const clearUserData = useStore((state) => state.clearUserData);
 
   const [connected, setConnected] = useState<boolean>(false);
   const [autoConnect, setAutoConnect] = useState(true);
@@ -81,12 +86,12 @@ export const WalletProvider = ({ children = null as any }) => {
     setTxFailure('Unkown error occurred.');
   }
 
-  useEffect(() => {
-    if (autoConnect) {
-      setAutoConnect(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoConnect]);
+  // useEffect(() => {
+  //   if (autoConnect) {
+  //     setAutoConnect(false);
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [autoConnect]);
 
   /**
    * Connects a browser wallet by fetching the public key from the wallet.
@@ -99,7 +104,7 @@ export const WalletProvider = ({ children = null as any }) => {
       publicKey = await getPublicKey();
       setWalletAddress(publicKey);
       setConnected(true);
-      await loadAccount(publicKey);
+      await loadUserData(publicKey);
     } catch (e: any) {
       error = e?.message ?? 'Failed to connect wallet.';
     }
@@ -110,7 +115,7 @@ export const WalletProvider = ({ children = null as any }) => {
   }
 
   function disconnect() {
-    removeUserState();
+    clearUserData();
     setWalletAddress('');
     setConnected(false);
   }
@@ -150,11 +155,11 @@ export const WalletProvider = ({ children = null as any }) => {
         setTxStatus(TxStatus.FAIL);
       }
 
-      // reload Horizon account after submission
+      // reload data after submission
       try {
-        await loadAccount(walletAddress);
+        await loadBlendData(true, lastPool, walletAddress);
       } catch {
-        console.error('Failed loading account: ', walletAddress);
+        console.error('Failed reloading blend data for account: ', walletAddress);
       }
 
       return result.unwrap();
@@ -249,6 +254,7 @@ export const WalletProvider = ({ children = null as any }) => {
           networkPassphrase: network.passphrase,
         },
       };
+      let backstopClient = new BackstopClient(BACKSTOP_ID);
       let submission = backstopClient.deposit(walletAddress, sign, network, txOptions, args);
       return submitTransaction<bigint>(submission);
     }
@@ -275,6 +281,7 @@ export const WalletProvider = ({ children = null as any }) => {
           networkPassphrase: network.passphrase,
         },
       };
+      let backstopClient = new BackstopClient(BACKSTOP_ID);
       let submission = backstopClient.withdraw(walletAddress, sign, network, txOptions, args);
       return submitTransaction<bigint>(submission);
     }
@@ -301,6 +308,7 @@ export const WalletProvider = ({ children = null as any }) => {
           networkPassphrase: network.passphrase,
         },
       };
+      let backstopClient = new BackstopClient(BACKSTOP_ID);
       let submission = backstopClient.queueWithdrawal(
         walletAddress,
         sign,
@@ -333,6 +341,7 @@ export const WalletProvider = ({ children = null as any }) => {
           networkPassphrase: network.passphrase,
         },
       };
+      let backstopClient = new BackstopClient(BACKSTOP_ID);
       let submission = backstopClient.dequeueWithdrawal(
         walletAddress,
         sign,
@@ -365,6 +374,7 @@ export const WalletProvider = ({ children = null as any }) => {
           networkPassphrase: network.passphrase,
         },
       };
+      let backstopClient = new BackstopClient(BACKSTOP_ID);
       let submission = backstopClient.claim(walletAddress, sign, network, txOptions, claimArgs);
       return submitTransaction<bigint>(submission);
     }
@@ -417,7 +427,7 @@ export const WalletProvider = ({ children = null as any }) => {
 
           // reload Horizon account after submission
           try {
-            await loadAccount(walletAddress);
+            await loadUserData(walletAddress);
           } catch {
             console.error('Failed loading account: ', walletAddress);
           }

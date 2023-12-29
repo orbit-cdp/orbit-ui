@@ -17,19 +17,28 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const theme = useTheme();
   const { connected, walletAddress, backstopQueueWithdrawal } = useWallet();
 
-  const backstopContract = useStore((state) => state.backstopContract);
-  const backstopUserEstimate = useStore((state) => state.backstop_user_est.get(poolId));
-  // TODO
-  const backstopTokenPrice = 0.75; //Number(
-  //   useStore((state) => state.backstopData.backstopTokenPrice / BigInt(1e7))
-  // );
-  const loadBackstopData = useStore((state) => state.loadBackstopData);
+  const backstop = useStore((state) => state.backstop);
+  const backstopPoolData = useStore((state) => state.backstop?.pools?.get(poolId));
+  const userBackstopData = useStore((state) => state.backstopUserData);
+  const userPoolBackstopBalance = userBackstopData?.balances.get(poolId);
+  const userPoolBackstopEst = userBackstopData?.estimates.get(poolId);
+
+  const backstopTokenPrice = backstop?.lpTokenPrice ?? 1;
+
   const [toQueue, setToQueue] = useState<string | undefined>(undefined);
 
+  const sharesToTokens = backstopPoolData
+    ? Number(backstopPoolData.poolBalance.tokens) / Number(backstopPoolData.poolBalance.shares)
+    : 1;
+
   const queuedBalance =
-    backstopUserEstimate?.q4w?.reduce((total, q4w) => total + Number(q4w.amount) / 1e7, 0) ??
-    0 + (backstopUserEstimate?.q4wUnlockedAmount ?? 0);
-  const availableToQueue = backstopUserEstimate?.availableToQueue ?? 0;
+    userPoolBackstopEst && userPoolBackstopBalance
+      ? (Number(userPoolBackstopBalance.shares - userPoolBackstopEst.notLockedShares) / 1e7) *
+        sharesToTokens
+      : 0;
+  const availableToQueue = userPoolBackstopEst
+    ? (Number(userPoolBackstopEst.notLockedShares) / 1e7) * sharesToTokens
+    : 0;
 
   const handleQueueAmountChange = (queueInput: string) => {
     if (/^[0-9]*\.?[0-9]{0,7}$/.test(queueInput) && availableToQueue > 0) {
@@ -54,7 +63,6 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
         amount: scaleInputToBigInt(toQueue, 7),
       };
       await backstopQueueWithdrawal(depositArgs, false);
-      await loadBackstopData(poolId, walletAddress, true);
     }
   };
 
