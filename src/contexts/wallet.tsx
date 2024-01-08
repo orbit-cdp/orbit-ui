@@ -138,7 +138,8 @@ export const WalletProvider = ({ children = null as any }) => {
   }
 
   async function submitTransaction<T>(
-    submission: Promise<ContractResult<T>>
+    submission: Promise<ContractResult<T>>,
+    poolId?: string | undefined
   ): Promise<T | undefined> {
     try {
       // submission calls `sign` internally which handles setting TxStatus
@@ -157,7 +158,7 @@ export const WalletProvider = ({ children = null as any }) => {
 
       // reload data after submission
       try {
-        await loadBlendData(true, lastPool, walletAddress);
+        await loadBlendData(true, poolId, walletAddress);
       } catch {
         console.error('Failed reloading blend data for account: ', walletAddress);
       }
@@ -198,7 +199,7 @@ export const WalletProvider = ({ children = null as any }) => {
       };
       let pool = new PoolClient(poolId);
       let submission = pool.submit(walletAddress, sign, network, txOptions, submitArgs);
-      return submitTransaction<Positions>(submission);
+      return submitTransaction<Positions>(submission, poolId);
     }
   }
 
@@ -227,7 +228,7 @@ export const WalletProvider = ({ children = null as any }) => {
       };
       let pool = new PoolClient(poolId);
       let submission = pool.claim(walletAddress, sign, network, txOptions, claimArgs);
-      return submitTransaction<bigint>(submission);
+      return submitTransaction<bigint>(submission, poolId);
     }
   }
 
