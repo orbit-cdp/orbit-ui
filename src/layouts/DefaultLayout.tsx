@@ -1,4 +1,5 @@
 import { Box } from '@mui/material';
+import { useRouter } from 'next/router';
 import { ReactNode, useEffect } from 'react';
 import { FaucetBanner } from '../components/common/FaucetBanner';
 import { OverlayModal } from '../components/common/OverlayModal';
@@ -10,8 +11,12 @@ import { useWallet } from '../contexts/wallet';
 import { useStore } from '../store/store';
 
 export default function DefaultLayout({ children }: { children: ReactNode }) {
-  const { viewType } = useSettings();
+  const { viewType, lastPool, setLastPool } = useSettings();
   const { connected, walletAddress } = useWallet();
+  const router = useRouter();
+  const { poolId } = router.query;
+  const safePoolId =
+    typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : undefined;
 
   const loadBlendData = useStore((state) => state.loadBlendData);
   const rewardZone = useStore((state) => state.backstop?.config?.rewardZone ?? []);
@@ -28,6 +33,10 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
   }, [loadBlendData, connected, walletAddress]);
 
   const faucet_pool = rewardZone.length > 0 ? rewardZone[0] : undefined;
+
+  if (safePoolId && safePoolId !== lastPool) {
+    setLastPool(safePoolId);
+  }
 
   const mainWidth = viewType <= ViewType.COMPACT ? '100%' : '886px';
   const mainMargin = viewType <= ViewType.COMPACT ? '0px' : '62px';

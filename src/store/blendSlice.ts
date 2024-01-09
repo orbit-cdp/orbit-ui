@@ -55,6 +55,7 @@ export const createBlendSlice: StateCreator<DataStore, [], [], BlendSlice> = (se
       for (let pool of Array.from(backstop.pools.keys())) {
         let pool_data = await Pool.load(network, pool, latest_ledger_close);
         pools.set(pool, pool_data);
+        console.log(JSON.stringify(Array.from(pool_data.reserves.entries())));
       }
 
       set({

@@ -60,10 +60,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     if (regex.test(borrowInput) && reserve && userPoolData) {
       let num_borrow = Number(borrowInput);
       let borrow_base = num_borrow * assetToBase * reserve.getLiabilityFactor();
-      // console.log('borrow_base: ', borrow_base);
       let tempNewLiabilities = userPoolData.estimates.totalEffectiveLiabilities + borrow_base;
-      // console.log('temp_new: ', tempNewLiabilities * 1.02);
-      // console.log('collat: ', userPoolData.estimates.totalEffectiveCollateral);
       if (tempNewLiabilities * 1.019 < userPoolData.estimates.totalEffectiveCollateral) {
         setToBorrow(borrowInput);
         setNewEffectiveLiabilities(tempNewLiabilities);
