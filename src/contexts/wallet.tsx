@@ -12,8 +12,9 @@ import {
   TxOptions,
 } from '@blend-capital/blend-sdk';
 import { getPublicKey, signTransaction } from '@stellar/freighter-api';
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { SorobanRpc, Transaction, xdr } from 'stellar-sdk';
+import { useLocalStorageState } from '../hooks';
 import { BACKSTOP_ID } from '../store/blendSlice';
 import { useStore } from '../store/store';
 import { useSettings } from './settings';
@@ -66,7 +67,8 @@ export const WalletProvider = ({ children = null as any }) => {
   const clearUserData = useStore((state) => state.clearUserData);
 
   const [connected, setConnected] = useState<boolean>(false);
-  const [autoConnect, setAutoConnect] = useState(true);
+  const [autoConnect, setAutoConnect] = useLocalStorageState('autoConnectWallet', 'false');
+
   const [txStatus, setTxStatus] = useState<TxStatus>(TxStatus.NONE);
   const [txHash, setTxHash] = useState<string>('');
   const [txFailure, setTxFailure] = useState<string>('');
@@ -86,12 +88,12 @@ export const WalletProvider = ({ children = null as any }) => {
     setTxFailure('Unkown error occurred.');
   }
 
-  // useEffect(() => {
-  //   if (autoConnect) {
-  //     setAutoConnect(false);
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [autoConnect]);
+  useEffect(() => {
+    if (!connected && autoConnect != 'false') {
+      connect();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoConnect]);
 
   /**
    * Connects a browser wallet by fetching the public key from the wallet.
@@ -104,6 +106,7 @@ export const WalletProvider = ({ children = null as any }) => {
       publicKey = await getPublicKey();
       setWalletAddress(publicKey);
       setConnected(true);
+      setAutoConnect('freighter');
       await loadUserData(publicKey);
     } catch (e: any) {
       error = e?.message ?? 'Failed to connect wallet.';
@@ -118,6 +121,7 @@ export const WalletProvider = ({ children = null as any }) => {
     clearUserData();
     setWalletAddress('');
     setConnected(false);
+    setAutoConnect('false');
   }
 
   /**
