@@ -54,15 +54,19 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   // @ts-ignore
   let stellar_reserve_amount = getAssetReserve(account, reserve?.tokenMetadata?.asset);
   const freeUserBalanceScaled = Number(userBalance) / scalar - stellar_reserve_amount;
+  const maxRepay =
+    freeUserBalanceScaled < curBorrowed ? freeUserBalanceScaled : curBorrowed * 1.0001;
 
+  const isRepayDisabled = !toRepay || Number(toRepay) > maxRepay || maxRepay <= 0;
+  const isMaxDisabled = freeUserBalanceScaled <= 0;
   const handleRepayAmountChange = (repayInput: string) => {
-    let regex = new RegExp(`^[0-9]*\.?[0-9]{0,${decimals}}$`);
-    if (regex.test(repayInput) && reserve && userPoolData) {
+    setToRepay(repayInput);
+    if (reserve && userPoolData) {
       let num_repay = Number(repayInput);
       let repay_base = num_repay * assetPrice * reserve.getLiabilityFactor();
       let tempNewLiabilities = userPoolData.estimates.totalEffectiveLiabilities - repay_base;
       if (num_repay <= freeUserBalanceScaled) {
-        setToRepay(repayInput);
+        /**  @dev @TODO  how should this number behave in UI */
         setNewEffectiveLiabilities(tempNewLiabilities);
       }
     }
@@ -70,8 +74,6 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
 
   const handleRepayMax = () => {
     if (userPoolData) {
-      let maxRepay =
-        freeUserBalanceScaled < curBorrowed ? freeUserBalanceScaled : curBorrowed * 1.0001;
       handleRepayAmountChange(maxRepay.toFixed(decimals));
     }
   };
@@ -129,11 +131,13 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
               onSetMax={handleRepayMax}
               palette={theme.palette.borrow}
               sx={{ width: '100%' }}
+              isMaxDisabled={isMaxDisabled}
             />
             <OpaqueButton
               onClick={handleSubmitTransaction}
               palette={theme.palette.borrow}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
+              disabled={isRepayDisabled}
             >
               Repay
             </OpaqueButton>

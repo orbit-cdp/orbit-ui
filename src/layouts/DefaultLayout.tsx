@@ -22,18 +22,14 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
   const rewardZone = useStore((state) => state.backstop?.config?.rewardZone ?? []);
 
   useEffect(() => {
-    const update = async () => {
-      await loadBlendData(false, undefined, connected ? walletAddress : undefined);
-    };
-    update();
     const refreshInterval = setInterval(async () => {
-      await update();
-    }, 30 * 1000);
+      await loadBlendData(false, undefined, connected ? walletAddress : undefined);
+    }, 10 * 1000);
     return () => clearInterval(refreshInterval);
   }, [loadBlendData, connected, walletAddress]);
 
   const faucet_pool = rewardZone.length > 0 ? rewardZone[0] : undefined;
-
+  /** @dev @TODO this may possibly be removed since it seems to be calculated everywhere */
   if (safePoolId && safePoolId !== lastPool) {
     setLastPool(safePoolId);
   }

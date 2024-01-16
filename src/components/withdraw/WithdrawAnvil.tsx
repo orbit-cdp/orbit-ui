@@ -51,8 +51,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
     : undefined;
 
   const handleWithdrawAmountChange = (withdrawInput: string) => {
-    let regex = new RegExp(`^[0-9]*\.?[0-9]{0,${decimals}}$`);
-    if (regex.test(withdrawInput) && reserve && userPoolData) {
+    if (reserve && userPoolData) {
       let realWithdraw = withdrawInput;
       let num_withdraw = Number(withdrawInput);
       if (num_withdraw > curSupplied) {
@@ -145,6 +144,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
               onClick={handleSubmitTransaction}
               palette={theme.palette.lend}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
+              disabled={!toWithdraw}
             >
               Withdraw
             </OpaqueButton>

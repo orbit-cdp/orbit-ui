@@ -45,18 +45,25 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({
             justifyContent: 'space-between',
             alignItems: 'center',
             color: theme.palette.text.secondary,
+            cursor: 'default',
           }}
+          disableFocusRipple
+          disableTouchRipple
         >
           <Box sx={{ margin: '6px', height: '30px' }}>
             <Icon src={'/icons/pageicons/oracle_icon.svg'} alt="oracle-icon" isCircle={false} />
           </Box>
+
+          {/**
+           * @dev removed touch effects from this button cause it was not navigating anywhere, if a navigation is added then touch effects and arrow can come back
+           * */}
           <Box sx={{ padding: '6px', display: 'flex', flexDirection: 'row', height: '30px' }}>
             <Box sx={{ paddingRight: '12px', lineHeight: '100%' }}>{`Oracle ${toCompactAddress(
               poolData.config.oracle
             )}`}</Box>
-            <Box>
+            {/* <Box>
               <ArrowForwardIcon fontSize="inherit" />
-            </Box>
+            </Box> */}
           </Box>
         </OpaqueButton>
       </Row>
