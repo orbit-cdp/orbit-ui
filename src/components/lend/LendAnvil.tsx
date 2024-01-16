@@ -54,7 +54,9 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   // @ts-ignore
   let stellar_reserve_amount = getAssetReserve(account, reserve?.tokenMetadata?.asset);
   const freeUserBalanceScaled = Number(userBalance) / scalar - stellar_reserve_amount;
-
+  const isLendDisabled =
+    !toLend || freeUserBalanceScaled <= 0 || Number(toLend) > freeUserBalanceScaled;
+  const isMaxDisabled = freeUserBalanceScaled <= 0;
   const handleLendAmountChange = (lendInput: string) => {
     setToLend(lendInput);
     if (userPoolData && reserve) {
@@ -129,15 +131,13 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
               onSetMax={handleLendMax}
               palette={theme.palette.lend}
               sx={{ width: '100%' }}
-              isMaxDisabled={freeUserBalanceScaled <= 0}
+              isMaxDisabled={isMaxDisabled}
             />
             <OpaqueButton
               onClick={handleSubmitTransaction}
               palette={theme.palette.lend}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
-              disabled={
-                !toLend || freeUserBalanceScaled <= 0 || Number(toLend) > freeUserBalanceScaled
-              }
+              disabled={isLendDisabled}
             >
               Supply
             </OpaqueButton>

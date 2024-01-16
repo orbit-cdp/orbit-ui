@@ -30,7 +30,7 @@ export const InputBar: React.FC<InputBarProps> = ({
     console.log({ newValue });
     if (type === 'number' && newValue !== '') {
       const sanitizedValue = newValue.replace(/[^0-9.\.]/g, '');
-      console.log({ sanitizedValue });
+
       onValueChange(sanitizedValue);
     } else {
       onValueChange(newValue);

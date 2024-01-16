@@ -56,6 +56,9 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   const freeUserBalanceScaled = Number(userBalance) / scalar - stellar_reserve_amount;
   const maxRepay =
     freeUserBalanceScaled < curBorrowed ? freeUserBalanceScaled : curBorrowed * 1.0001;
+
+  const isRepayDisabled = !toRepay || Number(toRepay) > maxRepay || maxRepay <= 0;
+  const isMaxDisabled = freeUserBalanceScaled <= 0;
   const handleRepayAmountChange = (repayInput: string) => {
     setToRepay(repayInput);
     if (reserve && userPoolData) {
@@ -128,13 +131,13 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
               onSetMax={handleRepayMax}
               palette={theme.palette.borrow}
               sx={{ width: '100%' }}
-              isMaxDisabled={freeUserBalanceScaled <= 0}
+              isMaxDisabled={isMaxDisabled}
             />
             <OpaqueButton
               onClick={handleSubmitTransaction}
               palette={theme.palette.borrow}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
-              disabled={!toRepay || Number(toRepay) > maxRepay || maxRepay <= 0}
+              disabled={isRepayDisabled}
             >
               Repay
             </OpaqueButton>

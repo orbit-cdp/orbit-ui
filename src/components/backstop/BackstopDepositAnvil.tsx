@@ -31,6 +31,8 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
 
   const [toDeposit, setToDeposit] = useState<string | undefined>(undefined);
 
+  const isDepositDisabled = !userBalance || !toDeposit || Number(toDeposit) > userBalance;
+  const isMaxDisabled = !userBalance;
   const handleDepositMax = () => {
     if (userBackstopData) {
       setToDeposit(userBalance.toFixed(7));
@@ -83,13 +85,13 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
               onSetMax={handleDepositMax}
               palette={theme.palette.backstop}
               sx={{ width: '100%' }}
-              isMaxDisabled={!userBalance}
+              isMaxDisabled={isMaxDisabled}
             />
             <OpaqueButton
               onClick={handleSubmitTransaction}
               palette={theme.palette.backstop}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
-              disabled={!userBalance || !toDeposit || Number(toDeposit) > userBalance}
+              disabled={isDepositDisabled}
             >
               Deposit
             </OpaqueButton>

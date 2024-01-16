@@ -39,6 +39,8 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const availableToQueue = userPoolBackstopEst
     ? (Number(userPoolBackstopEst.notLockedShares) / 1e7) * sharesToTokens
     : 0;
+  const isMaxDisabled = !availableToQueue;
+  const isQueueDisabled = !toQueue || availableToQueue <= 0 || Number(toQueue) > availableToQueue;
 
   const handleQueueMax = () => {
     if (availableToQueue > 0) {
@@ -92,13 +94,13 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
               onSetMax={handleQueueMax}
               palette={theme.palette.backstop}
               sx={{ width: '100%' }}
-              isMaxDisabled={availableToQueue <= 0}
+              isMaxDisabled={isMaxDisabled}
             />
             <OpaqueButton
               onClick={handleSubmitTransaction}
               palette={theme.palette.backstop}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
-              disabled={!toQueue || availableToQueue <= 0 || Number(toQueue) > availableToQueue}
+              disabled={isQueueDisabled}
             >
               Queue
             </OpaqueButton>
