@@ -22,6 +22,7 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
   const rewardZone = useStore((state) => state.backstop?.config?.rewardZone ?? []);
 
   useEffect(() => {
+    /** @dev @TODO load blend data is already async  */
     const update = async () => {
       await loadBlendData(false, undefined, connected ? walletAddress : undefined);
     };
@@ -33,7 +34,7 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
   }, [loadBlendData, connected, walletAddress]);
 
   const faucet_pool = rewardZone.length > 0 ? rewardZone[0] : undefined;
-
+  /** @dev @TODO this may possibly be removed since it seems to be calculated everywhere */
   if (safePoolId && safePoolId !== lastPool) {
     setLastPool(safePoolId);
   }
