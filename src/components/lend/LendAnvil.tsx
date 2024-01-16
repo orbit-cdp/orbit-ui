@@ -56,13 +56,13 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   const freeUserBalanceScaled = Number(userBalance) / scalar - stellar_reserve_amount;
 
   const handleLendAmountChange = (lendInput: string) => {
-    let regex = new RegExp(`^[0-9]*\.?[0-9]{0,${decimals}}$`);
-    if (regex.test(lendInput) && userPoolData && reserve) {
+    setToLend(lendInput);
+    if (userPoolData && reserve) {
       let num_lend = Number(lendInput);
       let lend_base = num_lend * assetPrice * reserve.getCollateralFactor();
       let tempEffectiveCollateral = userPoolData.estimates.totalEffectiveCollateral + lend_base;
+      /**  @dev @TODO  how should this number behave in UI */
       if (num_lend <= freeUserBalanceScaled) {
-        setToLend(lendInput);
         setNewEffectiveCollateral(tempEffectiveCollateral);
       }
     }
@@ -129,11 +129,15 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
               onSetMax={handleLendMax}
               palette={theme.palette.lend}
               sx={{ width: '100%' }}
+              isMaxDisabled={freeUserBalanceScaled <= 0}
             />
             <OpaqueButton
               onClick={handleSubmitTransaction}
               palette={theme.palette.lend}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
+              disabled={
+                !toLend || freeUserBalanceScaled <= 0 || Number(toLend) > freeUserBalanceScaled
+              }
             >
               Supply
             </OpaqueButton>

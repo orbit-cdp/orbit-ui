@@ -56,8 +56,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     : undefined;
 
   const handleBorrowAmountChange = (borrowInput: string) => {
-    let regex = new RegExp(`^[0-9]*\.?[0-9]{0,${decimals}}$`);
-    if (regex.test(borrowInput) && reserve && userPoolData) {
+    if (reserve && userPoolData) {
       let num_borrow = Number(borrowInput);
       let borrow_base = num_borrow * assetToBase * reserve.getLiabilityFactor();
       let tempNewLiabilities = userPoolData.estimates.totalEffectiveLiabilities + borrow_base;
@@ -140,6 +139,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
               onClick={handleSubmitTransaction}
               palette={theme.palette.borrow}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
+              disabled={!toBorrow}
             >
               Borrow
             </OpaqueButton>
