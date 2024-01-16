@@ -1,6 +1,7 @@
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import LogoutIcon from '@mui/icons-material/Logout';
+import WalletIcon from '@mui/icons-material/Wallet';
 import {
   Alert,
   Button,
@@ -17,7 +18,6 @@ import React from 'react';
 import { useWallet } from '../../contexts/wallet';
 import * as formatter from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
-import { WalletIcon } from '../common/WalletIcon';
 
 export const WalletMenu = () => {
   const theme = useTheme();
@@ -47,20 +47,16 @@ export const WalletMenu = () => {
   const [anchorElDropdown, setAnchorElDropdown] = React.useState<null | HTMLElement>(null);
   const openDropdown = Boolean(anchorElDropdown);
 
-  const [anchorElConnect, setAnchorElConnect] = React.useState<null | HTMLElement>(null);
-  const openConnect = Boolean(anchorElConnect);
-
   const handleClickDropdown = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorElDropdown(event.currentTarget);
   };
 
-  const handleClickConnect = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorElConnect(event.currentTarget);
+  const handleClickConnect = () => {
+    connect();
   };
 
   const handleClose = () => {
     setAnchorElDropdown(null);
-    setAnchorElConnect(null);
   };
 
   return (
@@ -71,7 +67,7 @@ export const WalletMenu = () => {
           onClick={handleClickDropdown}
           sx={{ width: '100%', height: '100%', color: theme.palette.text.secondary }}
         >
-          <WalletIcon name={'Freighter'} />
+          <WalletIcon />
           <Typography variant="body1" color={theme.palette.text.primary}>
             {formatter.toCompactAddress(walletAddress)}
           </Typography>
@@ -125,37 +121,6 @@ export const WalletMenu = () => {
           <ListItemIcon>
             <LogoutIcon sx={{ color: '#E7424C' }} />
           </ListItemIcon>
-        </MenuItem>
-      </Menu>
-      <Menu
-        id="connect-wallet-menu"
-        anchorEl={anchorElConnect}
-        open={openConnect}
-        onClose={handleClose}
-        MenuListProps={{
-          'aria-labelledby': 'connect-wallet-dropdown-button',
-          sx: { width: anchorElConnect && anchorElConnect.offsetWidth },
-        }}
-        PaperProps={{
-          // @ts-ignore - TODO: Figure out why typing is broken
-          backgroundColor: theme.palette.menu.main,
-        }}
-      >
-        <MenuItem
-          onClick={() => {
-            handleClose();
-            connect();
-            setOpenCon(true);
-          }}
-        >
-          <ListItemIcon>
-            <WalletIcon name={'Freighter'} />
-          </ListItemIcon>
-          <ListItemText>
-            <Typography variant="h3" color={theme.palette.text.primary} sx={{ marginLeft: '6px' }}>
-              Freighter
-            </Typography>
-          </ListItemText>
         </MenuItem>
       </Menu>
 

@@ -11,7 +11,15 @@ import {
   SubmitArgs,
   TxOptions,
 } from '@blend-capital/blend-sdk';
-import { getPublicKey, signTransaction } from '@stellar/freighter-api';
+import {
+  AlbedoModule,
+  FreighterModule,
+  ISupportedWallet,
+  StellarWalletsKit,
+  WalletNetwork,
+  XBULL_ID,
+  xBullModule,
+} from '@creit.tech/stellar-wallets-kit/build/main';
 import React, { useContext, useEffect, useState } from 'react';
 import { SorobanRpc, Transaction, xdr } from 'stellar-sdk';
 import { useLocalStorageState } from '../hooks';
@@ -25,7 +33,7 @@ export interface IWalletContext {
   txStatus: TxStatus;
   lastTxHash: string | undefined;
   lastTxFailure: string | undefined;
-  connect: () => void;
+  connect: () => Promise<void>;
   disconnect: () => void;
   clearLastTx: () => void;
   poolSubmit: (
@@ -76,6 +84,22 @@ export const WalletProvider = ({ children = null as any }) => {
   // wallet state
   const [walletAddress, setWalletAddress] = useState<string>('');
 
+  const walletKit: StellarWalletsKit = new StellarWalletsKit({
+    network: network.passphrase as WalletNetwork,
+    selectedWalletId: autoConnect !== undefined && autoConnect !== 'false' ? autoConnect : XBULL_ID,
+    modules: [new xBullModule(), new FreighterModule(), new AlbedoModule()],
+  });
+
+  useEffect(() => {
+    if (!connected && autoConnect !== 'false') {
+      // @dev: timeout ensures chrome has the ability to load extensions
+      setTimeout(() => {
+        handleSetWalletAddress();
+      }, 500);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoConnect]);
+
   function setFailureMessage(message: string | undefined) {
     if (message) {
       // some contract failures include diagnostic information. If so, try and remove it.
@@ -86,33 +110,35 @@ export const WalletProvider = ({ children = null as any }) => {
     }
   }
 
-  useEffect(() => {
-    if (!connected && autoConnect != 'false') {
-      connect();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoConnect]);
-
   /**
-   * Connects a browser wallet by fetching the public key from the wallet.
-   * returns The public key of the wallet
+   * Connect a wallet to the application via the walletKit
    */
-  async function connect() {
-    let publicKey = '';
-    let error = '';
+  async function handleSetWalletAddress() {
     try {
-      publicKey = await getPublicKey();
+      const publicKey = await walletKit.getPublicKey();
       setWalletAddress(publicKey);
       setConnected(true);
-      setAutoConnect('freighter');
       await loadUserData(publicKey);
     } catch (e: any) {
-      error = e?.message ?? 'Failed to connect wallet.';
+      console.error('Unable to load wallet information: ', e);
     }
-    if (error) {
-      return error;
+  }
+
+  /**
+   * Open up a modal to connect the user's browser wallet
+   */
+  async function connect() {
+    try {
+      await walletKit.openModal({
+        onWalletSelected: async (option: ISupportedWallet) => {
+          walletKit.setWallet(option.id);
+          setAutoConnect(option.id);
+          await handleSetWalletAddress();
+        },
+      });
+    } catch (e: any) {
+      console.error('Unable to connect wallet: ', e);
     }
-    return publicKey;
   }
 
   function disconnect() {
@@ -132,13 +158,17 @@ export const WalletProvider = ({ children = null as any }) => {
     if (connected) {
       setTxStatus(TxStatus.SIGNING);
       try {
-        let result = await signTransaction(xdr, { networkPassphrase: network.passphrase });
+        let { result } = await walletKit.signTx({
+          xdr: xdr,
+          publicKeys: [walletAddress],
+          network: network.passphrase as WalletNetwork,
+        });
         setTxStatus(TxStatus.SUBMITTING);
         return result;
       } catch (e: any) {
-        if (e == 'User declined access') {
+        if (e === 'User declined access') {
           setTxFailure('Transaction rejected by wallet.');
-        } else if (typeof e == 'string') {
+        } else if (typeof e === 'string') {
           setTxFailure(e);
         }
 
