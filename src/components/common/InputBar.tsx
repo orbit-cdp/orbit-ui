@@ -7,6 +7,8 @@ export interface InputBarProps extends BoxProps {
   onValueChange: (new_value: string) => void;
   onSetMax: () => void;
   palette: PaletteColor;
+  isMaxDisabled?: boolean;
+  type?: 'number' | 'text';
 }
 
 export const InputBar: React.FC<InputBarProps> = ({
@@ -16,10 +18,24 @@ export const InputBar: React.FC<InputBarProps> = ({
   onSetMax,
   palette,
   sx,
+  type = 'number',
+  isMaxDisabled,
   ...props
 }) => {
   const theme = useTheme();
-
+  /**
+   * sanitize input if type is number
+   */
+  function handleChange(newValue: string) {
+    console.log({ newValue });
+    if (type === 'number' && newValue !== '') {
+      const sanitizedValue = newValue.replace(/[^0-9.\.]/g, '');
+      console.log({ sanitizedValue });
+      onValueChange(sanitizedValue);
+    } else {
+      onValueChange(newValue);
+    }
+  }
   return (
     <Box
       sx={{
@@ -36,7 +52,7 @@ export const InputBar: React.FC<InputBarProps> = ({
     >
       <Input
         value={value}
-        onChange={(event) => onValueChange(event.target.value)}
+        onChange={(event) => handleChange(event.target.value)}
         placeholder="0"
         disableUnderline={true}
         sx={{ marginLeft: '12px', width: '100%' }}
@@ -48,6 +64,7 @@ export const InputBar: React.FC<InputBarProps> = ({
       </Box>
       <CustomButton
         onClick={onSetMax}
+        disabled={isMaxDisabled}
         sx={{
           color: palette.main,
           backgroundColor: palette.opaque,
