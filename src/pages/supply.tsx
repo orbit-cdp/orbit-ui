@@ -29,7 +29,7 @@ const Supply: NextPage = () => {
       </Row>
       <Row>
         <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>
-          <ReserveDropdown action="Supply" poolId={safePoolId} activeReserveId={safeAssetId} />
+          <ReserveDropdown action="supply" poolId={safePoolId} activeReserveId={safeAssetId} />
         </Section>
       </Row>
       <Row>
