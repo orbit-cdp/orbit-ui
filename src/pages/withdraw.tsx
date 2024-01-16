@@ -20,7 +20,6 @@ const Withdraw: NextPage = () => {
 
   const poolData = useStore((state) => state.pools.get(safePoolId));
   const userPoolData = useStore((state) => state.userPoolData.get(safePoolId));
-  const userBalance = useStore((state) => state.balances.get(safeAssetId));
   const reserve = poolData?.reserves.get(safeAssetId);
 
   return (
