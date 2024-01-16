@@ -28,7 +28,7 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
     update();
     const refreshInterval = setInterval(async () => {
       await update();
-    }, 10 * 1000);
+    }, 30 * 1000);
     return () => clearInterval(refreshInterval);
   }, [loadBlendData, connected, walletAddress]);
 
