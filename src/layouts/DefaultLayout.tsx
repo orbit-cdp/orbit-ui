@@ -22,13 +22,8 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
   const rewardZone = useStore((state) => state.backstop?.config?.rewardZone ?? []);
 
   useEffect(() => {
-    /** @dev @TODO load blend data is already async  */
-    const update = async () => {
-      await loadBlendData(false, undefined, connected ? walletAddress : undefined);
-    };
-    update();
     const refreshInterval = setInterval(async () => {
-      await update();
+      await loadBlendData(false, undefined, connected ? walletAddress : undefined);
     }, 10 * 1000);
     return () => clearInterval(refreshInterval);
   }, [loadBlendData, connected, walletAddress]);
