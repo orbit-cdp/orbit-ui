@@ -1,5 +1,5 @@
 import { PoolBackstopActionArgs } from '@blend-capital/blend-sdk';
-import { Alert, Box, Typography, useTheme } from '@mui/material';
+import { AlertColor, Box, Typography, useTheme } from '@mui/material';
 import { useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
@@ -10,6 +10,7 @@ import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
+import { TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
@@ -39,12 +40,31 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const availableToQueue = userPoolBackstopEst
     ? (Number(userPoolBackstopEst.notLockedShares) / 1e7) * sharesToTokens
     : 0;
-  const isMaxDisabled = !availableToQueue;
-  const isQueueDisabled =
-    !toQueue ||
-    !(Number(toQueue) > 0) ||
-    availableToQueue <= 0 ||
-    Number(toQueue) > availableToQueue;
+
+  // verify that the user can act
+  let isSubmitDisabled: boolean;
+  let isMaxDisabled: boolean;
+  let reason: string | undefined = undefined;
+  let disabledType: AlertColor | undefined = undefined;
+  if (availableToQueue <= 0) {
+    isSubmitDisabled = true;
+    isMaxDisabled = true;
+    reason = 'You do not have any deposits to withdraw.';
+    disabledType = 'warning';
+  } else if (!toQueue) {
+    isSubmitDisabled = true;
+    isMaxDisabled = false;
+    reason = 'Please enter an amount to queue for withdrawal.';
+    disabledType = 'info';
+  } else if (Number(toQueue) > availableToQueue) {
+    isSubmitDisabled = true;
+    isMaxDisabled = false;
+    reason = 'You do not have enough available deposits to withdrawal.';
+    disabledType = 'warning';
+  } else {
+    isSubmitDisabled = false;
+    isMaxDisabled = false;
+  }
 
   const handleQueueMax = () => {
     if (availableToQueue > 0) {
@@ -104,7 +124,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
               onClick={handleSubmitTransaction}
               palette={theme.palette.backstop}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
-              disabled={isQueueDisabled}
+              disabled={isSubmitDisabled}
             >
               Queue
             </OpaqueButton>
@@ -115,66 +135,18 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
             </Typography>
           </Box>
         </Box>
-        <Box
-          sx={{
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            backgroundColor: theme.palette.background.paper,
-            zIndex: 12,
-          }}
-        >
-          {!isQueueDisabled && (
-            <>
-              <Typography
-                variant="h5"
-                sx={{ marginLeft: '12px', marginBottom: '12px', marginTop: '12px' }}
-              >
-                Transaction Overview
-              </Typography>
-              {/* <Box
-            sx={{
-              marginLeft: '24px',
-              marginBottom: '12px',
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}
-          >
-            <LocalGasStationIcon
-              fontSize="inherit"
-              sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}
-            />
-            <Typography
-              variant="h5"
-              sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}
-            >
-              $1.88
-            </Typography>
-            <HelpOutlineIcon fontSize="inherit" sx={{ color: theme.palette.text.secondary }} />
-          </Box> */}
-              <Value title="Amount to queue" value={`${toQueue ?? '0'} BLND-USDC LP`} />
-              <Value
-                title="New queue expiration"
-                value={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-              />
-              <ValueChange
-                title="Your total amount queued"
-                curValue={`${toBalance(queuedBalance)} BLND-USDC LP`}
-                newValue={`${toBalance(queuedBalance + Number(toQueue ?? '0'))} BLND-USDC LP`}
-              />
-            </>
-          )}
-          {isQueueDisabled && (
-            <>
-              {Number(toQueue) > availableToQueue && (
-                <Alert severity="error">
-                  <Typography variant="body2">Input larger than available value</Typography>
-                </Alert>
-              )}
-            </>
-          )}
-        </Box>
+        <TxOverview isDisabled={isSubmitDisabled} disabledType={disabledType} reason={reason}>
+          <Value title="Amount to queue" value={`${toQueue ?? '0'} BLND-USDC LP`} />
+          <Value
+            title="New queue expiration"
+            value={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+          />
+          <ValueChange
+            title="Your total amount queued"
+            curValue={`${toBalance(queuedBalance)} BLND-USDC LP`}
+            newValue={`${toBalance(queuedBalance + Number(toQueue ?? '0'))} BLND-USDC LP`}
+          />
+        </TxOverview>
       </Section>
     </Row>
   );

@@ -50,7 +50,7 @@ const Borrow: NextPage = () => {
                 Available
               </Typography>
               <Typography variant="h4" sx={{ color: theme.palette.borrow.main }}>
-                {toBalance(userBalance, reserve?.config.decimals)}
+                {toBalance(reserve?.poolBalance, reserve?.config.decimals)}
               </Typography>
             </Box>
             <Box>
