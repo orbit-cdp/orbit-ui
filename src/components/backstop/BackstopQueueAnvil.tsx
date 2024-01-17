@@ -1,5 +1,5 @@
 import { PoolBackstopActionArgs } from '@blend-capital/blend-sdk';
-import { Box, Typography, useTheme } from '@mui/material';
+import { Alert, Box, Typography, useTheme } from '@mui/material';
 import { useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
@@ -40,7 +40,11 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
     ? (Number(userPoolBackstopEst.notLockedShares) / 1e7) * sharesToTokens
     : 0;
   const isMaxDisabled = !availableToQueue;
-  const isQueueDisabled = !toQueue || availableToQueue <= 0 || Number(toQueue) > availableToQueue;
+  const isQueueDisabled =
+    !toQueue ||
+    !(Number(toQueue) > 0) ||
+    availableToQueue <= 0 ||
+    Number(toQueue) > availableToQueue;
 
   const handleQueueMax = () => {
     if (availableToQueue > 0) {
@@ -120,13 +124,15 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
             zIndex: 12,
           }}
         >
-          <Typography
-            variant="h5"
-            sx={{ marginLeft: '12px', marginBottom: '12px', marginTop: '12px' }}
-          >
-            Transaction Overview
-          </Typography>
-          {/* <Box
+          {!isQueueDisabled && (
+            <>
+              <Typography
+                variant="h5"
+                sx={{ marginLeft: '12px', marginBottom: '12px', marginTop: '12px' }}
+              >
+                Transaction Overview
+              </Typography>
+              {/* <Box
             sx={{
               marginLeft: '24px',
               marginBottom: '12px',
@@ -147,16 +153,27 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
             </Typography>
             <HelpOutlineIcon fontSize="inherit" sx={{ color: theme.palette.text.secondary }} />
           </Box> */}
-          <Value title="Amount to queue" value={`${toQueue ?? '0'} BLND-USDC LP`} />
-          <Value
-            title="New queue expiration"
-            value={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-          />
-          <ValueChange
-            title="Your total amount queued"
-            curValue={`${toBalance(queuedBalance)} BLND-USDC LP`}
-            newValue={`${toBalance(queuedBalance + Number(toQueue ?? '0'))} BLND-USDC LP`}
-          />
+              <Value title="Amount to queue" value={`${toQueue ?? '0'} BLND-USDC LP`} />
+              <Value
+                title="New queue expiration"
+                value={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+              />
+              <ValueChange
+                title="Your total amount queued"
+                curValue={`${toBalance(queuedBalance)} BLND-USDC LP`}
+                newValue={`${toBalance(queuedBalance + Number(toQueue ?? '0'))} BLND-USDC LP`}
+              />
+            </>
+          )}
+          {isQueueDisabled && (
+            <>
+              {Number(toQueue) > availableToQueue && (
+                <Alert severity="error">
+                  <Typography variant="body2">Input larger than available value</Typography>
+                </Alert>
+              )}
+            </>
+          )}
         </Box>
       </Section>
     </Row>
