@@ -1,5 +1,5 @@
 import { SubmitArgs } from '@blend-capital/blend-sdk';
-import { Box, Typography, useTheme } from '@mui/material';
+import { Alert, Box, Typography, useTheme } from '@mui/material';
 import { useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
@@ -57,7 +57,8 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   const maxRepay =
     freeUserBalanceScaled < curBorrowed ? freeUserBalanceScaled : curBorrowed * 1.0001;
 
-  const isRepayDisabled = !toRepay || Number(toRepay) > maxRepay || maxRepay <= 0;
+  const isRepayDisabled =
+    !toRepay || !(Number(toRepay) > 0) || Number(toRepay) > maxRepay || maxRepay <= 0;
   const isMaxDisabled = freeUserBalanceScaled <= 0;
   const handleRepayAmountChange = (repayInput: string) => {
     setToRepay(repayInput);
@@ -158,13 +159,15 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
             borderRadius: '5px',
           }}
         >
-          <Typography
-            variant="h5"
-            sx={{ marginLeft: '24px', marginBottom: '12px', marginTop: '12px' }}
-          >
-            Transaction Overview
-          </Typography>
-          {/* <Box
+          {!isRepayDisabled && (
+            <>
+              <Typography
+                variant="h5"
+                sx={{ marginLeft: '24px', marginBottom: '12px', marginTop: '12px' }}
+              >
+                Transaction Overview
+              </Typography>
+              {/* <Box
             sx={{
               marginLeft: '24px',
               marginBottom: '12px',
@@ -185,25 +188,41 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
             </Typography>
             <HelpOutlineIcon fontSize="inherit" sx={{ color: theme.palette.text.secondary }} />
           </Box> */}
-          <Value title="Amount to repay" value={`${toRepay ?? '0'} ${symbol}`} />
-          <ValueChange
-            title="Your total borrowed"
-            curValue={`${toBalance(curBorrowed, decimals)} ${symbol}`}
-            newValue={`${toBalance(
-              Math.max(curBorrowed - Number(toRepay ?? '0'), 0),
-              decimals
-            )} ${symbol}`}
-          />
-          <ValueChange
-            title="Borrow capacity"
-            curValue={`$${toBalance(oldBorrowCap)}`}
-            newValue={`$${toBalance(borrowCap)}`}
-          />
-          <ValueChange
-            title="Borrow limit"
-            curValue={toPercentage(Number.isFinite(oldBorrowLimit) ? oldBorrowLimit : 0)}
-            newValue={toPercentage(Number.isFinite(borrowLimit) ? borrowLimit : 0)}
-          />
+              <Value title="Amount to repay" value={`${toRepay ?? '0'} ${symbol}`} />
+              <ValueChange
+                title="Your total borrowed"
+                curValue={`${toBalance(curBorrowed, decimals)} ${symbol}`}
+                newValue={`${toBalance(
+                  Math.max(curBorrowed - Number(toRepay ?? '0'), 0),
+                  decimals
+                )} ${symbol}`}
+              />
+              <ValueChange
+                title="Borrow capacity"
+                curValue={`$${toBalance(oldBorrowCap)}`}
+                newValue={`$${toBalance(borrowCap)}`}
+              />
+              <ValueChange
+                title="Borrow limit"
+                curValue={toPercentage(Number.isFinite(oldBorrowLimit) ? oldBorrowLimit : 0)}
+                newValue={toPercentage(Number.isFinite(borrowLimit) ? borrowLimit : 0)}
+              />
+            </>
+          )}
+          {isRepayDisabled && (
+            <>
+              {Number(toRepay) > maxRepay && (
+                <Alert severity="error">
+                  <Typography variant="body2">Input larger than available value</Typography>
+                </Alert>
+              )}
+              {maxRepay <= 0 && (
+                <Alert severity="error">
+                  <Typography variant="body2">No repay balance available</Typography>
+                </Alert>
+              )}
+            </>
+          )}
         </Box>
       </Section>
     </Row>

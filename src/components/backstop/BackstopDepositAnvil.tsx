@@ -1,5 +1,5 @@
 import { PoolBackstopActionArgs } from '@blend-capital/blend-sdk';
-import { Box, Typography, useTheme } from '@mui/material';
+import { Alert, Box, Typography, useTheme } from '@mui/material';
 import { useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
@@ -31,7 +31,8 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
 
   const [toDeposit, setToDeposit] = useState<string | undefined>(undefined);
 
-  const isDepositDisabled = !userBalance || !toDeposit || Number(toDeposit) > userBalance;
+  const isDepositDisabled =
+    !userBalance || !toDeposit || !(Number(toDeposit) > 0) || Number(toDeposit) > userBalance;
   const isMaxDisabled = !userBalance;
   const handleDepositMax = () => {
     if (userBackstopData) {
@@ -112,13 +113,15 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
             zIndex: 12,
           }}
         >
-          <Typography
-            variant="h5"
-            sx={{ marginLeft: '12px', marginBottom: '12px', marginTop: '12px' }}
-          >
-            Transaction Overview
-          </Typography>
-          {/* <Box
+          {!isDepositDisabled && (
+            <>
+              <Typography
+                variant="h5"
+                sx={{ marginLeft: '12px', marginBottom: '12px', marginTop: '12px' }}
+              >
+                Transaction Overview
+              </Typography>
+              {/* <Box
             sx={{
               marginLeft: '24px',
               marginBottom: '12px',
@@ -139,12 +142,23 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
             </Typography>
             <HelpOutlineIcon fontSize="inherit" sx={{ color: theme.palette.text.secondary }} />
           </Box> */}
-          <Value title="Amount to deposit" value={`${toDeposit ?? '0'} BLND-USDC LP`} />
-          <ValueChange
-            title="Your total deposit"
-            curValue={`${toBalance(curDeposit)} BLND-USDC LP`}
-            newValue={`${toBalance(curDeposit + Number(toDeposit ?? '0'))} BLND-USDC LP`}
-          />
+              <Value title="Amount to deposit" value={`${toDeposit ?? '0'} BLND-USDC LP`} />
+              <ValueChange
+                title="Your total deposit"
+                curValue={`${toBalance(curDeposit)} BLND-USDC LP`}
+                newValue={`${toBalance(curDeposit + Number(toDeposit ?? '0'))} BLND-USDC LP`}
+              />
+            </>
+          )}
+          {isDepositDisabled && (
+            <>
+              {Number(toDeposit) > userBalance && (
+                <Alert severity="error">
+                  <Typography variant="body2">Input larger than balance</Typography>
+                </Alert>
+              )}
+            </>
+          )}
         </Box>
       </Section>
     </Row>
