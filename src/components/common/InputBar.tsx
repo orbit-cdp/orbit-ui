@@ -27,7 +27,6 @@ export const InputBar: React.FC<InputBarProps> = ({
    * sanitize input if type is number
    */
   function handleChange(newValue: string) {
-    console.log({ newValue });
     if (type === 'number' && newValue !== '') {
       const sanitizedValue = newValue.replace(/[^0-9.\.]/g, '');
 

@@ -87,7 +87,6 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
           }
         }
       }
-
       set({
         account,
         balances: user_balances,
