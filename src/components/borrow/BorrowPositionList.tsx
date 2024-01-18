@@ -59,7 +59,10 @@ export const BorrowPositionList: React.FC<PoolComponentProps> = ({ poolId }) => 
         {headerNum >= 5 && <Box sx={{ width: headerWidth }} />}
       </Box>
       {Array.from(poolData.reserves.values())
-        .filter((reserve) => userPoolData.estimates.liabilities.get(reserve.assetId) != 0)
+        .filter(
+          (reserve) =>
+            (userPoolData.positions.liabilities.get(reserve.config.index) ?? BigInt(0)) != BigInt(0)
+        )
         .map((reserve) => (
           <BorrowPositionCard
             key={reserve.assetId}
