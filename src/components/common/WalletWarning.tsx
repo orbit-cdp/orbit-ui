@@ -33,7 +33,7 @@ export const WalletWarning = () => {
   return (
     <>
       {connected ? (
-        !isFunded ? (
+        isFunded === false ? (
           <Row
             sx={{
               background: theme.palette.warning.opaque,

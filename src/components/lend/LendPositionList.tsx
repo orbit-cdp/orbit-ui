@@ -61,8 +61,9 @@ export const LendPositionList: React.FC<PoolComponentProps> = ({ poolId }) => {
       {Array.from(poolData.reserves.values())
         .filter(
           (reserve) =>
-            userPoolData.estimates.collateral.get(reserve.assetId) != 0 ||
-            userPoolData.estimates.supply.get(reserve.assetId) != 0
+            (userPoolData.positions.collateral.get(reserve.config.index) ?? BigInt(0)) !=
+              BigInt(0) ||
+            (userPoolData.positions.supply.get(reserve.config.index) ?? BigInt(0)) != BigInt(0)
         )
         .map((reserve) => (
           <LendPositionCard

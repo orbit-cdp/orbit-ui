@@ -82,8 +82,8 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
       errorProps.isMaxDisabled = false;
       errorProps.reason = 'Please enter an amount to borrow.';
       errorProps.disabledType = 'info';
-    } else if (borrowLimit == undefined || borrowLimit > 0.9804) {
-      // @dev: a borrow limit of 98.04% ~= a health factor of 1.02
+    } else if (borrowLimit == undefined || borrowLimit > 0.9805) {
+      // @dev: a borrow limit of 98.05% ~= a health factor of 1.02
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
       errorProps.reason =
@@ -119,7 +119,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
         reserve.estimates.supplied * (reserve.config.max_util / 1e7 - 0.01) -
           reserve.estimates.borrowed
       );
-      setToBorrow(to_borrow.toFixed(7));
+      setToBorrow(Math.max(to_borrow, 0).toFixed(7));
     }
   };
 

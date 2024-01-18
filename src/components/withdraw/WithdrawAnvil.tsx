@@ -120,7 +120,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
           1.02;
         let to_wd = to_bounded_hf / (assetPrice * reserve.getCollateralFactor());
         let withdrawAmount = Math.min(to_wd, curSupplied) + 1 / 10 ** decimals;
-        handleWithdrawAmountChange(withdrawAmount.toFixed(decimals));
+        handleWithdrawAmountChange(Math.max(withdrawAmount, 0).toFixed(decimals));
       }
     }
   };
