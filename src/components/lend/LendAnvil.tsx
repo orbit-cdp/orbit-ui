@@ -1,6 +1,6 @@
 import { SubmitArgs } from '@blend-capital/blend-sdk';
-import { AlertColor, Box, Typography, useTheme } from '@mui/material';
-import { useState } from 'react';
+import { Box, Typography, useTheme } from '@mui/material';
+import { useMemo, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
@@ -11,7 +11,7 @@ import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
-import { TxOverview } from '../common/TxOverview';
+import { SubmitError, TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
@@ -58,32 +58,36 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   const borrowLimit = userPoolData
     ? userPoolData.estimates.totalEffectiveLiabilities / newEffectiveCollateral
     : undefined;
-
   // verify that the user can act
-  let isLendDisabled: boolean;
-  let isMaxDisabled: boolean;
-  let reason: string | undefined = undefined;
-  let disabledType: AlertColor | undefined = undefined;
-  if (freeUserBalanceScaled <= 0) {
-    isLendDisabled = true;
-    isMaxDisabled = true;
-    reason = 'You do not have any available balance to supply.';
-    disabledType = 'warning';
-  } else if (!toLend) {
-    isLendDisabled = true;
-    isMaxDisabled = false;
-    reason = 'Please enter an amount to supply.';
-    disabledType = 'info';
-  } else if (Number(toLend) > freeUserBalanceScaled) {
-    isLendDisabled = true;
-    isMaxDisabled = false;
-    reason = 'You do not have enough available balance to supply.';
-    disabledType = 'warning';
-  } else {
-    isLendDisabled = false;
-    isMaxDisabled = false;
-  }
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
+    const errorProps: SubmitError = {
+      isSubmitDisabled: false,
+      isMaxDisabled: false,
+      reason: undefined,
+      disabledType: undefined,
+    };
+    if (freeUserBalanceScaled <= 0) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = true;
+      errorProps.reason = 'You do not have any available balance to supply.';
+      errorProps.disabledType = 'warning';
+    } else if (!toLend) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = 'Please enter an amount to supply.';
+      errorProps.disabledType = 'info';
+    } else if (Number(toLend) > freeUserBalanceScaled) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = 'You do not have enough available balance to supply.';
+      errorProps.disabledType = 'warning';
+    } else {
+      errorProps.isSubmitDisabled = false;
+      errorProps.isMaxDisabled = false;
+    }
 
+    return errorProps;
+  }, [freeUserBalanceScaled, toLend]);
   const handleLendMax = () => {
     if (userPoolData) {
       if (freeUserBalanceScaled > 0) {
@@ -151,7 +155,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
               onClick={handleSubmitTransaction}
               palette={theme.palette.lend}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
-              disabled={isLendDisabled}
+              disabled={isSubmitDisabled}
             >
               Supply
             </OpaqueButton>
@@ -162,7 +166,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
             </Typography>
           </Box>
         </Box>
-        <TxOverview isDisabled={isLendDisabled} disabledType={disabledType} reason={reason}>
+        <TxOverview isDisabled={isSubmitDisabled} disabledType={disabledType} reason={reason}>
           <Value title="Amount to supply" value={`${toLend ?? '0'} ${symbol}`} />
           <ValueChange
             title="Your total supplied"

@@ -1,6 +1,6 @@
 import { SubmitArgs } from '@blend-capital/blend-sdk';
-import { AlertColor, Box, Typography, useTheme } from '@mui/material';
-import { useState } from 'react';
+import { Box, Typography, useTheme } from '@mui/material';
+import { useMemo, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
@@ -10,7 +10,7 @@ import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
-import { TxOverview } from '../common/TxOverview';
+import { SubmitError, TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
@@ -54,39 +54,45 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   const borrowLimit = userPoolData
     ? userPoolData.estimates.totalEffectiveLiabilities / newEffectiveCollateral
     : undefined;
-
   // verify that the user can act
-  let isSubmitDisabled: boolean;
-  let isMaxDisabled: boolean;
-  let reason: string | undefined = undefined;
-  let disabledType: AlertColor | undefined = undefined;
-  if (curSupplied == 0) {
-    isSubmitDisabled = true;
-    isMaxDisabled = true;
-    reason = 'You do not have any assets to withdraw.';
-    disabledType = 'warning';
-  } else if (!toWithdraw) {
-    isSubmitDisabled = true;
-    isMaxDisabled = false;
-    reason = 'Please enter an amount to withdraw.';
-    disabledType = 'info';
-  } else if (borrowLimit == undefined || borrowLimit > 0.9804) {
-    // @dev: a borrow limit of 98.04% ~= a health factor of 1.02
-    isSubmitDisabled = true;
-    isMaxDisabled = false;
-    reason =
-      'Your withdraw is too high and you have exceeded the max borrow limit of 98%. Current value: ' +
-      toPercentage(borrowLimit);
-    disabledType = 'warning';
-  } else if (poolTokens < scaleInputToBigInt(toWithdraw, decimals)) {
-    isSubmitDisabled = true;
-    isMaxDisabled = false;
-    reason = "You cannot withdraw more than the pool's balance.";
-    disabledType = 'warning';
-  } else {
-    isSubmitDisabled = false;
-    isMaxDisabled = false;
-  }
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
+    const errorProps: SubmitError = {
+      isSubmitDisabled: false,
+      isMaxDisabled: false,
+      reason: undefined,
+      disabledType: undefined,
+    };
+    if (curSupplied == 0) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = true;
+      errorProps.reason = 'You do not have any assets to withdraw.';
+      errorProps.disabledType = 'warning';
+    } else if (!toWithdraw) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = 'Please enter an amount to withdraw.';
+      errorProps.disabledType = 'info';
+    } else if (borrowLimit == undefined || borrowLimit > 0.9804) {
+      // @dev: a borrow limit of 98.04% ~= a health factor of 1.02
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason =
+        'Your withdraw is too high and you have exceeded the max borrow limit of 98%. Current value: ' +
+        toPercentage(borrowLimit);
+      errorProps.disabledType = 'warning';
+    } else if (poolTokens < scaleInputToBigInt(toWithdraw, decimals)) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = "You cannot withdraw more than the pool's balance.";
+      errorProps.disabledType = 'warning';
+    } else {
+      errorProps.isSubmitDisabled = false;
+      errorProps.isMaxDisabled = false;
+    }
+
+    return errorProps;
+  }, [toWithdraw, borrowLimit, poolTokens, decimals, curSupplied]);
+  // verify that the user can act
 
   const handleWithdrawAmountChange = (withdrawInput: string) => {
     if (reserve && userPoolData) {

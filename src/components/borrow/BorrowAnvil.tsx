@@ -1,6 +1,6 @@
 import { SubmitArgs } from '@blend-capital/blend-sdk';
-import { AlertColor, Box, Typography, useTheme } from '@mui/material';
-import { useState } from 'react';
+import { Box, Typography, useTheme } from '@mui/material';
+import { useMemo, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
@@ -10,7 +10,7 @@ import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
-import { TxOverview } from '../common/TxOverview';
+import { SubmitError, TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
@@ -61,42 +61,52 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const newAssetUtil = reserve
     ? (reserve.estimates.borrowed + num_borrow) / reserve.estimates.supplied
     : 0;
-
   // verify that the user can act
-  let isSubmitDisabled: boolean;
-  let isMaxDisabled: boolean;
-  let reason: string | undefined = undefined;
-  let disabledType: AlertColor | undefined = undefined;
-  if (
-    userPoolData?.estimates.totalEffectiveCollateral == undefined ||
-    userPoolData.estimates.totalEffectiveCollateral == 0
-  ) {
-    isSubmitDisabled = true;
-    isMaxDisabled = true;
-    reason = 'You do not have any collateral to borrow against.';
-    disabledType = 'warning';
-  } else if (!toBorrow) {
-    isSubmitDisabled = true;
-    isMaxDisabled = false;
-    reason = 'Please enter an amount to borrow.';
-    disabledType = 'info';
-  } else if (borrowLimit == undefined || borrowLimit > 0.9804) {
-    // @dev: a borrow limit of 98.04% ~= a health factor of 1.02
-    isSubmitDisabled = true;
-    isMaxDisabled = false;
-    reason =
-      'Your borrow is too high and you have exceeded the max borrow limit of 98%. Current value: ' +
-      toPercentage(borrowLimit);
-    disabledType = 'warning';
-  } else if (newAssetUtil > (reserve?.config.max_util ?? 0) / 1e7) {
-    isSubmitDisabled = true;
-    isMaxDisabled = false;
-    reason = "You cannot borrow more than the pool's max utilization.";
-    disabledType = 'warning';
-  } else {
-    isSubmitDisabled = false;
-    isMaxDisabled = false;
-  }
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
+    const errorProps: SubmitError = {
+      isSubmitDisabled: false,
+      isMaxDisabled: false,
+      reason: undefined,
+      disabledType: undefined,
+    };
+    if (
+      userPoolData?.estimates.totalEffectiveCollateral == undefined ||
+      userPoolData.estimates.totalEffectiveCollateral == 0
+    ) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = true;
+      errorProps.reason = 'You do not have any collateral to borrow against.';
+      errorProps.disabledType = 'warning';
+    } else if (!toBorrow) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = 'Please enter an amount to borrow.';
+      errorProps.disabledType = 'info';
+    } else if (borrowLimit == undefined || borrowLimit > 0.9804) {
+      // @dev: a borrow limit of 98.04% ~= a health factor of 1.02
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason =
+        'Your borrow is too high and you have exceeded the max borrow limit of 98%. Current value: ' +
+        toPercentage(borrowLimit);
+      errorProps.disabledType = 'warning';
+    } else if (newAssetUtil > (reserve?.config.max_util ?? 0) / 1e7) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = "You cannot borrow more than the pool's max utilization.";
+      errorProps.disabledType = 'warning';
+    } else {
+      errorProps.isSubmitDisabled = false;
+      errorProps.isMaxDisabled = false;
+    }
+    return errorProps;
+  }, [
+    toBorrow,
+    borrowLimit,
+    newAssetUtil,
+    reserve?.config.max_util,
+    userPoolData?.estimates?.totalEffectiveCollateral,
+  ]);
 
   const handleBorrowMax = () => {
     if (oldBorrowCapAsset && reserve && userPoolData) {

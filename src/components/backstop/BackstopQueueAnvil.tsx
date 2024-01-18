@@ -1,6 +1,6 @@
 import { PoolBackstopActionArgs } from '@blend-capital/blend-sdk';
-import { AlertColor, Box, Typography, useTheme } from '@mui/material';
-import { useState } from 'react';
+import { Box, Typography, useTheme } from '@mui/material';
+import { useMemo, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
@@ -10,7 +10,7 @@ import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
-import { TxOverview } from '../common/TxOverview';
+import { SubmitError, TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
@@ -40,31 +40,35 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const availableToQueue = userPoolBackstopEst
     ? (Number(userPoolBackstopEst.notLockedShares) / 1e7) * sharesToTokens
     : 0;
-
   // verify that the user can act
-  let isSubmitDisabled: boolean;
-  let isMaxDisabled: boolean;
-  let reason: string | undefined = undefined;
-  let disabledType: AlertColor | undefined = undefined;
-  if (availableToQueue <= 0) {
-    isSubmitDisabled = true;
-    isMaxDisabled = true;
-    reason = 'You do not have any deposits to withdraw.';
-    disabledType = 'warning';
-  } else if (!toQueue) {
-    isSubmitDisabled = true;
-    isMaxDisabled = false;
-    reason = 'Please enter an amount to queue for withdrawal.';
-    disabledType = 'info';
-  } else if (Number(toQueue) > availableToQueue) {
-    isSubmitDisabled = true;
-    isMaxDisabled = false;
-    reason = 'You do not have enough available deposits to withdrawal.';
-    disabledType = 'warning';
-  } else {
-    isSubmitDisabled = false;
-    isMaxDisabled = false;
-  }
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
+    const errorProps: SubmitError = {
+      isSubmitDisabled: false,
+      isMaxDisabled: false,
+      reason: undefined,
+      disabledType: undefined,
+    };
+    if (availableToQueue <= 0) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = true;
+      errorProps.reason = 'You do not have any deposits to withdraw.';
+      errorProps.disabledType = 'warning';
+    } else if (!toQueue) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = 'Please enter an amount to queue for withdrawal.';
+      errorProps.disabledType = 'info';
+    } else if (Number(toQueue) > availableToQueue) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = 'You do not have enough available deposits to withdrawal.';
+      errorProps.disabledType = 'warning';
+    } else {
+      errorProps.isSubmitDisabled = false;
+      errorProps.isMaxDisabled = false;
+    }
+    return errorProps;
+  }, [toQueue, availableToQueue]);
 
   const handleQueueMax = () => {
     if (availableToQueue > 0) {

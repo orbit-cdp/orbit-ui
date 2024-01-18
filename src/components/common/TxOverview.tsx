@@ -7,6 +7,13 @@ export interface TxOverviewProps extends BoxProps {
   reason: string | undefined;
 }
 
+export interface SubmitError {
+  isSubmitDisabled: boolean;
+  isMaxDisabled: boolean;
+  reason: string | undefined;
+  disabledType: AlertColor | undefined;
+}
+
 export const TxOverview: React.FC<TxOverviewProps> = ({
   isDisabled,
   disabledType,
