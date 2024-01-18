@@ -44,6 +44,7 @@ export const WalletWarning = () => {
               margin: '6px',
               padding: '12px',
               paddingRight: '20px',
+              borderRadius: '5px',
             }}
           >
             <InfoOutlinedIcon sx={{ marginRight: '6px' }} />

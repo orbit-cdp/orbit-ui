@@ -12,7 +12,6 @@ import {
   TxOptions,
 } from '@blend-capital/blend-sdk';
 import {
-  AlbedoModule,
   FreighterModule,
   ISupportedWallet,
   StellarWalletsKit,
@@ -87,7 +86,7 @@ export const WalletProvider = ({ children = null as any }) => {
   const walletKit: StellarWalletsKit = new StellarWalletsKit({
     network: network.passphrase as WalletNetwork,
     selectedWalletId: autoConnect !== undefined && autoConnect !== 'false' ? autoConnect : XBULL_ID,
-    modules: [new xBullModule(), new FreighterModule(), new AlbedoModule()],
+    modules: [new xBullModule(), new FreighterModule()],
   });
 
   useEffect(() => {
