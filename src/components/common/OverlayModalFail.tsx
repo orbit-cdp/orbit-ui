@@ -9,6 +9,9 @@ export const OverlayModalFail: React.FC<CloseableOverlayProps> = ({ handleCloseO
   const theme = useTheme();
   const { lastTxHash, lastTxFailure } = useWallet();
 
+  const txFailure =
+    lastTxFailure == undefined || lastTxFailure == '' ? 'Unknown error occured.' : lastTxFailure;
+
   return (
     <Box
       sx={{
@@ -40,17 +43,19 @@ export const OverlayModalFail: React.FC<CloseableOverlayProps> = ({ handleCloseO
           {`Transaction submission failed!`}
         </Typography>
         <Typography variant="h2" sx={{ margin: '12px' }}>
-          {lastTxFailure}
+          {txFailure}
         </Typography>
-        <Link
-          target="_blank"
-          href={`https://stellar.expert/explorer/testnet/tx/${lastTxHash}`}
-          underline="hover"
-          variant="h5"
-          rel="noopener"
-        >
-          View the transaction details.
-        </Link>
+        {lastTxHash && (
+          <Link
+            target="_blank"
+            href={`https://stellar.expert/explorer/testnet/tx/${lastTxHash}`}
+            underline="hover"
+            variant="h5"
+            rel="noopener"
+          >
+            View the transaction details.
+          </Link>
+        )}
         <OpaqueButton
           onClick={handleCloseOverlay}
           palette={theme.palette.primary}

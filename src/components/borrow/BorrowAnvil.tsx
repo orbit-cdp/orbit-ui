@@ -1,6 +1,6 @@
 import { SubmitArgs } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
@@ -10,6 +10,7 @@ import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
+import { SubmitError, TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
@@ -17,25 +18,19 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const theme = useTheme();
   const { connected, walletAddress, poolSubmit } = useWallet();
 
-  const account = useStore((state) => state.account);
   const poolData = useStore((state) => state.pools.get(poolId));
   const userPoolData = useStore((state) => state.userPoolData.get(poolId));
-  const userBalance = useStore((state) => state.balances.get(assetId)) ?? BigInt(0);
   const reserve = poolData?.reserves.get(assetId);
   const assetToBase = reserve?.oraclePrice ?? 1;
   const baseToAsset = 1 / assetToBase;
 
   const [toBorrow, setToBorrow] = useState<string | undefined>(undefined);
-  const [newEffectiveLiabilities, setNewEffectiveLiabilities] = useState<number>(
-    userPoolData?.estimates.totalEffectiveLiabilities ?? 0
-  );
 
   const decimals = reserve?.config.decimals ?? 7;
-  const scalar = 10 ** decimals;
   const symbol = reserve?.tokenMetadata?.symbol ?? '';
 
+  // calculate current wallet state
   const curBorrowed = userPoolData?.estimates?.liabilities?.get(assetId) ?? 0;
-
   const oldBorrowCap = userPoolData
     ? userPoolData.estimates.totalEffectiveCollateral -
       userPoolData.estimates.totalEffectiveLiabilities
@@ -46,6 +41,15 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     ? userPoolData.estimates.totalEffectiveLiabilities /
       userPoolData.estimates.totalEffectiveCollateral
     : undefined;
+
+  // calculate new wallet state
+  let num_borrow = 0;
+  let newEffectiveLiabilities = 0;
+  if (toBorrow && userPoolData && reserve) {
+    num_borrow = Number(toBorrow);
+    let borrow_base = num_borrow * assetToBase * reserve.getLiabilityFactor();
+    newEffectiveLiabilities = userPoolData.estimates.totalEffectiveLiabilities + borrow_base;
+  }
   const borrowCap = userPoolData
     ? userPoolData.estimates.totalEffectiveCollateral - newEffectiveLiabilities
     : undefined;
@@ -54,22 +58,55 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const borrowLimit = userPoolData
     ? newEffectiveLiabilities / userPoolData.estimates.totalEffectiveCollateral
     : undefined;
-
-  const handleBorrowAmountChange = (borrowInput: string) => {
-    let regex = new RegExp(`^[0-9]*\.?[0-9]{0,${decimals}}$`);
-    if (regex.test(borrowInput) && reserve && userPoolData) {
-      let num_borrow = Number(borrowInput);
-      let borrow_base = num_borrow * assetToBase * reserve.getLiabilityFactor();
-      // console.log('borrow_base: ', borrow_base);
-      let tempNewLiabilities = userPoolData.estimates.totalEffectiveLiabilities + borrow_base;
-      // console.log('temp_new: ', tempNewLiabilities * 1.02);
-      // console.log('collat: ', userPoolData.estimates.totalEffectiveCollateral);
-      if (tempNewLiabilities * 1.019 < userPoolData.estimates.totalEffectiveCollateral) {
-        setToBorrow(borrowInput);
-        setNewEffectiveLiabilities(tempNewLiabilities);
-      }
+  const newAssetUtil = reserve
+    ? (reserve.estimates.borrowed + num_borrow) / reserve.estimates.supplied
+    : 0;
+  // verify that the user can act
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
+    const errorProps: SubmitError = {
+      isSubmitDisabled: false,
+      isMaxDisabled: false,
+      reason: undefined,
+      disabledType: undefined,
+    };
+    if (
+      userPoolData?.estimates.totalEffectiveCollateral == undefined ||
+      userPoolData.estimates.totalEffectiveCollateral == 0
+    ) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = true;
+      errorProps.reason = 'You do not have any collateral to borrow against.';
+      errorProps.disabledType = 'warning';
+    } else if (!toBorrow) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = 'Please enter an amount to borrow.';
+      errorProps.disabledType = 'info';
+    } else if (borrowLimit == undefined || borrowLimit > 0.9805) {
+      // @dev: a borrow limit of 98.05% ~= a health factor of 1.02
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason =
+        'Your borrow is too high and you have exceeded the max borrow limit of 98%. Current value: ' +
+        toPercentage(borrowLimit);
+      errorProps.disabledType = 'warning';
+    } else if (newAssetUtil > (reserve?.config.max_util ?? 0) / 1e7) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = "You cannot borrow more than the pool's max utilization.";
+      errorProps.disabledType = 'warning';
+    } else {
+      errorProps.isSubmitDisabled = false;
+      errorProps.isMaxDisabled = false;
     }
-  };
+    return errorProps;
+  }, [
+    toBorrow,
+    borrowLimit,
+    newAssetUtil,
+    reserve?.config.max_util,
+    userPoolData?.estimates?.totalEffectiveCollateral,
+  ]);
 
   const handleBorrowMax = () => {
     if (oldBorrowCapAsset && reserve && userPoolData) {
@@ -79,9 +116,10 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
         1.02;
       let to_borrow = Math.min(
         to_bounded_hf / (assetToBase * reserve.getLiabilityFactor()),
-        reserve.estimates.supplied * (reserve.config.max_util / 1e7) - reserve.estimates.borrowed
+        reserve.estimates.supplied * (reserve.config.max_util / 1e7 - 0.01) -
+          reserve.estimates.borrowed
       );
-      handleBorrowAmountChange(to_borrow.toFixed(7));
+      setToBorrow(Math.max(to_borrow, 0).toFixed(7));
     }
   };
 
@@ -134,15 +172,17 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
             <InputBar
               symbol={symbol}
               value={toBorrow}
-              onValueChange={handleBorrowAmountChange}
+              onValueChange={setToBorrow}
               onSetMax={handleBorrowMax}
               palette={theme.palette.borrow}
               sx={{ width: '100%' }}
+              isMaxDisabled={isMaxDisabled}
             />
             <OpaqueButton
               onClick={handleSubmitTransaction}
               palette={theme.palette.borrow}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
+              disabled={isSubmitDisabled}
             >
               Borrow
             </OpaqueButton>
@@ -153,43 +193,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
             </Typography>
           </Box>
         </Box>
-        <Box
-          sx={{
-            width: '100%',
-            display: 'flex',
-            borderRadius: '5px',
-            flexDirection: 'column',
-            backgroundColor: theme.palette.background.paper,
-            zIndex: 12,
-          }}
-        >
-          <Typography
-            variant="h5"
-            sx={{ marginLeft: '24px', marginBottom: '12px', marginTop: '12px' }}
-          >
-            Transaction Overview
-          </Typography>
-          {/* <Box
-            sx={{
-              marginLeft: '24px',
-              marginBottom: '12px',
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}
-          >
-            <LocalGasStationIcon
-              fontSize="inherit"
-              sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}
-            />
-            <Typography
-              variant="h5"
-              sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}
-            >
-              $1.88
-            </Typography>
-            <HelpOutlineIcon fontSize="inherit" sx={{ color: theme.palette.text.secondary }} />
-          </Box> */}
+        <TxOverview isDisabled={isSubmitDisabled} disabledType={disabledType} reason={reason}>
           <Value title="Amount to borrow" value={`${toBorrow ?? '0'} ${symbol}`} />
           <ValueChange
             title="Your total borrowed"
@@ -206,7 +210,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
             curValue={toPercentage(Number.isFinite(oldBorrowLimit) ? oldBorrowLimit : 0)}
             newValue={toPercentage(Number.isFinite(borrowLimit) ? borrowLimit : 0)}
           />
-        </Box>
+        </TxOverview>
       </Section>
     </Row>
   );

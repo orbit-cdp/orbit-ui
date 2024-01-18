@@ -1,6 +1,6 @@
 import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded';
 import { Alert, IconButton, Menu, MenuItem, Snackbar, useTheme } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ViewType, useSettings } from '../../contexts';
 import { useStore } from '../../store/store';
 import { NavItem } from './NavItem';
@@ -11,7 +11,6 @@ export const NavMenu = () => {
 
   const rewardZone = useStore((state) => state.backstop?.config?.rewardZone ?? []);
 
-  const [poolId, setPoolId] = useState<string>(lastPool ?? '');
   const [openCon, setOpenCon] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
@@ -29,13 +28,17 @@ export const NavMenu = () => {
     setOpenCon(false);
   };
 
-  // useEffect(() => {
-  //   if (lastPool) {
-  //     setPoolId(lastPool);
-  //   } else {
-  //     setPoolId(rewardZone.length != 0 ? rewardZone[0] : '');
-  //   }
-  // }, [rewardZone, lastPool]);
+  const [poolId, setPoolId] = useState<string>(lastPool ?? 'null');
+
+  useEffect(() => {
+    if (lastPool) {
+      setPoolId(lastPool);
+    } else if (rewardZone.length != 0) {
+      setPoolId(rewardZone[0]);
+    } else {
+      setPoolId('null');
+    }
+  }, [lastPool, rewardZone]);
 
   return (
     <>

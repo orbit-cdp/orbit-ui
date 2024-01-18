@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
+/** @dev @TODO check if is useful or not (why would you want both state and ls unless it affects renders) */
 export const useLocalStorageState = (
   key: string,
   defaultState: string | undefined
@@ -8,6 +9,7 @@ export const useLocalStorageState = (
 
   useEffect(() => {
     const stored = localStorage.getItem(key);
+    /** @dev @TODO unhandled json .parse */
     setState(stored ? JSON.parse(stored) : defaultState);
   }, [defaultState, key]);
 

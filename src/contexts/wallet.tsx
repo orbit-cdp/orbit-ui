@@ -11,9 +11,17 @@ import {
   SubmitArgs,
   TxOptions,
 } from '@blend-capital/blend-sdk';
-import { getPublicKey, signTransaction } from '@stellar/freighter-api';
-import React, { useContext, useState } from 'react';
+import {
+  FreighterModule,
+  ISupportedWallet,
+  StellarWalletsKit,
+  WalletNetwork,
+  XBULL_ID,
+  xBullModule,
+} from '@creit.tech/stellar-wallets-kit/build/main';
+import React, { useContext, useEffect, useState } from 'react';
 import { SorobanRpc, Transaction, xdr } from 'stellar-sdk';
+import { useLocalStorageState } from '../hooks';
 import { BACKSTOP_ID } from '../store/blendSlice';
 import { useStore } from '../store/store';
 import { useSettings } from './settings';
@@ -22,11 +30,11 @@ export interface IWalletContext {
   connected: boolean;
   walletAddress: string;
   txStatus: TxStatus;
-  lastTxHash: string;
-  lastTxFailure: string;
-  connect: () => void;
+  lastTxHash: string | undefined;
+  lastTxFailure: string | undefined;
+  connect: () => Promise<void>;
   disconnect: () => void;
-  clearTxStatus: () => void;
+  clearLastTx: () => void;
   poolSubmit: (
     poolId: string,
     submitArgs: SubmitArgs,
@@ -66,13 +74,30 @@ export const WalletProvider = ({ children = null as any }) => {
   const clearUserData = useStore((state) => state.clearUserData);
 
   const [connected, setConnected] = useState<boolean>(false);
-  const [autoConnect, setAutoConnect] = useState(true);
+  const [autoConnect, setAutoConnect] = useLocalStorageState('autoConnectWallet', 'false');
+
   const [txStatus, setTxStatus] = useState<TxStatus>(TxStatus.NONE);
-  const [txHash, setTxHash] = useState<string>('');
-  const [txFailure, setTxFailure] = useState<string>('');
+  const [txHash, setTxHash] = useState<string | undefined>(undefined);
+  const [txFailure, setTxFailure] = useState<string | undefined>(undefined);
 
   // wallet state
   const [walletAddress, setWalletAddress] = useState<string>('');
+
+  const walletKit: StellarWalletsKit = new StellarWalletsKit({
+    network: network.passphrase as WalletNetwork,
+    selectedWalletId: autoConnect !== undefined && autoConnect !== 'false' ? autoConnect : XBULL_ID,
+    modules: [new xBullModule(), new FreighterModule()],
+  });
+
+  useEffect(() => {
+    if (!connected && autoConnect !== 'false') {
+      // @dev: timeout ensures chrome has the ability to load extensions
+      setTimeout(() => {
+        handleSetWalletAddress();
+      }, 500);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoConnect]);
 
   function setFailureMessage(message: string | undefined) {
     if (message) {
@@ -80,44 +105,46 @@ export const WalletProvider = ({ children = null as any }) => {
       let substrings = message.split('Event log (newest first):');
       if (substrings.length > 1) {
         setTxFailure(substrings[0].trimEnd());
-        return;
       }
     }
-    setTxFailure('Unkown error occurred.');
   }
 
-  // useEffect(() => {
-  //   if (autoConnect) {
-  //     setAutoConnect(false);
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [autoConnect]);
-
   /**
-   * Connects a browser wallet by fetching the public key from the wallet.
-   * returns The public key of the wallet
+   * Connect a wallet to the application via the walletKit
    */
-  async function connect() {
-    let publicKey = '';
-    let error = '';
+  async function handleSetWalletAddress() {
     try {
-      publicKey = await getPublicKey();
+      const publicKey = await walletKit.getPublicKey();
       setWalletAddress(publicKey);
       setConnected(true);
       await loadUserData(publicKey);
     } catch (e: any) {
-      error = e?.message ?? 'Failed to connect wallet.';
+      console.error('Unable to load wallet information: ', e);
     }
-    if (error) {
-      return error;
+  }
+
+  /**
+   * Open up a modal to connect the user's browser wallet
+   */
+  async function connect() {
+    try {
+      await walletKit.openModal({
+        onWalletSelected: async (option: ISupportedWallet) => {
+          walletKit.setWallet(option.id);
+          setAutoConnect(option.id);
+          await handleSetWalletAddress();
+        },
+      });
+    } catch (e: any) {
+      console.error('Unable to connect wallet: ', e);
     }
-    return publicKey;
   }
 
   function disconnect() {
     clearUserData();
     setWalletAddress('');
     setConnected(false);
+    setAutoConnect('false');
   }
 
   /**
@@ -129,25 +156,41 @@ export const WalletProvider = ({ children = null as any }) => {
   async function sign(xdr: string): Promise<string> {
     if (connected) {
       setTxStatus(TxStatus.SIGNING);
-      let result = await signTransaction(xdr, { networkPassphrase: network.passphrase });
-      setTxStatus(TxStatus.SUBMITTING);
-      return result;
+      try {
+        let { result } = await walletKit.signTx({
+          xdr: xdr,
+          publicKeys: [walletAddress],
+          network: network.passphrase as WalletNetwork,
+        });
+        setTxStatus(TxStatus.SUBMITTING);
+        return result;
+      } catch (e: any) {
+        if (e === 'User declined access') {
+          setTxFailure('Transaction rejected by wallet.');
+        } else if (typeof e === 'string') {
+          setTxFailure(e);
+        }
+
+        setTxStatus(TxStatus.FAIL);
+        throw e;
+      }
     } else {
       throw new Error('Not connected to a wallet');
     }
   }
 
   async function submitTransaction<T>(
-    submission: Promise<ContractResult<T>>
+    submission: Promise<ContractResult<T>>,
+    poolId?: string | undefined
   ): Promise<T | undefined> {
     try {
       // submission calls `sign` internally which handles setting TxStatus
+      setFailureMessage(undefined);
       setTxStatus(TxStatus.BUILDING);
       let result = await submission;
       setTxHash(result.hash);
       if (result.ok) {
         console.log('Successfully submitted transaction: ', result.hash);
-        setFailureMessage('');
         setTxStatus(TxStatus.SUCCESS);
       } else {
         console.log('Failed submitted transaction: ', result.hash);
@@ -157,7 +200,7 @@ export const WalletProvider = ({ children = null as any }) => {
 
       // reload data after submission
       try {
-        await loadBlendData(true, lastPool, walletAddress);
+        await loadBlendData(true, poolId, walletAddress);
       } catch {
         console.error('Failed reloading blend data for account: ', walletAddress);
       }
@@ -169,6 +212,12 @@ export const WalletProvider = ({ children = null as any }) => {
       setTxStatus(TxStatus.FAIL);
       return undefined;
     }
+  }
+
+  function clearLastTx() {
+    setTxStatus(TxStatus.NONE);
+    setTxHash(undefined);
+    setTxFailure(undefined);
   }
 
   //********** Pool Functions ***********/
@@ -189,7 +238,7 @@ export const WalletProvider = ({ children = null as any }) => {
       let txOptions: TxOptions = {
         sim,
         pollingInterval: 1000,
-        timeout: 15000,
+        timeout: 20000,
         builderOptions: {
           fee: '10000',
           timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
@@ -198,7 +247,7 @@ export const WalletProvider = ({ children = null as any }) => {
       };
       let pool = new PoolClient(poolId);
       let submission = pool.submit(walletAddress, sign, network, txOptions, submitArgs);
-      return submitTransaction<Positions>(submission);
+      return submitTransaction<Positions>(submission, poolId);
     }
   }
 
@@ -227,7 +276,7 @@ export const WalletProvider = ({ children = null as any }) => {
       };
       let pool = new PoolClient(poolId);
       let submission = pool.claim(walletAddress, sign, network, txOptions, claimArgs);
-      return submitTransaction<bigint>(submission);
+      return submitTransaction<bigint>(submission, poolId);
     }
   }
 
@@ -456,7 +505,7 @@ export const WalletProvider = ({ children = null as any }) => {
         lastTxFailure: txFailure,
         connect,
         disconnect,
-        clearTxStatus: () => setTxStatus(TxStatus.NONE),
+        clearLastTx,
         poolSubmit,
         poolClaim,
         backstopDeposit,

@@ -9,6 +9,7 @@ import { DataStore } from './store';
  */
 export interface UserSlice {
   account: Horizon.AccountResponse | undefined;
+  isFunded: boolean | undefined;
   balances: Map<string, bigint>;
   backstopUserData: BackstopUser | undefined;
   userPoolData: Map<string, PoolUser>;
@@ -19,6 +20,7 @@ export interface UserSlice {
 
 export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set, get) => ({
   account: undefined,
+  isFunded: undefined,
   balances: new Map<string, bigint>(),
   backstopUserData: undefined,
   userPoolData: new Map<string, PoolUser>(),
@@ -40,8 +42,15 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
       }
 
       // load horizon account
-      let horizon = get().horizonServer();
-      let account = await horizon.loadAccount(id);
+      let account: Horizon.AccountResponse;
+      try {
+        let horizon = get().horizonServer();
+        account = await horizon.loadAccount(id);
+      } catch (e) {
+        console.error('Account does not exist.');
+        set({ isFunded: false });
+        throw e;
+      }
 
       // load user data for backstop
       let backstop_user = await backstop.loadUser(network, id);
@@ -87,9 +96,9 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
           }
         }
       }
-
       set({
         account,
+        isFunded: true,
         balances: user_balances,
         backstopUserData: backstop_user,
         userPoolData: user_pool_data,

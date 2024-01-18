@@ -2,7 +2,7 @@ import { Backstop, Pool } from '@blend-capital/blend-sdk';
 import { StateCreator } from 'zustand';
 import { DataStore } from './store';
 
-export const BACKSTOP_ID = 'CCK5UFOXYMP4YP2YCMTT3EWW262Z4BUQASWHA6J7ZGVEARRFTH4EQXJ5';
+export const BACKSTOP_ID = 'CATLJNAQQIRHTAXCRPC3IHIUIQ6KQXNUUVCVGAOL2T2RPRPCNFT6MM4M';
 
 /**
  * Ledger state for the Blend protocol
@@ -25,7 +25,6 @@ export const createBlendSlice: StateCreator<DataStore, [], [], BlendSlice> = (se
   loadBlendData: async (force_update: boolean, pool_id?: string, user_id?: string) => {
     try {
       const network = get().network;
-
       // get latest ledger close time (TODO: File issue to include close time on getLatestLedger)
       const rpc = get().rpcServer();
       let tx_response = await rpc.getTransaction(

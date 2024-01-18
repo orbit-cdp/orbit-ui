@@ -11,20 +11,24 @@ export interface CloseableOverlayProps {
 
 export const OverlayModal: React.FC = () => {
   const router = useRouter();
-  const { txStatus, clearTxStatus } = useWallet();
+  const { txStatus, clearLastTx } = useWallet();
 
   const display = txStatus !== TxStatus.NONE ? 'flex' : 'none';
 
   const { poolId } = router.query;
 
   const handleReturn = () => {
-    clearTxStatus();
-    if (router.route == '/') {
-      router.push({ pathname: '/' });
-    } else if (router.route.includes('backstop')) {
-      router.push({ pathname: `/backstop`, query: { poolId: poolId } });
-    } else {
-      router.push({ pathname: `/dashboard`, query: { poolId: poolId } });
+    const returnToHomePage = txStatus != TxStatus.FAIL;
+    clearLastTx();
+
+    if (returnToHomePage) {
+      if (router.route == '/') {
+        router.push({ pathname: '/' });
+      } else if (router.route.includes('backstop')) {
+        router.push({ pathname: `/backstop`, query: { poolId: poolId } });
+      } else {
+        router.push({ pathname: `/dashboard`, query: { poolId: poolId } });
+      }
     }
   };
 

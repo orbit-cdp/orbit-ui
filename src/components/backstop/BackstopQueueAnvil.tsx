@@ -1,6 +1,6 @@
 import { PoolBackstopActionArgs } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
@@ -10,6 +10,7 @@ import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
+import { SubmitError, TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
@@ -39,15 +40,35 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const availableToQueue = userPoolBackstopEst
     ? (Number(userPoolBackstopEst.notLockedShares) / 1e7) * sharesToTokens
     : 0;
-
-  const handleQueueAmountChange = (queueInput: string) => {
-    if (/^[0-9]*\.?[0-9]{0,7}$/.test(queueInput) && availableToQueue > 0) {
-      let num_queue = Number(queueInput);
-      if (num_queue <= availableToQueue) {
-        setToQueue(queueInput);
-      }
+  // verify that the user can act
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
+    const errorProps: SubmitError = {
+      isSubmitDisabled: false,
+      isMaxDisabled: false,
+      reason: undefined,
+      disabledType: undefined,
+    };
+    if (availableToQueue <= 0) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = true;
+      errorProps.reason = 'You do not have any deposits to withdraw.';
+      errorProps.disabledType = 'warning';
+    } else if (!toQueue) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = 'Please enter an amount to queue for withdrawal.';
+      errorProps.disabledType = 'info';
+    } else if (Number(toQueue) > availableToQueue) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = 'You do not have enough available deposits to withdrawal.';
+      errorProps.disabledType = 'warning';
+    } else {
+      errorProps.isSubmitDisabled = false;
+      errorProps.isMaxDisabled = false;
     }
-  };
+    return errorProps;
+  }, [toQueue, availableToQueue]);
 
   const handleQueueMax = () => {
     if (availableToQueue > 0) {
@@ -97,15 +118,17 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
             <InputBar
               symbol={'BLND-USDC LP'}
               value={toQueue}
-              onValueChange={handleQueueAmountChange}
+              onValueChange={setToQueue}
               onSetMax={handleQueueMax}
               palette={theme.palette.backstop}
               sx={{ width: '100%' }}
+              isMaxDisabled={isMaxDisabled}
             />
             <OpaqueButton
               onClick={handleSubmitTransaction}
               palette={theme.palette.backstop}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
+              disabled={isSubmitDisabled}
             >
               Queue
             </OpaqueButton>
@@ -116,42 +139,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
             </Typography>
           </Box>
         </Box>
-        <Box
-          sx={{
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            backgroundColor: theme.palette.background.paper,
-            zIndex: 12,
-          }}
-        >
-          <Typography
-            variant="h5"
-            sx={{ marginLeft: '12px', marginBottom: '12px', marginTop: '12px' }}
-          >
-            Transaction Overview
-          </Typography>
-          {/* <Box
-            sx={{
-              marginLeft: '24px',
-              marginBottom: '12px',
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}
-          >
-            <LocalGasStationIcon
-              fontSize="inherit"
-              sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}
-            />
-            <Typography
-              variant="h5"
-              sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}
-            >
-              $1.88
-            </Typography>
-            <HelpOutlineIcon fontSize="inherit" sx={{ color: theme.palette.text.secondary }} />
-          </Box> */}
+        <TxOverview isDisabled={isSubmitDisabled} disabledType={disabledType} reason={reason}>
           <Value title="Amount to queue" value={`${toQueue ?? '0'} BLND-USDC LP`} />
           <Value
             title="New queue expiration"
@@ -162,7 +150,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
             curValue={`${toBalance(queuedBalance)} BLND-USDC LP`}
             newValue={`${toBalance(queuedBalance + Number(toQueue ?? '0'))} BLND-USDC LP`}
           />
-        </Box>
+        </TxOverview>
       </Section>
     </Row>
   );

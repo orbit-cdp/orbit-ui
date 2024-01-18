@@ -45,7 +45,14 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({
             justifyContent: 'space-between',
             alignItems: 'center',
             color: theme.palette.text.secondary,
+            cursor: 'default',
           }}
+          onClick={() =>
+            window.open(
+              `https://stellar.expert/explorer/testnet/contract/${poolData.config.oracle}`,
+              '_blank'
+            )
+          }
         >
           <Box sx={{ margin: '6px', height: '30px' }}>
             <Icon src={'/icons/pageicons/oracle_icon.svg'} alt="oracle-icon" isCircle={false} />

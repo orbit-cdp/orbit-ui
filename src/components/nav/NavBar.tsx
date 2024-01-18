@@ -1,6 +1,6 @@
 import { Box, IconButton } from '@mui/material';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ViewType, useSettings } from '../../contexts';
 import { useStore } from '../../store/store';
 import { Row } from '../common/Row';
@@ -14,15 +14,17 @@ export const NavBar = () => {
   const { viewType, lastPool } = useSettings();
   const rewardZone = useStore((state) => state.backstop?.config?.rewardZone ?? []);
 
-  const [poolId, setPoolId] = useState<string>(lastPool ?? '');
+  const [poolId, setPoolId] = useState<string>(lastPool ?? 'null');
 
-  // useEffect(() => {
-  //   if (lastPool) {
-  //     setPoolId(lastPool);
-  //   } else {
-  //     setPoolId(rewardZone.length != 0 ? rewardZone[0] : '');
-  //   }
-  // }, [rewardZone, lastPool]);
+  useEffect(() => {
+    if (lastPool) {
+      setPoolId(lastPool);
+    } else if (rewardZone.length != 0) {
+      setPoolId(rewardZone[0]);
+    } else {
+      setPoolId('null');
+    }
+  }, [lastPool, rewardZone]);
 
   return (
     <Row sx={{ height: '62px' }}>

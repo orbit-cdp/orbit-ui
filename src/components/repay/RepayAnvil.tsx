@@ -1,6 +1,6 @@
 import { SubmitArgs } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
@@ -11,6 +11,7 @@ import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
+import { SubmitError, TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
@@ -26,16 +27,15 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   const assetPrice = reserve?.oraclePrice ?? 1;
 
   const [toRepay, setToRepay] = useState<string | undefined>(undefined);
-  const [newEffectiveLiabilities, setNewEffectiveLiabilities] = useState<number>(
-    userPoolData?.estimates.totalEffectiveLiabilities ?? 0
-  );
 
   const decimals = reserve?.config.decimals ?? 7;
   const scalar = 10 ** decimals;
   const symbol = reserve?.tokenMetadata?.symbol ?? '';
 
+  // calculate current wallet state
+  let stellar_reserve_amount = getAssetReserve(account, reserve?.tokenMetadata?.asset);
+  const freeUserBalanceScaled = Number(userBalance) / scalar - stellar_reserve_amount;
   const curBorrowed = userPoolData?.estimates?.liabilities?.get(assetId) ?? 0;
-
   const oldBorrowCap = userPoolData
     ? userPoolData.estimates.totalEffectiveCollateral -
       userPoolData.estimates.totalEffectiveLiabilities
@@ -44,35 +44,59 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
     ? userPoolData.estimates.totalEffectiveLiabilities /
       userPoolData.estimates.totalEffectiveCollateral
     : undefined;
+
+  // calculate new wallet state
+  let newEffectiveLiabilities = userPoolData?.estimates.totalEffectiveCollateral ?? 0;
+  let returnedTokens = 0;
+  if (toRepay && userPoolData && reserve) {
+    let num_repay = Number(toRepay);
+    let repay_base = num_repay * assetPrice * reserve.getLiabilityFactor();
+    newEffectiveLiabilities = userPoolData.estimates.totalEffectiveLiabilities - repay_base;
+    returnedTokens = num_repay > curBorrowed ? num_repay - curBorrowed : 0;
+  }
   const borrowCap = userPoolData
     ? userPoolData.estimates.totalEffectiveCollateral - newEffectiveLiabilities
     : undefined;
   const borrowLimit = userPoolData
     ? newEffectiveLiabilities / userPoolData.estimates.totalEffectiveCollateral
     : undefined;
-
-  // @ts-ignore
-  let stellar_reserve_amount = getAssetReserve(account, reserve?.tokenMetadata?.asset);
-  const freeUserBalanceScaled = Number(userBalance) / scalar - stellar_reserve_amount;
-
-  const handleRepayAmountChange = (repayInput: string) => {
-    let regex = new RegExp(`^[0-9]*\.?[0-9]{0,${decimals}}$`);
-    if (regex.test(repayInput) && reserve && userPoolData) {
-      let num_repay = Number(repayInput);
-      let repay_base = num_repay * assetPrice * reserve.getLiabilityFactor();
-      let tempNewLiabilities = userPoolData.estimates.totalEffectiveLiabilities - repay_base;
-      if (num_repay <= freeUserBalanceScaled) {
-        setToRepay(repayInput);
-        setNewEffectiveLiabilities(tempNewLiabilities);
-      }
+  // verify that the user can act
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
+    const errorProps: SubmitError = {
+      isSubmitDisabled: false,
+      isMaxDisabled: false,
+      reason: undefined,
+      disabledType: undefined,
+    };
+    if (freeUserBalanceScaled <= 0) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = true;
+      errorProps.reason = 'You do not have any available balance to repay.';
+      errorProps.disabledType = 'warning';
+    } else if (!toRepay) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = 'Please enter an amount to repay.';
+      errorProps.disabledType = 'info';
+    } else if (Number(toRepay) > freeUserBalanceScaled) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = 'You do not have enough available balance to repay.';
+      errorProps.disabledType = 'warning';
+    } else {
+      errorProps.isSubmitDisabled = false;
+      errorProps.isMaxDisabled = false;
     }
-  };
+
+    return errorProps;
+  }, [freeUserBalanceScaled, toRepay]);
 
   const handleRepayMax = () => {
     if (userPoolData) {
+      let dustProofRepay = curBorrowed * 1.001;
       let maxRepay =
-        freeUserBalanceScaled < curBorrowed ? freeUserBalanceScaled : curBorrowed * 1.0001;
-      handleRepayAmountChange(maxRepay.toFixed(decimals));
+        freeUserBalanceScaled < dustProofRepay ? freeUserBalanceScaled : dustProofRepay;
+      setToRepay(maxRepay.toFixed(decimals));
     }
   };
 
@@ -125,15 +149,17 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
             <InputBar
               symbol={symbol}
               value={toRepay}
-              onValueChange={handleRepayAmountChange}
+              onValueChange={setToRepay}
               onSetMax={handleRepayMax}
               palette={theme.palette.borrow}
               sx={{ width: '100%' }}
+              isMaxDisabled={isMaxDisabled}
             />
             <OpaqueButton
               onClick={handleSubmitTransaction}
               palette={theme.palette.borrow}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
+              disabled={isSubmitDisabled}
             >
               Repay
             </OpaqueButton>
@@ -144,44 +170,11 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
             </Typography>
           </Box>
         </Box>
-        <Box
-          sx={{
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            backgroundColor: theme.palette.background.paper,
-            zIndex: 12,
-            borderRadius: '5px',
-          }}
-        >
-          <Typography
-            variant="h5"
-            sx={{ marginLeft: '24px', marginBottom: '12px', marginTop: '12px' }}
-          >
-            Transaction Overview
-          </Typography>
-          {/* <Box
-            sx={{
-              marginLeft: '24px',
-              marginBottom: '12px',
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}
-          >
-            <LocalGasStationIcon
-              fontSize="inherit"
-              sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}
-            />
-            <Typography
-              variant="h5"
-              sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}
-            >
-              $1.88
-            </Typography>
-            <HelpOutlineIcon fontSize="inherit" sx={{ color: theme.palette.text.secondary }} />
-          </Box> */}
+        <TxOverview isDisabled={isSubmitDisabled} disabledType={disabledType} reason={reason}>
           <Value title="Amount to repay" value={`${toRepay ?? '0'} ${symbol}`} />
+          {returnedTokens != 0 && (
+            <Value title="Amount to return" value={`${toBalance(returnedTokens)} ${symbol}`} />
+          )}
           <ValueChange
             title="Your total borrowed"
             curValue={`${toBalance(curBorrowed, decimals)} ${symbol}`}
@@ -200,7 +193,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
             curValue={toPercentage(Number.isFinite(oldBorrowLimit) ? oldBorrowLimit : 0)}
             newValue={toPercentage(Number.isFinite(borrowLimit) ? borrowLimit : 0)}
           />
-        </Box>
+        </TxOverview>
       </Section>
     </Row>
   );
