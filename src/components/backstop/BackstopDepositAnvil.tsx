@@ -1,6 +1,6 @@
 import { PoolBackstopActionArgs } from '@blend-capital/blend-sdk';
-import { Alert, Box, Typography, useTheme } from '@mui/material';
-import { useState } from 'react';
+import { Box, Typography, useTheme } from '@mui/material';
+import { useMemo, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
@@ -10,6 +10,7 @@ import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
+import { SubmitError, TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
@@ -17,6 +18,7 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
   const theme = useTheme();
   const { connected, walletAddress, backstopDeposit } = useWallet();
 
+  const backstopData = useStore((state) => state.backstop);
   const backstopPoolData = useStore((state) => state.backstop?.pools?.get(poolId));
   const userBackstopData = useStore((state) => state.backstopUserData);
   const userPoolBackstopBalance = userBackstopData?.balances.get(poolId);
@@ -30,10 +32,36 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
       : 0;
 
   const [toDeposit, setToDeposit] = useState<string | undefined>(undefined);
+  // verify that the user can act
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
+    const errorProps: SubmitError = {
+      isSubmitDisabled: false,
+      isMaxDisabled: false,
+      reason: undefined,
+      disabledType: undefined,
+    };
+    if (userBalance <= 0) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = true;
+      errorProps.reason = 'You do not have any available balance to deposit.';
+      errorProps.disabledType = 'warning';
+    } else if (!toDeposit) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = 'Please enter an amount to deposit.';
+      errorProps.disabledType = 'info';
+    } else if (Number(toDeposit) > userBalance) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = 'You do not have enough available balance to deposit.';
+      errorProps.disabledType = 'warning';
+    } else {
+      errorProps.isSubmitDisabled = false;
+      errorProps.isMaxDisabled = false;
+    }
+    return errorProps;
+  }, [toDeposit, userBalance]);
 
-  const isDepositDisabled =
-    !userBalance || !toDeposit || !(Number(toDeposit) > 0) || Number(toDeposit) > userBalance;
-  const isMaxDisabled = !userBalance;
   const handleDepositMax = () => {
     if (userBackstopData) {
       setToDeposit(userBalance.toFixed(7));
@@ -92,74 +120,25 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
               onClick={handleSubmitTransaction}
               palette={theme.palette.backstop}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
-              disabled={isDepositDisabled}
+              disabled={isSubmitDisabled}
             >
               Deposit
             </OpaqueButton>
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {/* TODO calculate lp price*/}
-              {`$${toBalance((Number(toDeposit ?? 0) * Number(0.75e7)) / 1e7)}`}
+              {`$${toBalance(Number(toDeposit ?? 0) * (backstopData?.lpTokenPrice ?? 1))}`}
             </Typography>
           </Box>
         </Box>
-        <Box
-          sx={{
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            backgroundColor: theme.palette.background.paper,
-            zIndex: 12,
-          }}
-        >
-          {!isDepositDisabled && (
-            <>
-              <Typography
-                variant="h5"
-                sx={{ marginLeft: '12px', marginBottom: '12px', marginTop: '12px' }}
-              >
-                Transaction Overview
-              </Typography>
-              {/* <Box
-            sx={{
-              marginLeft: '24px',
-              marginBottom: '12px',
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}
-          >
-            <LocalGasStationIcon
-              fontSize="inherit"
-              sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}
-            />
-            <Typography
-              variant="h5"
-              sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}
-            >
-              $1.88
-            </Typography>
-            <HelpOutlineIcon fontSize="inherit" sx={{ color: theme.palette.text.secondary }} />
-          </Box> */}
-              <Value title="Amount to deposit" value={`${toDeposit ?? '0'} BLND-USDC LP`} />
-              <ValueChange
-                title="Your total deposit"
-                curValue={`${toBalance(curDeposit)} BLND-USDC LP`}
-                newValue={`${toBalance(curDeposit + Number(toDeposit ?? '0'))} BLND-USDC LP`}
-              />
-            </>
-          )}
-          {isDepositDisabled && (
-            <>
-              {Number(toDeposit) > userBalance && (
-                <Alert severity="error">
-                  <Typography variant="body2">Input larger than balance</Typography>
-                </Alert>
-              )}
-            </>
-          )}
-        </Box>
+        <TxOverview isDisabled={isSubmitDisabled} disabledType={disabledType} reason={reason}>
+          <Value title="Amount to deposit" value={`${toDeposit ?? '0'} BLND-USDC LP`} />
+          <ValueChange
+            title="Your total deposit"
+            curValue={`${toBalance(curDeposit)} BLND-USDC LP`}
+            newValue={`${toBalance(curDeposit + Number(toDeposit ?? '0'))} BLND-USDC LP`}
+          />
+        </TxOverview>
       </Section>
     </Row>
   );

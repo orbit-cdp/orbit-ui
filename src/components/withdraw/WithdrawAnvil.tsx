@@ -1,6 +1,6 @@
 import { SubmitArgs } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
@@ -10,6 +10,7 @@ import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
+import { SubmitError, TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
@@ -17,24 +18,20 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   const theme = useTheme();
   const { connected, walletAddress, poolSubmit } = useWallet();
 
-  const account = useStore((state) => state.account);
   const poolData = useStore((state) => state.pools.get(poolId));
   const userPoolData = useStore((state) => state.userPoolData.get(poolId));
-  const userBalance = useStore((state) => state.balances.get(assetId)) ?? BigInt(0);
   const reserve = poolData?.reserves.get(assetId);
   const assetPrice = reserve?.oraclePrice ?? 1;
 
   const [toWithdrawSubmit, setToWithdrawSubmit] = useState<string | undefined>(undefined);
   const [toWithdraw, setToWithdraw] = useState<string | undefined>(undefined);
-  const [newEffectiveCollateral, setNewEffectiveCollateral] = useState<number>(
-    userPoolData?.estimates.totalEffectiveCollateral ?? 0
-  );
 
   const decimals = reserve?.config.decimals ?? 7;
   const symbol = reserve?.tokenMetadata?.symbol ?? '';
+  const poolTokens = reserve?.poolBalance ?? BigInt(0);
 
+  // calculate current wallet state
   const curSupplied = userPoolData?.estimates?.collateral?.get(assetId) ?? 0;
-
   const oldBorrowCap = userPoolData
     ? userPoolData.estimates.totalEffectiveCollateral -
       userPoolData.estimates.totalEffectiveLiabilities
@@ -43,12 +40,59 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
     ? userPoolData.estimates.totalEffectiveLiabilities /
       userPoolData.estimates.totalEffectiveCollateral
     : undefined;
+
+  // calculate new wallet state
+  let newEffectiveCollateral = 0;
+  if (userPoolData && reserve && toWithdraw) {
+    let num_withdraw = Number(toWithdraw);
+    let withdraw_base = num_withdraw * assetPrice * reserve.getCollateralFactor();
+    newEffectiveCollateral = userPoolData.estimates.totalEffectiveCollateral - withdraw_base;
+  }
   const borrowCap = userPoolData
     ? newEffectiveCollateral - userPoolData.estimates.totalEffectiveLiabilities
     : undefined;
   const borrowLimit = userPoolData
     ? userPoolData.estimates.totalEffectiveLiabilities / newEffectiveCollateral
     : undefined;
+  // verify that the user can act
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
+    const errorProps: SubmitError = {
+      isSubmitDisabled: false,
+      isMaxDisabled: false,
+      reason: undefined,
+      disabledType: undefined,
+    };
+    if (curSupplied == 0) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = true;
+      errorProps.reason = 'You do not have any assets to withdraw.';
+      errorProps.disabledType = 'warning';
+    } else if (!toWithdraw) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = 'Please enter an amount to withdraw.';
+      errorProps.disabledType = 'info';
+    } else if (borrowLimit == undefined || borrowLimit > 0.9804) {
+      // @dev: a borrow limit of 98.04% ~= a health factor of 1.02
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason =
+        'Your withdraw is too high and you have exceeded the max borrow limit of 98%. Current value: ' +
+        toPercentage(borrowLimit);
+      errorProps.disabledType = 'warning';
+    } else if (poolTokens < scaleInputToBigInt(toWithdraw, decimals)) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = "You cannot withdraw more than the pool's balance.";
+      errorProps.disabledType = 'warning';
+    } else {
+      errorProps.isSubmitDisabled = false;
+      errorProps.isMaxDisabled = false;
+    }
+
+    return errorProps;
+  }, [toWithdraw, borrowLimit, poolTokens, decimals, curSupplied]);
+  // verify that the user can act
 
   const handleWithdrawAmountChange = (withdrawInput: string) => {
     if (reserve && userPoolData) {
@@ -60,13 +104,8 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
         realWithdraw = curSupplied.toFixed(decimals);
         num_withdraw = Number(realWithdraw);
       }
-      let withdraw_base = num_withdraw * assetPrice * reserve.getCollateralFactor();
-      let tempEffectiveCollateral = userPoolData.estimates.totalEffectiveCollateral - withdraw_base;
-      if (tempEffectiveCollateral >= userPoolData.estimates.totalEffectiveLiabilities * 1.019) {
-        setToWithdraw(realWithdraw);
-        setToWithdrawSubmit(withdrawInput);
-        setNewEffectiveCollateral(tempEffectiveCollateral);
-      }
+      setToWithdraw(realWithdraw);
+      setToWithdrawSubmit(withdrawInput);
     }
   };
 
@@ -139,12 +178,13 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
               onSetMax={handleWithdrawMax}
               palette={theme.palette.lend}
               sx={{ width: '100%' }}
+              isMaxDisabled={isMaxDisabled}
             />
             <OpaqueButton
               onClick={handleSubmitTransaction}
               palette={theme.palette.lend}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
-              disabled={!toWithdraw}
+              disabled={isSubmitDisabled}
             >
               Withdraw
             </OpaqueButton>
@@ -155,43 +195,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
             </Typography>
           </Box>
         </Box>
-        <Box
-          sx={{
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            backgroundColor: theme.palette.background.paper,
-            zIndex: 12,
-            borderRadius: '5px',
-          }}
-        >
-          <Typography
-            variant="h5"
-            sx={{ marginLeft: '24px', marginBottom: '12px', marginTop: '12px' }}
-          >
-            Transaction Overview
-          </Typography>
-          {/* <Box
-            sx={{
-              marginLeft: '24px',
-              marginBottom: '12px',
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}
-          >
-            <LocalGasStationIcon
-              fontSize="inherit"
-              sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}
-            />
-            <Typography
-              variant="h5"
-              sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}
-            >
-              $1.88
-            </Typography>
-            <HelpOutlineIcon fontSize="inherit" sx={{ color: theme.palette.text.secondary }} />
-          </Box> */}
+        <TxOverview isDisabled={isSubmitDisabled} disabledType={disabledType} reason={reason}>
           <Value title="Amount to withdraw" value={`${toWithdraw ?? '0'} ${symbol}`} />
           <ValueChange
             title="Your total supplied"
@@ -208,7 +212,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
             curValue={toPercentage(Number.isFinite(oldBorrowLimit) ? oldBorrowLimit : 0)}
             newValue={toPercentage(Number.isFinite(borrowLimit) ? borrowLimit : 0)}
           />
-        </Box>
+        </TxOverview>
       </Section>
     </Row>
   );

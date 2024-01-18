@@ -21,10 +21,10 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({ q4w, inTok
   const loadUserData = useStore((state) => state.loadUserData);
 
   const NOW_SECONDS = Math.floor(Date.now() / 1000);
-  const THIRTY_DAYS_SECONDS = 30 * 24 * 60 * 60;
+  const TOTAL_QUEUE_TIME_SECONDS = 21 * 24 * 60 * 60;
 
   const [timeLeft, setTimeLeft] = useState<number>(Math.max(0, Number(q4w.exp) - NOW_SECONDS));
-  const timeWaitedPercentage = Math.min(1, 1 - timeLeft / THIRTY_DAYS_SECONDS);
+  const timeWaitedPercentage = Math.min(1, 1 - timeLeft / TOTAL_QUEUE_TIME_SECONDS);
 
   useEffect(() => {
     if (timeLeft > 0) {
