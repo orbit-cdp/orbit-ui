@@ -83,6 +83,11 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
       errorProps.isMaxDisabled = false;
       errorProps.reason = 'You do not have enough available balance to repay.';
       errorProps.disabledType = 'warning';
+    } else if (toRepay.split('.')[1]?.length > decimals) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = `You cannot supply more than ${decimals} decimal places.`;
+      errorProps.disabledType = 'warning';
     } else {
       errorProps.isSubmitDisabled = false;
       errorProps.isMaxDisabled = false;

@@ -25,7 +25,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const userPoolBackstopEst = userBackstopData?.estimates.get(poolId);
 
   const backstopTokenPrice = backstop?.lpTokenPrice ?? 1;
-
+  const decimals = 7;
   const [toQueue, setToQueue] = useState<string | undefined>(undefined);
 
   const sharesToTokens = backstopPoolData
@@ -62,6 +62,11 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
       errorProps.reason = 'You do not have enough available deposits to withdrawal.';
+      errorProps.disabledType = 'warning';
+    } else if (toQueue.split('.')[1]?.length > decimals) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = `You cannot supply more than ${decimals} decimal places.`;
       errorProps.disabledType = 'warning';
     } else {
       errorProps.isSubmitDisabled = false;

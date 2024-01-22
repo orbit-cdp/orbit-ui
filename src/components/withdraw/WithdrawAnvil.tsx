@@ -85,6 +85,11 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
       errorProps.isMaxDisabled = false;
       errorProps.reason = "You cannot withdraw more than the pool's balance.";
       errorProps.disabledType = 'warning';
+    } else if (toWithdraw.split('.')[1]?.length > decimals) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = `You cannot supply more than ${decimals} decimal places.`;
+      errorProps.disabledType = 'warning';
     } else {
       errorProps.isSubmitDisabled = false;
       errorProps.isMaxDisabled = false;

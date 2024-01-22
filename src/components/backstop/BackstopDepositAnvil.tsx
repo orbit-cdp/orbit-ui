@@ -24,7 +24,7 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
   const userPoolBackstopBalance = userBackstopData?.balances.get(poolId);
 
   const userBalance = Number(userBackstopData?.tokens ?? BigInt(0)) / 1e7;
-
+  const decimals = 7;
   const curDeposit =
     userPoolBackstopBalance && backstopPoolData
       ? (Number(userPoolBackstopBalance.shares) / 1e7) *
@@ -54,6 +54,11 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
       errorProps.reason = 'You do not have enough available balance to deposit.';
+      errorProps.disabledType = 'warning';
+    } else if (toDeposit.split('.')[1]?.length > decimals) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = `You cannot supply more than ${decimals} decimal places.`;
       errorProps.disabledType = 'warning';
     } else {
       errorProps.isSubmitDisabled = false;
