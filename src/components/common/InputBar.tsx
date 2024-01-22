@@ -1,4 +1,5 @@
 import { Box, BoxProps, Input, PaletteColor, Typography, useTheme } from '@mui/material';
+import { ChangeEvent } from 'react';
 import { CustomButton } from './CustomButton';
 
 export interface InputBarProps extends BoxProps {
@@ -26,13 +27,25 @@ export const InputBar: React.FC<InputBarProps> = ({
   /**
    * sanitize input if type is number
    */
-  function handleChange(newValue: string) {
+  function handleChange(event: ChangeEvent<HTMLInputElement>) {
+    const newValue = event.target.value;
+
     if (type === 'number' && newValue !== '') {
       const sanitizedValue = newValue.replace(/[^0-9.\.]/g, '');
-
       onValueChange(sanitizedValue);
     } else {
       onValueChange(newValue);
+    }
+  }
+  /**
+   * sanitize on key down if type is number
+   */
+  function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (type === 'number') {
+      const inputHasDecimalPoint = value?.includes('.');
+      if (inputHasDecimalPoint && event.key === '.') {
+        event.preventDefault();
+      }
     }
   }
   return (
@@ -51,7 +64,8 @@ export const InputBar: React.FC<InputBarProps> = ({
     >
       <Input
         value={value || ''}
-        onChange={(event) => handleChange(event.target.value)}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
         placeholder="0"
         disableUnderline={true}
         sx={{ marginLeft: '12px', width: '100%' }}
