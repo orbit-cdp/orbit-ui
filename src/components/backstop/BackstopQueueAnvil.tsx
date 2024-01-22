@@ -26,7 +26,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
 
   const backstopTokenPrice = backstop?.lpTokenPrice ?? 1;
   const decimals = 7;
-  const [toQueue, setToQueue] = useState<string | undefined>(undefined);
+  const [toQueue, setToQueue] = useState<string>('');
 
   const sharesToTokens = backstopPoolData
     ? Number(backstopPoolData.poolBalance.tokens) / Number(backstopPoolData.poolBalance.shares)

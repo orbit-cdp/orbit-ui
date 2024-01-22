@@ -26,7 +26,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   const reserve = poolData?.reserves.get(assetId);
   const assetPrice = reserve?.oraclePrice ?? 1;
 
-  const [toRepay, setToRepay] = useState<string | undefined>(undefined);
+  const [toRepay, setToRepay] = useState<string>('');
 
   const decimals = reserve?.config.decimals ?? 7;
   const scalar = 10 ** decimals;

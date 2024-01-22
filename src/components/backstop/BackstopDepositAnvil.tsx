@@ -31,7 +31,7 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
         (Number(backstopPoolData.poolBalance.tokens) / Number(backstopPoolData.poolBalance.shares))
       : 0;
 
-  const [toDeposit, setToDeposit] = useState<string | undefined>(undefined);
+  const [toDeposit, setToDeposit] = useState<string>('');
   // verify that the user can act
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
     const errorProps: SubmitError = {

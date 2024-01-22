@@ -24,7 +24,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   const assetPrice = reserve?.oraclePrice ?? 1;
 
   const [toWithdrawSubmit, setToWithdrawSubmit] = useState<string | undefined>(undefined);
-  const [toWithdraw, setToWithdraw] = useState<string | undefined>(undefined);
+  const [toWithdraw, setToWithdraw] = useState<string>('');
 
   const decimals = reserve?.config.decimals ?? 7;
   const symbol = reserve?.tokenMetadata?.symbol ?? '';

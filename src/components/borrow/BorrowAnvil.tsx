@@ -24,7 +24,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const assetToBase = reserve?.oraclePrice ?? 1;
   const baseToAsset = 1 / assetToBase;
 
-  const [toBorrow, setToBorrow] = useState<string | undefined>(undefined);
+  const [toBorrow, setToBorrow] = useState<string>('');
 
   const decimals = reserve?.config.decimals ?? 7;
   const symbol = reserve?.tokenMetadata?.symbol ?? '';

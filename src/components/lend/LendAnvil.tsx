@@ -26,7 +26,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   const reserve = poolData?.reserves.get(assetId);
   const assetPrice = reserve?.oraclePrice ?? 1;
 
-  const [toLend, setToLend] = useState<string | undefined>(undefined);
+  const [toLend, setToLend] = useState<string>('');
 
   const decimals = reserve?.config.decimals ?? 7;
   const scalar = 10 ** decimals;

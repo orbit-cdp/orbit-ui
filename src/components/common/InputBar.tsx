@@ -50,7 +50,7 @@ export const InputBar: React.FC<InputBarProps> = ({
       {...props}
     >
       <Input
-        value={value}
+        value={value || ''}
         onChange={(event) => handleChange(event.target.value)}
         placeholder="0"
         disableUnderline={true}
