@@ -2,7 +2,7 @@ import { Button, ButtonProps, PaletteColor } from '@mui/material';
 
 export interface OpaqueButtonProps extends ButtonProps {
   palette: PaletteColor;
-  passedRef: any;
+  passedRef?: any;
 }
 
 export const OpaqueButton: React.FC<OpaqueButtonProps> = ({
