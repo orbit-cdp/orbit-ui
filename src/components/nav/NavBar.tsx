@@ -14,15 +14,17 @@ export const NavBar = () => {
   const { viewType, lastPool } = useSettings();
   const rewardZone = useStore((state) => state.backstop?.config?.rewardZone ?? []);
 
-  const [poolId, setPoolId] = useState<string>(lastPool ?? 'null');
-
+  const [poolId, setPoolId] = useState<string | undefined>(lastPool);
   useEffect(() => {
-    if (lastPool) {
-      setPoolId(lastPool);
-    } else if (rewardZone.length != 0) {
-      setPoolId(rewardZone[0]);
-    } else {
-      setPoolId('null');
+    if (!poolId || poolId !== lastPool) {
+      if (lastPool) {
+        setPoolId(lastPool);
+      } else if (rewardZone.length != 0) {
+        const rewardPoolId = rewardZone[0];
+        if (rewardPoolId !== poolId) {
+          setPoolId(rewardZone[0]);
+        }
+      }
     }
   }, [lastPool, rewardZone]);
 
