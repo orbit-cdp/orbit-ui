@@ -72,6 +72,11 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
       errorProps.isMaxDisabled = false;
       errorProps.reason = 'Please enter an amount to withdraw.';
       errorProps.disabledType = 'info';
+    } else if (toWithdraw.split('.')[1]?.length > decimals) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = `You cannot supply more than ${decimals} decimal places.`;
+      errorProps.disabledType = 'warning';
     } else if (borrowLimit == undefined || borrowLimit > 0.9804) {
       // @dev: a borrow limit of 98.04% ~= a health factor of 1.02
       errorProps.isSubmitDisabled = true;
@@ -85,11 +90,6 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
       errorProps.isMaxDisabled = false;
       errorProps.reason = "You cannot withdraw more than the pool's balance.";
       errorProps.disabledType = 'warning';
-    } else if (toWithdraw.split('.')[1]?.length > decimals) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = `You cannot supply more than ${decimals} decimal places.`;
-      errorProps.disabledType = 'warning';
     } else {
       errorProps.isSubmitDisabled = false;
       errorProps.isMaxDisabled = false;
@@ -100,6 +100,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   // verify that the user can act
 
   const handleWithdrawAmountChange = (withdrawInput: string) => {
+    console.log('withdrawInput', withdrawInput);
     if (reserve && userPoolData) {
       let realWithdraw = withdrawInput;
       let num_withdraw = Number(withdrawInput);
@@ -111,6 +112,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
       }
       setToWithdraw(realWithdraw);
       setToWithdrawSubmit(withdrawInput);
+      console.log('end setting');
     }
   };
 
