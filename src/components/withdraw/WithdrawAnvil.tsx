@@ -100,7 +100,6 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   // verify that the user can act
 
   const handleWithdrawAmountChange = (withdrawInput: string) => {
-    console.log('withdrawInput', withdrawInput);
     if (reserve && userPoolData) {
       let realWithdraw = withdrawInput;
       let num_withdraw = Number(withdrawInput);
@@ -112,7 +111,6 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
       }
       setToWithdraw(realWithdraw);
       setToWithdrawSubmit(withdrawInput);
-      console.log('end setting');
     }
   };
 
