@@ -26,7 +26,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   const reserve = poolData?.reserves.get(assetId);
   const assetPrice = reserve?.oraclePrice ?? 1;
 
-  const [toLend, setToLend] = useState<string | undefined>(undefined);
+  const [toLend, setToLend] = useState<string>('');
 
   const decimals = reserve?.config.decimals ?? 7;
   const scalar = 10 ** decimals;
@@ -80,6 +80,11 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
       errorProps.reason = 'You do not have enough available balance to supply.';
+      errorProps.disabledType = 'warning';
+    } else if (toLend.split('.')[1]?.length > decimals) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = `You cannot supply more than ${decimals} decimal places.`;
       errorProps.disabledType = 'warning';
     } else {
       errorProps.isSubmitDisabled = false;

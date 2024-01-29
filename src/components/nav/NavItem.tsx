@@ -15,7 +15,7 @@ export const NavItem = ({ to, title, sx, ...props }: INavItemProps) => {
   const active = to.pathname == router.route;
 
   return (
-    <Link href={to}>
+    <Link href={to} passHref legacyBehavior>
       <ToggleButton
         active={active}
         palette={theme.palette.primary}

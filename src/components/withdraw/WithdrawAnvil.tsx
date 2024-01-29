@@ -24,7 +24,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   const assetPrice = reserve?.oraclePrice ?? 1;
 
   const [toWithdrawSubmit, setToWithdrawSubmit] = useState<string | undefined>(undefined);
-  const [toWithdraw, setToWithdraw] = useState<string | undefined>(undefined);
+  const [toWithdraw, setToWithdraw] = useState<string>('');
 
   const decimals = reserve?.config.decimals ?? 7;
   const symbol = reserve?.tokenMetadata?.symbol ?? '';
@@ -72,6 +72,11 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
       errorProps.isMaxDisabled = false;
       errorProps.reason = 'Please enter an amount to withdraw.';
       errorProps.disabledType = 'info';
+    } else if (toWithdraw.split('.')[1]?.length > decimals) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = `You cannot supply more than ${decimals} decimal places.`;
+      errorProps.disabledType = 'warning';
     } else if (borrowLimit == undefined || borrowLimit > 0.9804) {
       // @dev: a borrow limit of 98.04% ~= a health factor of 1.02
       errorProps.isSubmitDisabled = true;

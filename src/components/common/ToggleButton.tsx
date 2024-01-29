@@ -7,31 +7,27 @@ export interface ToggleButtonProps extends ButtonBaseProps {
   palette: PaletteColor;
 }
 
-export const ToggleButton: React.FC<ToggleButtonProps> = ({
-  active,
-  palette,
-  sx,
-  children,
-  color,
-  ...props
-}) => {
-  const theme = useTheme();
-  return (
-    <>
-      {active ? (
-        <OpaqueButton palette={palette} sx={{ ...sx }} {...props}>
-          {children}
-        </OpaqueButton>
-      ) : (
-        <Button
-          variant="text"
-          color="primary"
-          sx={{ color: theme.palette.common.white, ...sx }}
-          {...props}
-        >
-          {children}
-        </Button>
-      )}
-    </>
-  );
-};
+export const ToggleButton: React.FC<ToggleButtonProps> = React.forwardRef(
+  ({ active, palette, sx, children, color, ...props }, ref) => {
+    const theme = useTheme();
+    return (
+      <>
+        {active ? (
+          <OpaqueButton palette={palette} sx={{ ...sx }} {...props} passedRef={ref}>
+            {children}
+          </OpaqueButton>
+        ) : (
+          <Button
+            variant="text"
+            color="primary"
+            sx={{ color: theme.palette.common.white, ...sx }}
+            {...props}
+            ref={ref}
+          >
+            {children}
+          </Button>
+        )}
+      </>
+    );
+  }
+);

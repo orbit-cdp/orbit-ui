@@ -26,7 +26,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   const reserve = poolData?.reserves.get(assetId);
   const assetPrice = reserve?.oraclePrice ?? 1;
 
-  const [toRepay, setToRepay] = useState<string | undefined>(undefined);
+  const [toRepay, setToRepay] = useState<string>('');
 
   const decimals = reserve?.config.decimals ?? 7;
   const scalar = 10 ** decimals;
@@ -82,6 +82,11 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
       errorProps.reason = 'You do not have enough available balance to repay.';
+      errorProps.disabledType = 'warning';
+    } else if (toRepay.split('.')[1]?.length > decimals) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = `You cannot supply more than ${decimals} decimal places.`;
       errorProps.disabledType = 'warning';
     } else {
       errorProps.isSubmitDisabled = false;

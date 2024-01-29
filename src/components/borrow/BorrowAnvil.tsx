@@ -24,7 +24,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const assetToBase = reserve?.oraclePrice ?? 1;
   const baseToAsset = 1 / assetToBase;
 
-  const [toBorrow, setToBorrow] = useState<string | undefined>(undefined);
+  const [toBorrow, setToBorrow] = useState<string>('');
 
   const decimals = reserve?.config.decimals ?? 7;
   const symbol = reserve?.tokenMetadata?.symbol ?? '';
@@ -94,6 +94,11 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
       errorProps.reason = "You cannot borrow more than the pool's max utilization.";
+      errorProps.disabledType = 'warning';
+    } else if (toBorrow.split('.')[1]?.length > decimals) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = `You cannot supply more than ${decimals} decimal places.`;
       errorProps.disabledType = 'warning';
     } else {
       errorProps.isSubmitDisabled = false;
