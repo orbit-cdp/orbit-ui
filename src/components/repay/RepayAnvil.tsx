@@ -1,7 +1,7 @@
 import { RequestType, SubmitArgs } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
-import { useWallet } from '../../contexts/wallet';
+import { TxStatus, useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { getAssetReserve } from '../../utils/horizon';
@@ -17,7 +17,7 @@ import { ValueChange } from '../common/ValueChange';
 
 export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, poolSubmit } = useWallet();
+  const { connected, walletAddress, poolSubmit, txStatus } = useWallet();
 
   const account = useStore((state) => state.account);
   const poolData = useStore((state) => state.pools.get(poolId));
@@ -60,6 +60,10 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   const borrowLimit = userPoolData
     ? newEffectiveLiabilities / userPoolData.estimates.totalEffectiveCollateral
     : undefined;
+
+  if (txStatus === TxStatus.SUCCESS && Number(toRepay) != 0) {
+    setToRepay('0');
+  }
   // verify that the user can act
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
     const errorProps: SubmitError = {
@@ -68,7 +72,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
       reason: undefined,
       disabledType: undefined,
     };
-    if (freeUserBalanceScaled <= 0) {
+    if (freeUserBalanceScaled <= 0 && txStatus !== TxStatus.SUCCESS) {
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = true;
       errorProps.reason = 'You do not have any available balance to repay.';

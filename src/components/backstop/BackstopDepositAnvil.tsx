@@ -1,7 +1,7 @@
 import { PoolBackstopActionArgs } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
-import { useWallet } from '../../contexts/wallet';
+import { TxStatus, useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
 import { scaleInputToBigInt } from '../../utils/scval';
@@ -16,7 +16,7 @@ import { ValueChange } from '../common/ValueChange';
 
 export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, backstopDeposit } = useWallet();
+  const { connected, walletAddress, backstopDeposit, txStatus } = useWallet();
 
   const backstopData = useStore((state) => state.backstop);
   const backstopPoolData = useStore((state) => state.backstop?.pools?.get(poolId));
@@ -32,6 +32,9 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
       : 0;
 
   const [toDeposit, setToDeposit] = useState<string>('');
+  if (txStatus === TxStatus.SUCCESS && Number(toDeposit) != 0) {
+    setToDeposit('0');
+  }
   // verify that the user can act
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
     const errorProps: SubmitError = {
@@ -40,7 +43,7 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
       reason: undefined,
       disabledType: undefined,
     };
-    if (userBalance <= 0) {
+    if (userBalance <= 0 && txStatus !== TxStatus.SUCCESS) {
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = true;
       errorProps.reason = 'You do not have any available balance to deposit.';

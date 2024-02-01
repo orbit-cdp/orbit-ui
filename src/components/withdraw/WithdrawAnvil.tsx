@@ -1,7 +1,7 @@
 import { RequestType, SubmitArgs } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
-import { useWallet } from '../../contexts/wallet';
+import { TxStatus, useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { scaleInputToBigInt } from '../../utils/scval';
@@ -16,7 +16,7 @@ import { ValueChange } from '../common/ValueChange';
 
 export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, poolSubmit } = useWallet();
+  const { connected, walletAddress, poolSubmit, txStatus } = useWallet();
 
   const poolData = useStore((state) => state.pools.get(poolId));
   const userPoolData = useStore((state) => state.userPoolData.get(poolId));
@@ -54,6 +54,10 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   const borrowLimit = userPoolData
     ? userPoolData.estimates.totalEffectiveLiabilities / newEffectiveCollateral
     : undefined;
+
+  if (txStatus === TxStatus.SUCCESS && Number(toWithdraw) != 0) {
+    setToWithdraw('0');
+  }
   // verify that the user can act
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
     const errorProps: SubmitError = {
@@ -62,7 +66,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
       reason: undefined,
       disabledType: undefined,
     };
-    if (curSupplied == 0) {
+    if (curSupplied == 0 && txStatus !== TxStatus.SUCCESS) {
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = true;
       errorProps.reason = 'You do not have any assets to withdraw.';
