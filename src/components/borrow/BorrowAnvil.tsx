@@ -1,4 +1,4 @@
-import { SubmitArgs } from '@blend-capital/blend-sdk';
+import { RequestType, SubmitArgs } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
@@ -138,7 +138,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           {
             amount: scaleInputToBigInt(toBorrow, reserve.config.decimals),
             address: reserve.assetId,
-            request_type: 4,
+            request_type: RequestType.Borrow,
           },
         ],
       };

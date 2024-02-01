@@ -1,4 +1,4 @@
-import { SubmitArgs } from '@blend-capital/blend-sdk';
+import { RequestType, SubmitArgs } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
@@ -139,7 +139,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
         requests: [
           {
             amount: scaleInputToBigInt(toWithdrawSubmit, decimals),
-            request_type: 3,
+            request_type: RequestType.WithdrawCollateral,
             address: reserve.assetId,
           },
         ],
