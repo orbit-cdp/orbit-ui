@@ -1,7 +1,7 @@
 import { RequestType, SubmitArgs } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
-import { useWallet } from '../../contexts/wallet';
+import { TxStatus, useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { scaleInputToBigInt } from '../../utils/scval';
@@ -16,7 +16,7 @@ import { ValueChange } from '../common/ValueChange';
 
 export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, poolSubmit } = useWallet();
+  const { connected, walletAddress, poolSubmit, txStatus } = useWallet();
 
   const poolData = useStore((state) => state.pools.get(poolId));
   const userPoolData = useStore((state) => state.userPoolData.get(poolId));
@@ -61,6 +61,10 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const newAssetUtil = reserve
     ? (reserve.estimates.borrowed + num_borrow) / reserve.estimates.supplied
     : 0;
+
+  if (txStatus === TxStatus.SUCCESS && Number(toBorrow) != 0) {
+    setToBorrow('0');
+  }
   // verify that the user can act
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
     const errorProps: SubmitError = {
