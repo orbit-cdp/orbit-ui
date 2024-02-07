@@ -1,12 +1,12 @@
 import { PoolClaimArgs } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import { Box, useTheme } from '@mui/material';
 import { ViewType, useSettings } from '../../contexts';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
+import { FlameIcon } from '../common/FlameIcon';
 import { Icon } from '../common/Icon';
 import { LinkBox } from '../common/LinkBox';
 import { PoolComponentProps } from '../common/PoolComponentProps';
@@ -121,19 +121,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
               onClick={handleSubmitTransaction}
             >
               <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                <Box
-                  sx={{
-                    width: '32px',
-                    height: '32px',
-                    backgroundColor: theme.palette.primary.opaque,
-                    color: theme.palette.primary.main,
-                    borderRadius: '50%',
-                    padding: '4px',
-                    marginRight: '12px',
-                  }}
-                >
-                  <LocalFireDepartmentIcon />
-                </Box>
+                <FlameIcon />
                 <StackedText
                   title="Claim Pool Emissions"
                   titleColor="inherit"
@@ -215,19 +203,8 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
               }}
             >
               <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                <Box
-                  sx={{
-                    width: '32px',
-                    height: '32px',
-                    backgroundColor: theme.palette.primary.opaque,
-                    color: theme.palette.primary.main,
-                    borderRadius: '50%',
-                    padding: '4px',
-                    marginRight: '12px',
-                  }}
-                >
-                  <LocalFireDepartmentIcon />
-                </Box>
+                <FlameIcon />
+
                 <StackedText
                   title="Claim Pool Emissions"
                   titleColor="inherit"

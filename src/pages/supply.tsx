@@ -1,6 +1,7 @@
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
+import { FlameIcon } from '../components/common/FlameIcon';
 import { GoBackHeader } from '../components/common/GoBackHeader';
 import { ReserveDropdown } from '../components/common/ReserveDropdown';
 import { Row } from '../components/common/Row';
@@ -9,6 +10,7 @@ import { StackedText } from '../components/common/StackedText';
 import { LendAnvil } from '../components/lend/LendAnvil';
 import { useStore } from '../store/store';
 import { toBalance, toPercentage } from '../utils/formatter';
+import { getEmissionsPerDayPerUnit } from '../utils/token';
 
 const Supply: NextPage = () => {
   const theme = useTheme();
@@ -63,7 +65,20 @@ const Supply: NextPage = () => {
         <Section width={SectionSize.THIRD}>
           <StackedText
             title="Supply APY"
-            text={toPercentage(reserve?.estimates.supplyApy)}
+            text={
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                {toPercentage(reserve?.estimates.supplyApy)}{' '}
+                <FlameIcon
+                  width={22}
+                  height={22}
+                  title={` This asset earns ${getEmissionsPerDayPerUnit(
+                    reserve?.supplyEmissions?.config.eps || BigInt(0),
+                    reserve?.estimates.supplied || 0,
+                    reserve?.config.decimals
+                  )} BLND/day emissions`}
+                />
+              </div>
+            }
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>
         </Section>

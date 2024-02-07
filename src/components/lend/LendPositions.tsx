@@ -1,6 +1,7 @@
 import { Typography, useTheme } from '@mui/material';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
+import { FlameIcon } from '../common/FlameIcon';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
@@ -40,6 +41,17 @@ export const LendPositions: React.FC<PoolComponentProps> = ({ poolId }) => {
               textColor={theme.palette.lend.main}
               sx={{ width: '100%', padding: '6px' }}
             ></StackedText>
+            {userPoolData.emissions.supplyEmissions && (
+              <FlameIcon
+                width={22}
+                height={22}
+                title={` This asset earns ${getEmissionsPerDayPerUnit(
+                  reserve.supplyEmissions?.config.eps || BigInt(0),
+                  reserve.estimates.supplied,
+                  reserve.config.decimals
+                ).toFixed(2)} BLND/day emissions`}
+              />
+            )}
           </Section>
         </Row>
         <LendPositionList poolId={poolId} />

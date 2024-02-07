@@ -1,9 +1,9 @@
 import { Box, BoxProps, Typography } from '@mui/material';
-import React from 'react';
+import React, { ReactElement } from 'react';
 
 export interface StackedTextProps extends BoxProps {
   title: string;
-  text: string;
+  text: string | ReactElement;
   type?: 'normal' | 'large' | undefined;
   titleColor?: string | undefined;
   textColor?: string | undefined;
