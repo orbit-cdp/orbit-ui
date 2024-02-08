@@ -1,5 +1,4 @@
 import { Typography, useTheme } from '@mui/material';
-import Image from 'next/image';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { PoolComponentProps } from '../common/PoolComponentProps';
@@ -41,7 +40,6 @@ export const BorrowPositions: React.FC<PoolComponentProps> = ({ poolId }) => {
               textColor={theme.palette.borrow.main}
               sx={{ width: '100%', padding: '6px' }}
             ></StackedText>
-            <Image src="/icons/dashboard/flame.svg" height={24} width={24} alt="emmission" />
           </Section>
         </Row>
         <BorrowPositionList poolId={poolId} />
