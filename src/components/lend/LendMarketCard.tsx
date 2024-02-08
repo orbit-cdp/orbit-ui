@@ -82,11 +82,13 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
               <FlameIcon
                 width={22}
                 height={22}
-                title={` This asset earns ${getEmissionsPerDayPerUnit(
-                  reserve.supplyEmissions?.config.eps || BigInt(0),
-                  reserve.estimates.supplied,
-                  reserve.config.decimals
-                )} BLND/day emissions`}
+                title={formatter.getEmissionTextFromValue(
+                  getEmissionsPerDayPerUnit(
+                    reserve.supplyEmissions?.config.eps || BigInt(0),
+                    reserve.estimates.supplied,
+                    reserve.config.decimals
+                  )
+                )}
               />
             )}
           </Box>

@@ -10,7 +10,7 @@ import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
 import { useWallet } from '../contexts/wallet';
 import { useStore } from '../store/store';
-import { toBalance, toPercentage } from '../utils/formatter';
+import { getEmissionTextFromValue, toBalance, toPercentage } from '../utils/formatter';
 import { getEmissionsPerDayPerUnit } from '../utils/token';
 
 const Borrow: NextPage = () => {
@@ -76,11 +76,13 @@ const Borrow: NextPage = () => {
                 <FlameIcon
                   width={22}
                   height={22}
-                  title={` This asset earns ${getEmissionsPerDayPerUnit(
-                    reserve?.borrowEmissions?.config.eps || BigInt(0),
-                    reserve?.estimates.borrowed || 0,
-                    reserve?.config.decimals
-                  )} BLND/day emissions`}
+                  title={getEmissionTextFromValue(
+                    getEmissionsPerDayPerUnit(
+                      reserve?.borrowEmissions?.config.eps || BigInt(0),
+                      reserve?.estimates.borrowed || 0,
+                      reserve?.config.decimals
+                    )
+                  )}
                 />
               </div>
             }
