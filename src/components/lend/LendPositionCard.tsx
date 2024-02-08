@@ -88,7 +88,8 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
                     reserve.supplyEmissions?.config.eps || BigInt(0),
                     reserve.estimates.supplied,
                     reserve.config.decimals
-                  )
+                  ),
+                  reserve.tokenMetadata.symbol
                 )}
               />
             )}

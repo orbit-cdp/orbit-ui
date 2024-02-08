@@ -86,7 +86,8 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
                     reserve.borrowEmissions?.config.eps || BigInt(0),
                     reserve.estimates.borrowed,
                     reserve.config.decimals
-                  )
+                  ),
+                  reserve.tokenMetadata.symbol
                 )}
               />
             )}
