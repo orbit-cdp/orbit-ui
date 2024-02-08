@@ -6,7 +6,6 @@ export function getEmissionsPerDayPerUnit(eps: bigint, totalAmount: number, deci
   }
   const epsNum = Number(Number(eps) / Math.pow(10, decimals || STELLAR_DECIMALS));
   const toReturn = Number((epsNum * SECONDS_PER_DAY) / totalAmount);
-  console.log({ toReturn, eps, epsNum, totalAmount, decimals });
   const decimalCount = toReturn.toString().split('.')[1]?.length || 0;
   if (decimalCount > (decimals || STELLAR_DECIMALS)) {
     return Number(toReturn.toFixed(decimals));
