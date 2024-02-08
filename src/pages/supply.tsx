@@ -76,7 +76,8 @@ const Supply: NextPage = () => {
                       reserve?.supplyEmissions?.config.eps || BigInt(0),
                       reserve?.estimates.supplied || 0,
                       reserve?.config.decimals
-                    )
+                    ),
+                    reserve?.tokenMetadata?.symbol || 'token'
                   )}
                 />
               </div>

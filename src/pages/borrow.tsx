@@ -81,7 +81,8 @@ const Borrow: NextPage = () => {
                       reserve?.borrowEmissions?.config.eps || BigInt(0),
                       reserve?.estimates.borrowed || 0,
                       reserve?.config.decimals
-                    )
+                    ),
+                    reserve?.tokenMetadata?.symbol || 'token'
                   )}
                 />
               </div>

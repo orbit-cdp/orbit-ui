@@ -87,7 +87,8 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
                     reserve.supplyEmissions?.config.eps || BigInt(0),
                     reserve.estimates.supplied,
                     reserve.config.decimals
-                  )
+                  ),
+                  reserve.tokenMetadata?.symbol
                 )}
               />
             )}
