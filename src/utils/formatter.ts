@@ -107,3 +107,7 @@ export function toTimeSpan(secondsLeft: number): string {
   !d && tmp.push(secondsLeft + 's');
   return tmp.join(' ');
 }
+
+export function getEmissionTextFromValue(value: string | number, symbol: string) {
+  return ` This asset earns ${value} BLND a day per ${symbol}`;
+}

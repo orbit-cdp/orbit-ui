@@ -2,6 +2,7 @@ import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { BorrowAnvil } from '../components/borrow/BorrowAnvil';
+import { FlameIcon } from '../components/common/FlameIcon';
 import { GoBackHeader } from '../components/common/GoBackHeader';
 import { ReserveDropdown } from '../components/common/ReserveDropdown';
 import { Row } from '../components/common/Row';
@@ -9,7 +10,8 @@ import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
 import { useWallet } from '../contexts/wallet';
 import { useStore } from '../store/store';
-import { toBalance, toPercentage } from '../utils/formatter';
+import { getEmissionTextFromValue, toBalance, toPercentage } from '../utils/formatter';
+import { getEmissionsPerDayPerUnit } from '../utils/token';
 
 const Borrow: NextPage = () => {
   const theme = useTheme();
@@ -62,11 +64,30 @@ const Borrow: NextPage = () => {
         </Section>
       </Row>
       <Row>
-        <Section width={SectionSize.THIRD}>
+        <Section
+          width={SectionSize.THIRD}
+          style={{ display: 'flex', justifyContent: 'space-between' }}
+        >
           <StackedText
             title="Borrow APY"
-            text={toPercentage(reserve?.estimates.apy)}
-            sx={{ width: '100%', padding: '6px' }}
+            text={
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                {toPercentage(reserve?.estimates.apy)}{' '}
+                <FlameIcon
+                  width={22}
+                  height={22}
+                  title={getEmissionTextFromValue(
+                    getEmissionsPerDayPerUnit(
+                      reserve?.borrowEmissions?.config.eps || BigInt(0),
+                      reserve?.estimates.borrowed || 0,
+                      reserve?.config.decimals
+                    ),
+                    reserve?.tokenMetadata?.symbol || 'token'
+                  )}
+                />
+              </div>
+            }
+            sx={{ padding: '6px' }}
           ></StackedText>
         </Section>
         <Section width={SectionSize.THIRD}>

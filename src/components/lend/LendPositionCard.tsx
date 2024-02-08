@@ -3,7 +3,9 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
 import { ViewType, useSettings } from '../../contexts';
 import * as formatter from '../../utils/formatter';
+import { getEmissionsPerDayPerUnit } from '../../utils/token';
 import { CustomButton } from '../common/CustomButton';
+import { FlameIcon } from '../common/FlameIcon';
 import { LinkBox } from '../common/LinkBox';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { SectionBase } from '../common/SectionBase';
@@ -77,6 +79,20 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
             <Typography variant="body1">
               {formatter.toPercentage(reserve.estimates.supplyApy)}
             </Typography>
+            {!!reserve.supplyEmissions && (
+              <FlameIcon
+                width={22}
+                height={22}
+                title={formatter.getEmissionTextFromValue(
+                  getEmissionsPerDayPerUnit(
+                    reserve.supplyEmissions?.config.eps || BigInt(0),
+                    reserve.estimates.supplied,
+                    reserve.config.decimals
+                  ),
+                  reserve.tokenMetadata.symbol
+                )}
+              />
+            )}
           </Box>
           {tableNum >= 5 && <Box sx={{ width: tableWidth }} />}
           <Box
