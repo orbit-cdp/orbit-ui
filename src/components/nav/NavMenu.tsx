@@ -89,14 +89,14 @@ export const NavMenu = () => {
         >
           <NavItem
             onClick={handleClose}
-            to={{ pathname: '/dashboard', query: { poolId: poolId } }}
-            title="Dashboard"
+            to={{ pathname: '/', query: { poolId: poolId } }}
+            title="Markets"
             sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
           />
           <NavItem
             onClick={handleClose}
-            to={{ pathname: '/', query: { poolId: poolId } }}
-            title="Markets"
+            to={{ pathname: '/dashboard', query: { poolId: poolId } }}
+            title="Dashboard"
             sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
           />
           <NavItem

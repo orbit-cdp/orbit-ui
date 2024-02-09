@@ -48,12 +48,12 @@ export const NavBar = () => {
           }}
         >
           <Section width={SectionSize.LARGE}>
+            <NavItem to={{ pathname: '/' }} title="Markets" sx={{ width: '33%' }} />
             <NavItem
               to={{ pathname: '/dashboard', query: { poolId: poolId } }}
               title="Dashboard"
               sx={{ width: '33%' }}
             />
-            <NavItem to={{ pathname: '/' }} title="Markets" sx={{ width: '33%' }} />
             <NavItem
               to={{ pathname: '/backstop', query: { poolId: poolId } }}
               title="Backstop"
