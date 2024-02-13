@@ -145,6 +145,8 @@ export const BackstopMintAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
                 palette={theme.palette.backstop}
                 sx={{ width: '100%' }}
                 isMaxDisabled={isMaxDisabled}
+                showSwitch
+                onSwitchClick={() => {}}
               />
             </Box>
             <OpaqueButton

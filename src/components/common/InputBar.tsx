@@ -1,3 +1,4 @@
+import { LoopOutlined } from '@mui/icons-material';
 import { Box, BoxProps, Input, PaletteColor, Typography, useTheme } from '@mui/material';
 import { ChangeEvent } from 'react';
 import { CustomButton } from './CustomButton';
@@ -10,6 +11,8 @@ export interface InputBarProps extends BoxProps {
   palette: PaletteColor;
   isMaxDisabled?: boolean;
   type?: 'number' | 'text';
+  showSwitch?: boolean;
+  onSwitchClick?: () => void;
 }
 
 export const InputBar: React.FC<InputBarProps> = ({
@@ -21,6 +24,8 @@ export const InputBar: React.FC<InputBarProps> = ({
   sx,
   type = 'number',
   isMaxDisabled,
+  showSwitch,
+  onSwitchClick,
   ...props
 }) => {
   const theme = useTheme();
@@ -53,7 +58,7 @@ export const InputBar: React.FC<InputBarProps> = ({
       sx={{
         display: 'flex',
         flexDirection: 'row',
-        justifyContent: 'flex-start',
+        justifyContent: 'space-between',
         alignItems: 'center',
         padding: '3px',
         borderRadius: '5px',
@@ -68,28 +73,58 @@ export const InputBar: React.FC<InputBarProps> = ({
         onKeyDown={handleKeyDown}
         placeholder="0"
         disableUnderline={true}
-        sx={{ marginLeft: '12px', width: '100%' }}
+        sx={{ marginLeft: '12px', width: '50%' }}
       />
-      <Box sx={{ marginLeft: '12px' }}>
-        <Typography variant="h5" sx={{ width: '113px', color: theme.palette.text.secondary }}>
-          {symbol}
-        </Typography>
-      </Box>
-      <CustomButton
-        onClick={onSetMax}
-        disabled={isMaxDisabled}
+      <Box
         sx={{
-          color: palette.main,
-          backgroundColor: palette.opaque,
-          width: '60px',
-          marginRight: '2px',
           marginLeft: '12px',
+          display: 'flex',
+          justifyContent: 'end',
           alignItems: 'center',
-          justifyContent: 'center',
+          width: '40%',
+          gap: '4px',
         }}
       >
-        MAX
-      </CustomButton>
+        <Typography
+          variant="h5"
+          sx={{ width: '113px', color: theme.palette.text.secondary, textAlign: 'right' }}
+        >
+          {symbol}
+        </Typography>
+        {showSwitch && (
+          <Box
+            sx={{
+              color: palette.main,
+              backgroundColor: palette.opaque,
+              borderRadius: '20%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '4px',
+              marginLeft: '6px',
+              width: '28px',
+              height: '28px',
+            }}
+          >
+            <LoopOutlined />
+          </Box>
+        )}
+        <CustomButton
+          onClick={onSetMax}
+          disabled={isMaxDisabled}
+          sx={{
+            color: palette.main,
+            backgroundColor: palette.opaque,
+            width: '60px',
+            marginRight: '2px',
+            marginLeft: '6px',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          MAX
+        </CustomButton>
+      </Box>
     </Box>
   );
 };

@@ -2,7 +2,7 @@ import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { BackstopMintAnvil } from '../components/backstop/BackstopMintAnvil';
-import { GoBackHeader } from '../components/common/GoBackHeader';
+import { GoBackButton } from '../components/common/GoBackButton';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { TokenIcon } from '../components/common/TokenIcon';
@@ -31,7 +31,7 @@ const BackstopMint: NextPage = () => {
   return (
     <>
       <Row sx={{ margin: '12px' }}>
-        <GoBackHeader name={poolData?.config.name} />
+        <GoBackButton />
       </Row>
       <Row>
         <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>
