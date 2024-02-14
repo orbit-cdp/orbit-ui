@@ -18,7 +18,7 @@ export const BackstopMintAnvil: React.FC<{
   setCurrentDepositToken: (token: { address: string | undefined; symbol: string }) => void;
 }> = ({ currentDepositToken, setCurrentDepositToken }) => {
   const [toMint, setToMint] = useState<string>('');
-
+  const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
   const [toSwap, setToSwap] = useState<string>('');
   /** run function on each state change */
   useDebouncedState(toSwap, 500, handleSwapChange);
@@ -65,13 +65,18 @@ export const BackstopMintAnvil: React.FC<{
       errorProps.isMaxDisabled = false;
       errorProps.reason = 'You do not have enough available balance to mint.';
       errorProps.disabledType = 'warning';
+    } else if (!toMint || !!loadingEstimate) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = 'Loading estimate...';
+      errorProps.disabledType = 'info';
     } else {
       errorProps.isSubmitDisabled = false;
       errorProps.isMaxDisabled = false;
     }
     return errorProps;
-  }, [toSwap, currentDepositToken.address, balancesByAddress]);
-
+  }, [toSwap, currentDepositToken.address, balancesByAddress, loadingEstimate]);
+  console.log({ loadingEstimate });
   const handleMaxClick = () => {
     /** @todo get comet LP estimate based on user balance and set in inputs */
     if (currentDepositToken.address) {
@@ -89,7 +94,6 @@ export const BackstopMintAnvil: React.FC<{
       const bigintValue = scaleInputToBigInt(value, decimals);
       const currentDepositTokenBalance =
         balancesByAddress.get(currentDepositToken.address ?? '') || 0;
-
       if (bigintValue <= currentDepositTokenBalance) {
         backstopMintByDepositTokenAmount(
           {
@@ -100,6 +104,7 @@ export const BackstopMintAnvil: React.FC<{
           },
           true
         ).then((val: bigint | undefined) => {
+          setLoadingEstimate(false);
           setToMint(toBalance(val || 0, decimals));
         });
       }
@@ -188,7 +193,10 @@ export const BackstopMintAnvil: React.FC<{
               <InputBar
                 symbol={currentDepositToken.symbol}
                 value={toSwap}
-                onValueChange={setToSwap}
+                onValueChange={(v) => {
+                  setToSwap(v);
+                  setLoadingEstimate(true);
+                }}
                 onSetMax={handleMaxClick}
                 palette={theme.palette.backstop}
                 sx={{ width: '100%' }}
@@ -212,7 +220,7 @@ export const BackstopMintAnvil: React.FC<{
                   variant="h5"
                   sx={{ color: theme.palette.text.secondary, marginLeft: '12px' }}
                 >
-                  {toMint || 0}
+                  {loadingEstimate ? 'Loading...' : toMint || 0}
                 </Typography>
                 <Typography
                   variant="h5"
