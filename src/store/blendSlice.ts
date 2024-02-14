@@ -3,7 +3,7 @@ import { StateCreator } from 'zustand';
 import { DataStore } from './store';
 
 export const BACKSTOP_ID = 'CAYRY4MZ42MAT3VLTXCILUG7RUAPELZDCDSI2BWBYUJWIDDWW3HQV5LU';
-
+export const COMET_ID = 'CBESO2HJRRXRNEDNZ6PAF5FXCLQNUSJK6YRWWY2CXCIANIHTMQUTHSOM';
 /**
  * Ledger state for the Blend protocol
  */
