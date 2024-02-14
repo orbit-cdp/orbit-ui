@@ -4,6 +4,7 @@ import HelpOutline from '@mui/icons-material/HelpOutline';
 import { Box, Tooltip, Typography } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
 import { BackstopBalanceCard } from '../components/backstop/BackstopBalanceCard';
 import { BackstopQueueMod } from '../components/backstop/BackstopQueueMod';
 import { CustomButton } from '../components/common/CustomButton';
@@ -23,15 +24,18 @@ import { toBalance, toPercentage } from '../utils/formatter';
 
 const Backstop: NextPage = () => {
   const router = useRouter();
-  const { connected, walletAddress, poolClaim } = useWallet();
+  const { connected, walletAddress, poolClaim, backstopMintByDepositTokenAmount } = useWallet();
   const loadBlendData = useStore((state) => state.loadBlendData);
   const { poolId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
-
+  const [availableToMint, setAvailableToMint] = useState<string>();
+  const [loadingEstimate, setLoadingEstimate] = useState(false);
   const backstopPoolData = useStore((state) => state.backstop?.pools?.get(safePoolId));
   const poolData = useStore((state) => state.pools.get(safePoolId));
   const userPoolData = useStore((state) => state.userPoolData.get(safePoolId));
-
+  const backstopData = useStore((state) => state.backstop);
+  const loadUserData = useStore((state) => state.loadUserData);
+  const balancesByAddress = useStore((state) => state.balances);
   const estBackstopApy =
     backstopPoolData && poolData
       ? ((poolData.config.backstopRate / 1e7) *
@@ -55,6 +59,47 @@ const Backstop: NextPage = () => {
       }
     }
   };
+  useEffect(() => {
+    if (!balancesByAddress.get(backstopData?.config.usdcTkn ?? '')) {
+      loadUserData(walletAddress);
+    }
+    /** load comet estimate for users full balance */
+    const usdcBalance = balancesByAddress.get(backstopData?.config.usdcTkn ?? '') || BigInt(0);
+    const blndBalance = balancesByAddress.get(backstopData?.config.blndTkn ?? '') || BigInt(0);
+    const usdcAddress = backstopData?.config.usdcTkn || '';
+    const blndAddress = backstopData?.config.blndTkn || '';
+    setLoadingEstimate(true);
+    backstopMintByDepositTokenAmount(
+      {
+        depositTokenAddress: usdcAddress,
+        depositTokenAmount: usdcBalance,
+        minLPTokenAmount: BigInt(0),
+        user: walletAddress,
+      },
+      true
+    ).then((usdcEstimate: bigint | undefined) => {
+      if (usdcEstimate) {
+        backstopMintByDepositTokenAmount(
+          {
+            depositTokenAddress: usdcAddress,
+            depositTokenAmount: usdcBalance,
+            minLPTokenAmount: BigInt(0),
+            user: walletAddress,
+          },
+          true
+        ).then((blndEstimate: bigint | undefined) => {
+          if (blndEstimate) {
+            const totalEstimate = usdcEstimate + blndEstimate;
+            setAvailableToMint(toBalance(totalEstimate, 7));
+            setLoadingEstimate(false);
+          }
+        });
+      } else {
+        setLoadingEstimate(false);
+        setAvailableToMint('--');
+      }
+    });
+  }, [balancesByAddress]);
 
   return (
     <>
@@ -192,7 +237,7 @@ const Backstop: NextPage = () => {
                 <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
                 <Box sx={{ display: 'flex', flexDirection: 'row' }}>
                   <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                    688.666k
+                    {loadingEstimate ? 'loading...' : availableToMint}
                   </Typography>
                   <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
                     BLND-USDC LP
