@@ -1,8 +1,10 @@
 import { Box, Typography, useTheme } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { TxStatus, useWallet } from '../../contexts/wallet';
+import { useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
+import { scaleInputToBigInt } from '../../utils/scval';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
@@ -14,11 +16,17 @@ import { ValueChange } from '../common/ValueChange';
 
 export const BackstopMintAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
   const [toMint, setToMint] = useState<string>('');
-  const [toSwap, setToSwap] = useState<string>('');
-  const theme = useTheme();
-  const { connected, walletAddress, backstopDeposit, txStatus } = useWallet();
 
+  const [toSwap, setToSwap] = useState<string>('');
+  useDebouncedState(toSwap, 500, handleSwapChange);
+  const theme = useTheme();
+  const { connected, walletAddress, txStatus, backstopMintByDepositTokenAmount } = useWallet();
   const backstopData = useStore((state) => state.backstop);
+
+  const [currentDepositToken, setCurrentDepositToken] = useState<{
+    address: string | undefined;
+    symbol: string;
+  }>({ address: backstopData?.config.usdcTkn, symbol: 'USDC' });
   const backstopPoolData = useStore((state) => state.backstop?.pools?.get(poolId));
   const userBackstopData = useStore((state) => state.backstopUserData);
   const userPoolBackstopBalance = userBackstopData?.balances.get(poolId);
@@ -69,25 +77,66 @@ export const BackstopMintAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
     return errorProps;
   }, [toMint, userBalance]);
 
-  const handlemintMax = () => {
+  const handleMaxClick = () => {
     /** @todo get comet LP estimate based on user balance and set in inputs */
   };
 
-  function handleMintChange(value: string) {
-    /** @todo get comet estimate used swap token for the desired amount of LP token and set in swap input */
-  }
-
   function handleSwapChange(value: string) {
-    /** @todo get comet estimate LP token for the inputted swap token and set in mint input  */
+    /**  get comet estimate LP token for the inputted swap token and set in mint input  */
+    if (currentDepositToken.address) {
+      backstopMintByDepositTokenAmount(
+        {
+          depositTokenAddress: currentDepositToken.address,
+          depositTokenAmount: scaleInputToBigInt(value, 7),
+          minLPTokenAmount: BigInt(0),
+          user: walletAddress,
+        },
+        true
+      ).then((val: bigint | undefined) => {
+        if (val) {
+          setToMint(toBalance(val, 7));
+        }
+      });
+    }
   }
 
-  const handleSubmitTransaction = async () => {
+  function handleSubmitTransaction() {
     /** @todo handle comet provide liquidty */
-  };
+    backstopMintByDepositTokenAmount(
+      {
+        depositTokenAddress: backstopData?.config.usdcTkn || '',
+        depositTokenAmount: scaleInputToBigInt(toSwap, 7),
+        minLPTokenAmount: BigInt(0),
+        user: walletAddress,
+      },
+      false
+    ).then((val) => {
+      console.log({ val });
+    });
+  }
+
+  function handleSwitchDepositToken() {
+    console.log({ currentDepositToken });
+    if (currentDepositToken.symbol === 'USDC') {
+      setCurrentDepositToken({
+        address: backstopData?.config.blndTkn,
+        symbol: 'BLND',
+      });
+    } else {
+      setCurrentDepositToken({
+        address: backstopData?.config.usdcTkn,
+        symbol: 'USDC',
+      });
+    }
+  }
 
   useEffect(() => {
     /**@todo load data from comet  */
   }, []);
+  useEffect(() => {
+    /**@todo load data from comet  */
+    handleSwapChange(toSwap);
+  }, [currentDepositToken.address]);
 
   return (
     <Row>
@@ -129,31 +178,51 @@ export const BackstopMintAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
               }}
             >
               <InputBar
-                symbol={'BLND-USDC LP'}
-                value={toMint}
-                onValueChange={handleMintChange}
-                onSetMax={handlemintMax}
-                palette={theme.palette.backstop}
-                sx={{ width: '100%' }}
-                isMaxDisabled={isMaxDisabled}
-              />
-              <InputBar
-                symbol={'USDC'}
+                symbol={currentDepositToken.symbol}
                 value={toSwap}
-                onValueChange={handleSwapChange}
-                onSetMax={handlemintMax}
+                onValueChange={setToSwap}
+                onSetMax={handleMaxClick}
                 palette={theme.palette.backstop}
                 sx={{ width: '100%' }}
                 isMaxDisabled={isMaxDisabled}
                 showSwitch
-                onSwitchClick={() => {}}
+                onSwitchClick={handleSwitchDepositToken}
               />
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '2px',
+                  borderRadius: '5px',
+                  height: '38px',
+                  backgroundColor: theme.palette.accent.main,
+                }}
+              >
+                <Typography
+                  variant="h5"
+                  sx={{ color: theme.palette.text.secondary, marginLeft: '12px' }}
+                >
+                  {toMint || 0}
+                </Typography>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    width: '113px',
+                    color: theme.palette.text.secondary,
+                    textAlign: 'right',
+                    marginRight: '12px',
+                  }}
+                >
+                  BLND-USDC LP
+                </Typography>
+              </Box>
             </Box>
             <OpaqueButton
               onClick={handleSubmitTransaction}
               palette={theme.palette.backstop}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px', height: 'max-content' }}
-              disabled={isSubmitDisabled}
             >
               Mint
             </OpaqueButton>

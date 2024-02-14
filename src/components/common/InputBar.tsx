@@ -104,7 +104,9 @@ export const InputBar: React.FC<InputBarProps> = ({
               marginLeft: '6px',
               width: '28px',
               height: '28px',
+              cursor: 'pointer',
             }}
+            onClick={onSwitchClick}
           >
             <LoopOutlined />
           </Box>
