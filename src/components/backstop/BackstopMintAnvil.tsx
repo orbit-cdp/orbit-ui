@@ -7,37 +7,30 @@ import { toBalance } from '../../utils/formatter';
 import { scaleInputToBigInt } from '../../utils/scval';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
-import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
 import { SubmitError, TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
-export const BackstopMintAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
+export const BackstopMintAnvil: React.FC<{
+  currentDepositToken: { address: string | undefined; symbol: string };
+  setCurrentDepositToken: (token: { address: string | undefined; symbol: string }) => void;
+}> = ({ currentDepositToken, setCurrentDepositToken }) => {
   const [toMint, setToMint] = useState<string>('');
 
   const [toSwap, setToSwap] = useState<string>('');
+  /** run function on each state change */
   useDebouncedState(toSwap, 500, handleSwapChange);
   const theme = useTheme();
   const { connected, walletAddress, txStatus, backstopMintByDepositTokenAmount } = useWallet();
   const backstopData = useStore((state) => state.backstop);
+  const loadUserData = useStore((state) => state.loadUserData);
 
-  const [currentDepositToken, setCurrentDepositToken] = useState<{
-    address: string | undefined;
-    symbol: string;
-  }>({ address: backstopData?.config.usdcTkn, symbol: 'USDC' });
-  const backstopPoolData = useStore((state) => state.backstop?.pools?.get(poolId));
   const userBackstopData = useStore((state) => state.backstopUserData);
-  const userPoolBackstopBalance = userBackstopData?.balances.get(poolId);
-
-  const userBalance = Number(userBackstopData?.tokens ?? BigInt(0)) / 1e7;
+  const balancesByAddress = useStore((state) => state.balances);
+  const userLPBalance = Number(userBackstopData?.tokens ?? BigInt(0)) / 1e7;
   const decimals = 7;
-  const curmint =
-    userPoolBackstopBalance && backstopPoolData
-      ? (Number(userPoolBackstopBalance.shares) / 1e7) *
-        (Number(backstopPoolData.poolBalance.tokens) / Number(backstopPoolData.poolBalance.shares))
-      : 0;
 
   if (txStatus === TxStatus.SUCCESS && Number(toMint) != 0) {
     setToMint('0');
@@ -50,53 +43,66 @@ export const BackstopMintAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
       reason: undefined,
       disabledType: undefined,
     };
-    if (userBalance <= 0 && txStatus !== TxStatus.SUCCESS) {
+    const currentDepositTokenBalance =
+      balancesByAddress.get(currentDepositToken.address ?? '') || 0;
+    if (currentDepositTokenBalance <= BigInt(0)) {
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = true;
       errorProps.reason = 'You do not have any available balance to mint.';
       errorProps.disabledType = 'warning';
-    } else if (!toMint) {
+    } else if (!toSwap) {
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
       errorProps.reason = 'Please enter an amount to mint.';
       errorProps.disabledType = 'info';
-    } else if (Number(toMint) > userBalance) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = 'You do not have enough available balance to mint.';
-      errorProps.disabledType = 'warning';
-    } else if (toMint.split('.')[1]?.length > decimals) {
+    } else if (toSwap.split('.')[1]?.length > decimals) {
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
       errorProps.reason = `You cannot supply more than ${decimals} decimal places.`;
+      errorProps.disabledType = 'warning';
+    } else if (scaleInputToBigInt(toSwap, decimals) > currentDepositTokenBalance) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = false;
+      errorProps.reason = 'You do not have enough available balance to mint.';
       errorProps.disabledType = 'warning';
     } else {
       errorProps.isSubmitDisabled = false;
       errorProps.isMaxDisabled = false;
     }
     return errorProps;
-  }, [toMint, userBalance]);
+  }, [toSwap, currentDepositToken.address, balancesByAddress]);
 
   const handleMaxClick = () => {
     /** @todo get comet LP estimate based on user balance and set in inputs */
+    if (currentDepositToken.address) {
+      const currentTokenBalance = balancesByAddress.get(currentDepositToken.address ?? '');
+      if (currentTokenBalance) {
+        setToSwap(toBalance(currentTokenBalance, 7));
+      }
+    }
   };
 
   function handleSwapChange(value: string) {
     /**  get comet estimate LP token for the inputted swap token and set in mint input  */
-    if (currentDepositToken.address) {
-      backstopMintByDepositTokenAmount(
-        {
-          depositTokenAddress: currentDepositToken.address,
-          depositTokenAmount: scaleInputToBigInt(value, 7),
-          minLPTokenAmount: BigInt(0),
-          user: walletAddress,
-        },
-        true
-      ).then((val: bigint | undefined) => {
-        if (val) {
-          setToMint(toBalance(val, 7));
-        }
-      });
+    const isWrongDecimals = value.split('.')[1]?.length > decimals;
+    if (currentDepositToken.address && !isWrongDecimals) {
+      const bigintValue = scaleInputToBigInt(value, decimals);
+      const currentDepositTokenBalance =
+        balancesByAddress.get(currentDepositToken.address ?? '') || 0;
+
+      if (bigintValue <= currentDepositTokenBalance) {
+        backstopMintByDepositTokenAmount(
+          {
+            depositTokenAddress: currentDepositToken.address,
+            depositTokenAmount: bigintValue,
+            minLPTokenAmount: BigInt(0),
+            user: walletAddress,
+          },
+          true
+        ).then((val: bigint | undefined) => {
+          setToMint(toBalance(val || 0, decimals));
+        });
+      }
     }
   }
 
@@ -105,7 +111,7 @@ export const BackstopMintAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
     backstopMintByDepositTokenAmount(
       {
         depositTokenAddress: backstopData?.config.usdcTkn || '',
-        depositTokenAmount: scaleInputToBigInt(toSwap, 7),
+        depositTokenAmount: scaleInputToBigInt(toSwap, decimals),
         minLPTokenAmount: BigInt(0),
         user: walletAddress,
       },
@@ -132,9 +138,11 @@ export const BackstopMintAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
 
   useEffect(() => {
     /**@todo load data from comet  */
+    if (!balancesByAddress.get(backstopData?.config.usdcTkn ?? '')) {
+      loadUserData(walletAddress);
+    }
   }, []);
   useEffect(() => {
-    /**@todo load data from comet  */
     handleSwapChange(toSwap);
   }, [currentDepositToken.address]);
 
@@ -223,6 +231,7 @@ export const BackstopMintAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
               onClick={handleSubmitTransaction}
               palette={theme.palette.backstop}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px', height: 'max-content' }}
+              disabled={isSubmitDisabled}
             >
               Mint
             </OpaqueButton>
@@ -237,8 +246,8 @@ export const BackstopMintAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
           <Value title="Amount to mint" value={`${toMint ?? '0'} BLND-USDC LP`} />
           <ValueChange
             title="Your total mint"
-            curValue={`${toBalance(curmint)} BLND-USDC LP`}
-            newValue={`${toBalance(curmint + Number(toMint ?? '0'))} BLND-USDC LP`}
+            curValue={`${toBalance(userLPBalance)} BLND-USDC LP`}
+            newValue={`${toBalance(userLPBalance + Number(toMint ?? '0'))} BLND-USDC LP`}
           />
         </TxOverview>
       </Section>

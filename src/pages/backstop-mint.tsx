@@ -1,6 +1,7 @@
 import { Box, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
+import { useState } from 'react';
 import { BackstopMintAnvil } from '../components/backstop/BackstopMintAnvil';
 import { GoBackButton } from '../components/common/GoBackButton';
 import { Row } from '../components/common/Row';
@@ -19,7 +20,12 @@ const BackstopMint: NextPage = () => {
   const backstopPoolData = useStore((state) => state.backstop?.pools?.get(safePoolId));
   const poolData = useStore((state) => state.pools.get(safePoolId));
   const userBackstopData = useStore((state) => state.backstopUserData);
-
+  const backstopData = useStore((state) => state.backstop);
+  const [currentDepositToken, setCurrentDepositToken] = useState<{
+    address: string | undefined;
+    symbol: string;
+  }>({ address: backstopData?.config.usdcTkn, symbol: 'USDC' });
+  const balancesByAddress = useStore((state) => state.balances);
   const estBackstopApy =
     backstopPoolData && poolData
       ? ((poolData.config.backstopRate / 1e7) *
@@ -66,19 +72,22 @@ const BackstopMint: NextPage = () => {
                 Available
               </Typography>
               <Typography variant="h4" sx={{ color: theme.palette.backstop.main }}>
-                {toBalance(userBackstopData?.tokens, 7)}
+                {toBalance(balancesByAddress.get(currentDepositToken.address ?? ''), 7)}
               </Typography>
             </Box>
             <Box>
               <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-                BLND-USDC LP
+                {currentDepositToken.symbol}
               </Typography>
             </Box>
           </Box>
         </Section>
       </Row>
 
-      <BackstopMintAnvil poolId={safePoolId} />
+      <BackstopMintAnvil
+        currentDepositToken={currentDepositToken}
+        setCurrentDepositToken={setCurrentDepositToken}
+      />
     </>
   );
 };
