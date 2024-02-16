@@ -82,7 +82,8 @@ export const BackstopMintAnvil: React.FC<{
     if (currentDepositToken.address) {
       const currentTokenBalance = balancesByAddress.get(currentDepositToken.address ?? '');
       if (currentTokenBalance) {
-        setToSwap(toBalance(currentTokenBalance, 7));
+        const max = Number(currentTokenBalance) / 10 ** decimals;
+        setToSwap(max.toString());
       }
     }
   };
