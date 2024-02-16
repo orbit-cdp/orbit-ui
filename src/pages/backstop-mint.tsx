@@ -14,25 +14,13 @@ const BackstopMint: NextPage = () => {
   const theme = useTheme();
 
   const router = useRouter();
-  const { poolId } = router.query;
-  const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
 
-  const backstopPoolData = useStore((state) => state.backstop?.pools?.get(safePoolId));
-  const poolData = useStore((state) => state.pools.get(safePoolId));
-  const userBackstopData = useStore((state) => state.backstopUserData);
   const backstopData = useStore((state) => state.backstop);
   const [currentDepositToken, setCurrentDepositToken] = useState<{
     address: string | undefined;
     symbol: string;
   }>({ address: backstopData?.config.usdcTkn, symbol: 'USDC' });
   const balancesByAddress = useStore((state) => state.balances);
-  const estBackstopApy =
-    backstopPoolData && poolData
-      ? ((poolData.config.backstopRate / 1e7) *
-          poolData.estimates.totalBorrowApy *
-          poolData.estimates.totalBorrow) /
-        backstopPoolData.estimates.totalSpotValue
-      : 0;
 
   return (
     <>

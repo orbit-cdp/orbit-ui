@@ -76,17 +76,19 @@ const Backstop: NextPage = () => {
         minLPTokenAmount: BigInt(0),
         user: walletAddress,
       },
-      true
+      true,
+      backstopData?.config.backstopTkn || ''
     ).then((usdcEstimate: bigint | undefined) => {
       if (usdcEstimate) {
         backstopMintByDepositTokenAmount(
           {
-            depositTokenAddress: usdcAddress,
-            depositTokenAmount: usdcBalance,
+            depositTokenAddress: blndAddress,
+            depositTokenAmount: blndBalance,
             minLPTokenAmount: BigInt(0),
             user: walletAddress,
           },
-          true
+          true,
+          backstopData?.config.backstopTkn || ''
         ).then((blndEstimate: bigint | undefined) => {
           if (blndEstimate) {
             const totalEstimate = usdcEstimate + blndEstimate;

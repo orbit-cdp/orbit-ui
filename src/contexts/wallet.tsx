@@ -22,7 +22,7 @@ import {
 import React, { useContext, useEffect, useState } from 'react';
 import { SorobanRpc, Transaction, xdr } from 'stellar-sdk';
 import { useLocalStorageState } from '../hooks';
-import { BACKSTOP_ID, COMET_ID } from '../store/blendSlice';
+import { BACKSTOP_ID } from '../store/blendSlice';
 import { useStore } from '../store/store';
 import {
   CometClient,
@@ -57,11 +57,13 @@ export interface IWalletContext {
   backstopClaim(args: BackstopClaimArgs, sim: boolean): Promise<bigint | undefined>;
   backstopMintByDepositTokenAmount(
     args: cometPoolDepositArgs,
-    sim: boolean
+    sim: boolean,
+    lpTokenAddress: string
   ): Promise<bigint | undefined>;
   backstopMintByLPTokenAmount(
     args: competPoolGetDepositAmountByLPArgs,
-    sim: boolean
+    sim: boolean,
+    lpTokenAddress: string
   ): Promise<bigint | undefined>;
   faucet(): Promise<undefined>;
 }
@@ -449,7 +451,8 @@ export const WalletProvider = ({ children = null as any }) => {
    */
   async function backstopMintByDepositTokenAmount(
     { depositTokenAddress, depositTokenAmount, minLPTokenAmount }: cometPoolDepositArgs,
-    sim: boolean
+    sim: boolean,
+    lpTokenAddress: string
   ) {
     if (connected) {
       let txOptions: TxOptions = {
@@ -462,7 +465,7 @@ export const WalletProvider = ({ children = null as any }) => {
           networkPassphrase: network.passphrase,
         },
       };
-      let cometClient = new CometClient(COMET_ID);
+      let cometClient = new CometClient(lpTokenAddress);
       let submission = cometClient.depositTokenInGetLPOut(
         sign,
         network,
@@ -492,7 +495,8 @@ export const WalletProvider = ({ children = null as any }) => {
       LPTokenAmount,
       maxDepositTokenAmount,
     }: competPoolGetDepositAmountByLPArgs,
-    sim: boolean
+    sim: boolean,
+    lpTokenAddress: string
   ) {
     if (connected) {
       let txOptions: TxOptions = {
@@ -505,7 +509,7 @@ export const WalletProvider = ({ children = null as any }) => {
           networkPassphrase: network.passphrase,
         },
       };
-      let cometClient = new CometClient(COMET_ID);
+      let cometClient = new CometClient(lpTokenAddress);
       let submission = cometClient.depositTokenInGetLPOut(
         sign,
         network,

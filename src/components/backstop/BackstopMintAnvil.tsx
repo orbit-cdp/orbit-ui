@@ -31,7 +31,7 @@ export const BackstopMintAnvil: React.FC<{
   const balancesByAddress = useStore((state) => state.balances);
   const userLPBalance = Number(userBackstopData?.tokens ?? BigInt(0)) / 1e7;
   const decimals = 7;
-
+  console.log({ lpAddress: backstopData?.config.backstopTkn });
   if (txStatus === TxStatus.SUCCESS && Number(toMint) != 0) {
     setToMint('0');
   }
@@ -102,7 +102,8 @@ export const BackstopMintAnvil: React.FC<{
             minLPTokenAmount: BigInt(0),
             user: walletAddress,
           },
-          true
+          true,
+          backstopData?.config.backstopTkn || ''
         ).then((val: bigint | undefined) => {
           setLoadingEstimate(false);
           setToMint(toBalance(val || 0, decimals));
@@ -119,7 +120,8 @@ export const BackstopMintAnvil: React.FC<{
         minLPTokenAmount: BigInt(0),
         user: walletAddress,
       },
-      false
+      false,
+      backstopData?.config.backstopTkn || ''
     );
   }
 
