@@ -76,9 +76,8 @@ export const BackstopMintAnvil: React.FC<{
     }
     return errorProps;
   }, [toSwap, currentDepositToken.address, balancesByAddress, loadingEstimate]);
-  console.log({ loadingEstimate });
+
   const handleMaxClick = () => {
-    /** @todo get comet LP estimate based on user balance and set in inputs */
     if (currentDepositToken.address) {
       const currentTokenBalance = balancesByAddress.get(currentDepositToken.address ?? '');
       if (currentTokenBalance) {
@@ -113,22 +112,18 @@ export const BackstopMintAnvil: React.FC<{
   }
 
   function handleSubmitTransaction() {
-    /** @todo handle comet provide liquidty */
     backstopMintByDepositTokenAmount(
       {
-        depositTokenAddress: backstopData?.config.usdcTkn || '',
+        depositTokenAddress: currentDepositToken.address || '',
         depositTokenAmount: scaleInputToBigInt(toSwap, decimals),
         minLPTokenAmount: BigInt(0),
         user: walletAddress,
       },
       false
-    ).then((val) => {
-      console.log({ val });
-    });
+    );
   }
 
   function handleSwitchDepositToken() {
-    console.log({ currentDepositToken });
     if (currentDepositToken.symbol === 'USDC') {
       setCurrentDepositToken({
         address: backstopData?.config.blndTkn,
@@ -143,7 +138,6 @@ export const BackstopMintAnvil: React.FC<{
   }
 
   useEffect(() => {
-    /**@todo load data from comet  */
     if (!balancesByAddress.get(backstopData?.config.usdcTkn ?? '')) {
       loadUserData(walletAddress);
     }

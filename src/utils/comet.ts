@@ -15,7 +15,6 @@ export class CometClient {
     user: Address,
  */
   public async depositTokenInGetLPOut(
-    source: string,
     sign: (txXdr: string) => Promise<string>,
     network: Network,
     depositTokenAddress: string,
@@ -35,7 +34,7 @@ export class CometClient {
     };
     const operation = this.comet.call(invokeArgs.method, ...invokeArgs.args);
     return await invokeOperation<i128>(
-      source,
+      user,
       sign,
       network,
       txOptions,
@@ -43,9 +42,7 @@ export class CometClient {
         if (value == undefined) {
           return undefined;
         }
-        console.log({ value });
         const scVal = scValToBigInt(xdr.ScVal.fromXDR(value as string, 'base64'));
-        console.log({ scVal });
         return scVal;
       },
       operation
@@ -59,7 +56,6 @@ export class CometClient {
         user: Address,
  */
   public async getTokenAmountInByLPAmount(
-    source: string,
     sign: (txXdr: string) => Promise<string>,
     network: Network,
     depositTokenAddress: string,
@@ -79,7 +75,7 @@ export class CometClient {
     };
     const operation = this.comet.call(invokeArgs.method, ...invokeArgs.args);
     return await invokeOperation<i128>(
-      source,
+      user,
       sign,
       network,
       txOptions,
@@ -87,9 +83,7 @@ export class CometClient {
         if (value == undefined) {
           return undefined;
         }
-        console.log({ value });
         const scVal = scValToBigInt(xdr.ScVal.fromXDR(value as string, 'base64'));
-        console.log({ scVal });
         return scVal;
       },
       operation

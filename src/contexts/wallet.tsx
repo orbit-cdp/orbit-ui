@@ -464,7 +464,6 @@ export const WalletProvider = ({ children = null as any }) => {
       };
       let cometClient = new CometClient(COMET_ID);
       let submission = cometClient.depositTokenInGetLPOut(
-        walletAddress,
         sign,
         network,
         depositTokenAddress,
@@ -473,7 +472,7 @@ export const WalletProvider = ({ children = null as any }) => {
         walletAddress,
         txOptions
       );
-      console.log({ submission });
+
       if (sim) {
         return (await submission).unwrap();
       } else {
@@ -508,7 +507,6 @@ export const WalletProvider = ({ children = null as any }) => {
       };
       let cometClient = new CometClient(COMET_ID);
       let submission = cometClient.depositTokenInGetLPOut(
-        walletAddress,
         sign,
         network,
         depositTokenAddress,
@@ -517,7 +515,6 @@ export const WalletProvider = ({ children = null as any }) => {
         walletAddress,
         txOptions
       );
-      console.log({ submission });
       if (sim) {
         return (await submission).unwrap();
       } else {
