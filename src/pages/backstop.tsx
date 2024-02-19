@@ -1,4 +1,4 @@
-import { PoolClaimArgs } from '@blend-capital/blend-sdk';
+import { BackstopClaimArgs } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import HelpOutline from '@mui/icons-material/HelpOutline';
 import { Box, Tooltip, Typography } from '@mui/material';
@@ -24,7 +24,7 @@ import { toBalance, toPercentage } from '../utils/formatter';
 
 const Backstop: NextPage = () => {
   const router = useRouter();
-  const { connected, walletAddress, poolClaim, backstopMintByDepositTokenAmount } = useWallet();
+  const { connected, walletAddress, backstopClaim, backstopMintByDepositTokenAmount } = useWallet();
   const loadBlendData = useStore((state) => state.loadBlendData);
   const { poolId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
@@ -34,6 +34,8 @@ const Backstop: NextPage = () => {
   const poolData = useStore((state) => state.pools.get(safePoolId));
   const userPoolData = useStore((state) => state.userPoolData.get(safePoolId));
   const backstopData = useStore((state) => state.backstop);
+  const userBackstopData = useStore((state) => state.backstopUserData);
+  const userEmissions = userBackstopData?.estimates.get(safePoolId)?.emissions;
   const loadUserData = useStore((state) => state.loadUserData);
   const balancesByAddress = useStore((state) => state.balances);
   const estBackstopApy =
@@ -44,21 +46,17 @@ const Backstop: NextPage = () => {
         backstopPoolData.estimates.totalSpotValue
       : 0;
   const handleClaimEmissionsClick = async () => {
-    if (connected && userPoolData) {
-      let reserves_to_claim = Array.from(userPoolData.emissions.entries()).map(
-        (emission) => emission[0]
-      );
-      if (reserves_to_claim.length > 0) {
-        let claimArgs: PoolClaimArgs = {
-          from: walletAddress,
-          reserve_token_ids: reserves_to_claim,
-          to: walletAddress,
-        };
-        await poolClaim(safePoolId, claimArgs, false);
-        await loadBlendData(true, safePoolId, walletAddress);
-      }
+    if (connected && userBackstopData && userEmissions) {
+      let claimArgs: BackstopClaimArgs = {
+        from: walletAddress,
+        pool_addresses: [safePoolId],
+        to: walletAddress,
+      };
+      await backstopClaim(claimArgs, false);
+      await loadBlendData(true, safePoolId, walletAddress);
     }
   };
+
   useEffect(() => {
     if (!balancesByAddress.get(backstopData?.config.usdcTkn ?? '')) {
       loadUserData(walletAddress);
@@ -68,6 +66,7 @@ const Backstop: NextPage = () => {
     const blndBalance = balancesByAddress.get(backstopData?.config.blndTkn ?? '') || BigInt(0);
     const usdcAddress = backstopData?.config.usdcTkn || '';
     const blndAddress = backstopData?.config.blndTkn || '';
+
     setLoadingEstimate(true);
     backstopMintByDepositTokenAmount(
       {
@@ -78,29 +77,46 @@ const Backstop: NextPage = () => {
       },
       true,
       backstopData?.config.backstopTkn || ''
-    ).then((usdcEstimate: bigint | undefined) => {
-      if (usdcEstimate) {
-        backstopMintByDepositTokenAmount(
-          {
-            depositTokenAddress: blndAddress,
-            depositTokenAmount: blndBalance,
-            minLPTokenAmount: BigInt(0),
-            user: walletAddress,
-          },
-          true,
-          backstopData?.config.backstopTkn || ''
-        ).then((blndEstimate: bigint | undefined) => {
-          if (blndEstimate) {
-            const totalEstimate = usdcEstimate + blndEstimate;
-            setAvailableToMint(toBalance(totalEstimate, 7));
-            setLoadingEstimate(false);
-          }
-        });
-      } else {
+    )
+      .then((usdcEstimate: bigint | undefined) => {
+        if (usdcEstimate) {
+          backstopMintByDepositTokenAmount(
+            {
+              depositTokenAddress: blndAddress,
+              depositTokenAmount: blndBalance,
+              minLPTokenAmount: BigInt(0),
+              user: walletAddress,
+            },
+            true,
+            backstopData?.config.backstopTkn || ''
+          )
+            .then((blndEstimate: bigint | undefined) => {
+              if (blndEstimate || usdcEstimate) {
+                const totalEstimate = usdcEstimate + (blndEstimate || BigInt(0));
+                setAvailableToMint(toBalance(totalEstimate, 7));
+
+                setLoadingEstimate(false);
+              } else {
+                setLoadingEstimate(false);
+                setAvailableToMint('--');
+              }
+            })
+            .catch(() => {
+              console.error('error getting blnd estimate');
+              setLoadingEstimate(false);
+              setAvailableToMint('--');
+            });
+        } else {
+          console.error('error getting usdc estimate');
+          setLoadingEstimate(false);
+          setAvailableToMint('--');
+        }
+      })
+      .catch(() => {
+        console.error('error on claim fn ');
         setLoadingEstimate(false);
         setAvailableToMint('--');
-      }
-    });
+      });
   }, [balancesByAddress]);
 
   return (
@@ -152,7 +168,7 @@ const Backstop: NextPage = () => {
         </Section>
       </Row>
 
-      {!!userPoolData?.estimates?.totalEmissions && (
+      {!!userEmissions && (
         <Row>
           <Section
             width={SectionSize.FULL}
@@ -183,7 +199,7 @@ const Backstop: NextPage = () => {
                   <TokenIcon symbol="blnd" sx={{ marginRight: '12px' }}></TokenIcon>
                   <Box sx={{ display: 'flex', flexDirection: 'row' }}>
                     <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                      {toBalance(userPoolData?.estimates?.totalEmissions ?? 0)} BLND
+                      {userEmissions.toFixed(4)} BLND
                     </Typography>
                     <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
                       BLND

@@ -202,6 +202,7 @@ export const WalletProvider = ({ children = null as any }) => {
       // submission calls `sign` internally which handles setting TxStatus
       setFailureMessage(undefined);
       setTxStatus(TxStatus.BUILDING);
+
       let result = await submission;
       setTxHash(result.hash);
       if (result.ok) {
@@ -454,33 +455,39 @@ export const WalletProvider = ({ children = null as any }) => {
     sim: boolean,
     lpTokenAddress: string
   ) {
-    if (connected) {
-      let txOptions: TxOptions = {
-        sim,
-        pollingInterval: 1000,
-        timeout: 15000,
-        builderOptions: {
-          fee: '10000',
-          timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
-          networkPassphrase: network.passphrase,
-        },
-      };
-      let cometClient = new CometClient(lpTokenAddress);
-      let submission = cometClient.depositTokenInGetLPOut(
-        sign,
-        network,
-        depositTokenAddress,
-        depositTokenAmount,
-        minLPTokenAmount,
-        walletAddress,
-        txOptions
-      );
-
-      if (sim) {
-        return (await submission).unwrap();
+    try {
+      console.log({ connected });
+      if (connected) {
+        let txOptions: TxOptions = {
+          sim,
+          pollingInterval: 1000,
+          timeout: 15000,
+          builderOptions: {
+            fee: '10000',
+            timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
+            networkPassphrase: network.passphrase,
+          },
+        };
+        let cometClient = new CometClient(lpTokenAddress);
+        let submission = cometClient.depositTokenInGetLPOut(
+          sign,
+          network,
+          depositTokenAddress,
+          depositTokenAmount,
+          minLPTokenAmount,
+          walletAddress,
+          txOptions
+        );
+        if (sim) {
+          return (await submission).unwrap();
+        } else {
+          return submitTransaction<bigint>(submission);
+        }
       } else {
-        return submitTransaction<bigint>(submission);
+        return;
       }
+    } catch (e) {
+      throw e;
     }
   }
   /**
