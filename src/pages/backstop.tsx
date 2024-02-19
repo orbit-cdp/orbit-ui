@@ -210,63 +210,67 @@ const Backstop: NextPage = () => {
           </Section>
         </Row>
       )}
-      {availableToMint != '--' && (
-        <Row>
-          <Section
-            width={SectionSize.FULL}
-            sx={{
-              flexDirection: 'column',
-              paddingTop: '12px',
-            }}
-          >
-            <Typography variant="body2" sx={{ margin: '6px', color: theme.palette.backstop.main }}>
-              Pool tokens available to mint
-            </Typography>
-            <Row>
-              <CustomButton
-                sx={{
-                  width: '100%',
-                  margin: '6px',
-                  padding: '12px',
-                  color: theme.palette.text.primary,
-                  backgroundColor: theme.palette.background.default,
-                  '&:hover': {
+
+      <Row>
+        <Section
+          width={SectionSize.FULL}
+          sx={{
+            flexDirection: 'column',
+            paddingTop: '12px',
+          }}
+        >
+          <Typography variant="body2" sx={{ margin: '6px', color: theme.palette.backstop.main }}>
+            Pool tokens available to mint
+          </Typography>
+          <Row>
+            <CustomButton
+              sx={{
+                width: '100%',
+                margin: '6px',
+                padding: '12px',
+                color: theme.palette.text.primary,
+                backgroundColor: theme.palette.background.default,
+                '&:hover': {
+                  color: theme.palette.backstop.main,
+                },
+              }}
+              onClick={() => {
+                router.push({ pathname: `/backstop-mint`, query: { poolId: poolId } });
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+                <Box
+                  sx={{
+                    backgroundColor: theme.palette.backstop.opaque,
                     color: theme.palette.backstop.main,
-                  },
-                }}
-                onClick={() => {
-                  router.push({ pathname: `/backstop-mint`, query: { poolId: poolId } });
-                }}
-              >
-                <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                  <Box
-                    sx={{
-                      backgroundColor: theme.palette.backstop.opaque,
-                      color: theme.palette.backstop.main,
-                      borderRadius: '50%',
-                      padding: '4px',
-                      margin: '6px',
-                      display: 'flex',
-                    }}
-                  >
-                    <Icon width="24px" height="24px" src="/icons/dashboard/mint.svg" alt="mint" />
-                  </Box>
-                  <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
-                  <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-                    <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                      {loadingEstimate ? 'loading...' : availableToMint}
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
-                      BLND-USDC LP
-                    </Typography>
-                  </Box>
+                    borderRadius: '50%',
+                    padding: '4px',
+                    margin: '6px',
+                    display: 'flex',
+                  }}
+                >
+                  <Icon width="24px" height="24px" src="/icons/dashboard/mint.svg" alt="mint" />
                 </Box>
-                <ArrowForwardIcon fontSize="inherit" />
-              </CustomButton>
-            </Row>
-          </Section>
-        </Row>
-      )}
+                <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
+                <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                  <Typography variant="h4" sx={{ marginRight: '6px' }}>
+                    {loadingEstimate
+                      ? 'loading...'
+                      : availableToMint != '--'
+                      ? availableToMint
+                      : 'Mint '}
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                    BLND-USDC LP
+                  </Typography>
+                </Box>
+              </Box>
+              <ArrowForwardIcon fontSize="inherit" />
+            </CustomButton>
+          </Row>
+        </Section>
+      </Row>
+
       <Row>
         <BackstopBalanceCard type="deposit" poolId={safePoolId} />
         <BackstopBalanceCard type="wallet" poolId={safePoolId} />
