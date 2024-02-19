@@ -80,38 +80,35 @@ const Backstop: NextPage = () => {
       backstopData?.config.backstopTkn || ''
     )
       .then((usdcEstimate: bigint | undefined) => {
-        if (usdcEstimate) {
-          backstopMintByDepositTokenAmount(
-            {
-              depositTokenAddress: blndAddress,
-              depositTokenAmount: blndBalance,
-              minLPTokenAmount: BigInt(0),
-              user: walletAddress,
-            },
-            true,
-            backstopData?.config.backstopTkn || ''
-          )
-            .then((blndEstimate: bigint | undefined) => {
-              if (blndEstimate || usdcEstimate) {
-                const totalEstimate = usdcEstimate + (blndEstimate || BigInt(0));
-                setAvailableToMint(toBalance(totalEstimate, 7));
+        if (!usdcEstimate) {
+          console.error('error getting usdc estimate');
+        }
+        backstopMintByDepositTokenAmount(
+          {
+            depositTokenAddress: blndAddress,
+            depositTokenAmount: blndBalance,
+            minLPTokenAmount: BigInt(0),
+            user: walletAddress,
+          },
+          true,
+          backstopData?.config.backstopTkn || ''
+        )
+          .then((blndEstimate: bigint | undefined) => {
+            if (blndEstimate || usdcEstimate) {
+              const totalEstimate = (usdcEstimate || BigInt(0)) + (blndEstimate || BigInt(0));
+              setAvailableToMint(toBalance(totalEstimate, 7));
 
-                setLoadingEstimate(false);
-              } else {
-                setLoadingEstimate(false);
-                setAvailableToMint('--');
-              }
-            })
-            .catch(() => {
-              console.error('error getting blnd estimate');
+              setLoadingEstimate(false);
+            } else {
               setLoadingEstimate(false);
               setAvailableToMint('--');
-            });
-        } else {
-          console.error('error getting usdc estimate');
-          setLoadingEstimate(false);
-          setAvailableToMint('--');
-        }
+            }
+          })
+          .catch(() => {
+            console.error('error getting blnd estimate');
+            setLoadingEstimate(false);
+            setAvailableToMint('--');
+          });
       })
       .catch(() => {
         console.error('error on claim fn ');
