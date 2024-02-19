@@ -43,7 +43,7 @@ export class CometClient {
           return undefined;
         }
         const scVal = scValToBigInt(xdr.ScVal.fromXDR(value as string, 'base64'));
-        console.log('HEYYY SCVAL', value, scVal);
+
         return scVal;
       },
       operation.toXDR('base64')

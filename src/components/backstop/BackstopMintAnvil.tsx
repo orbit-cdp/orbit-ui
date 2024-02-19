@@ -31,7 +31,6 @@ export const BackstopMintAnvil: React.FC<{
   const balancesByAddress = useStore((state) => state.balances);
   const userLPBalance = Number(userBackstopData?.tokens ?? BigInt(0)) / 1e7;
   const decimals = 7;
-  console.log({ lpAddress: backstopData?.config.backstopTkn });
   if (txStatus === TxStatus.SUCCESS && Number(toMint) != 0) {
     setToMint('0');
   }

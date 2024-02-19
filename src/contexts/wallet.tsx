@@ -456,7 +456,6 @@ export const WalletProvider = ({ children = null as any }) => {
     lpTokenAddress: string
   ) {
     try {
-      console.log({ connected });
       if (connected) {
         let txOptions: TxOptions = {
           sim,
