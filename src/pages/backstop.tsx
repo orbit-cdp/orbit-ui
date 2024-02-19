@@ -101,19 +101,19 @@ const Backstop: NextPage = () => {
               setLoadingEstimate(false);
             } else {
               setLoadingEstimate(false);
-              setAvailableToMint('--');
+              setAvailableToMint('0');
             }
           })
           .catch(() => {
             console.error('error getting blnd estimate');
             setLoadingEstimate(false);
-            setAvailableToMint('--');
+            setAvailableToMint('0');
           });
       })
       .catch(() => {
         console.error('error on claim fn ');
         setLoadingEstimate(false);
-        setAvailableToMint('--');
+        setAvailableToMint('0');
       });
   }, [balancesByAddress]);
 
@@ -254,11 +254,7 @@ const Backstop: NextPage = () => {
                 <TokenIcon symbol="blndusdclp" sx={{ marginRight: '12px' }}></TokenIcon>
                 <Box sx={{ display: 'flex', flexDirection: 'row' }}>
                   <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                    {loadingEstimate
-                      ? 'loading...'
-                      : availableToMint != '--'
-                      ? availableToMint
-                      : 'Mint '}
+                    {loadingEstimate ? 'loading...' : availableToMint}
                   </Typography>
                   <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
                     BLND-USDC LP
