@@ -24,11 +24,7 @@ import { SorobanRpc, Transaction, xdr } from 'stellar-sdk';
 import { useLocalStorageState } from '../hooks';
 import { BACKSTOP_ID } from '../store/blendSlice';
 import { useStore } from '../store/store';
-import {
-  CometClient,
-  cometPoolDepositArgs,
-  competPoolGetDepositAmountByLPArgs,
-} from '../utils/comet';
+import { CometClient, cometPoolDepositArgs } from '../utils/comet';
 import { useSettings } from './settings';
 
 export interface IWalletContext {
@@ -61,7 +57,7 @@ export interface IWalletContext {
     lpTokenAddress: string
   ): Promise<bigint | undefined>;
   backstopMintByLPTokenAmount(
-    args: competPoolGetDepositAmountByLPArgs,
+    args: cometPoolGetDepositAmountByLPArgs,
     sim: boolean,
     lpTokenAddress: string
   ): Promise<bigint | undefined>;
@@ -500,7 +496,7 @@ export const WalletProvider = ({ children = null as any }) => {
       depositTokenAddress,
       LPTokenAmount,
       maxDepositTokenAmount,
-    }: competPoolGetDepositAmountByLPArgs,
+    }: cometPoolGetDepositAmountByLPArgs,
     sim: boolean,
     lpTokenAddress: string
   ) {

@@ -98,7 +98,7 @@ export interface cometPoolDepositArgs {
   user: string;
 }
 
-export interface competPoolGetDepositAmountByLPArgs {
+export interface cometPoolGetDepositAmountByLPArgs {
   depositTokenAddress: string;
   LPTokenAmount: bigint;
   maxDepositTokenAmount: bigint;
