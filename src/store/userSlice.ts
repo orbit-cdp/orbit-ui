@@ -66,10 +66,6 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
 
       //  fetch USDC balance from account response
       let usdcBalanceLine = account.balances.find((balance) => {
-        if (balance.asset_type == 'native') {
-          // @ts-ignore
-          return reserve.tokenMetadata.asset.isNative();
-        }
         return (
           // @ts-ignore
           balance.asset_code === usdcReserve.asset_code &&
@@ -85,10 +81,6 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
       );
       //  fetch USDC balance from account response
       let blendBalanceLine = account.balances.find((balance) => {
-        if (balance.asset_type == 'native') {
-          // @ts-ignore
-          return reserve.tokenMetadata.asset.isNative();
-        }
         return (
           // @ts-ignore
           balance.asset_code === blendReserve.asset_code &&
