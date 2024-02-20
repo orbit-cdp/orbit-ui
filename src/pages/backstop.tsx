@@ -58,7 +58,6 @@ const Backstop: NextPage = () => {
   };
 
   useEffect(() => {
-    console.log('run');
     if (balancesByAddress.get(backstopData?.config.usdcTkn ?? '') === undefined) {
       loadUserData(walletAddress);
     }
@@ -81,7 +80,7 @@ const Backstop: NextPage = () => {
     )
       .then((usdcEstimate: bigint | undefined) => {
         if (!usdcEstimate) {
-          console.error('error getting usdc estimate');
+          // console.error('error getting usdc estimate');
         }
         backstopMintByDepositTokenAmount(
           {
