@@ -24,7 +24,11 @@ import { SorobanRpc, Transaction, xdr } from 'stellar-sdk';
 import { useLocalStorageState } from '../hooks';
 import { BACKSTOP_ID } from '../store/blendSlice';
 import { useStore } from '../store/store';
-import { CometClient, cometPoolDepositArgs } from '../utils/comet';
+import {
+  CometClient,
+  cometPoolDepositArgs,
+  cometPoolGetDepositAmountByLPArgs,
+} from '../utils/comet';
 import { useSettings } from './settings';
 
 export interface IWalletContext {
