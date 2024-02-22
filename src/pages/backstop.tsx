@@ -5,6 +5,7 @@ import { Box, Tooltip, Typography } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { Address } from 'stellar-sdk';
 import { BackstopBalanceCard } from '../components/backstop/BackstopBalanceCard';
 import { BackstopQueueMod } from '../components/backstop/BackstopQueueMod';
 import { CustomButton } from '../components/common/CustomButton';
@@ -18,6 +19,7 @@ import { StackedText } from '../components/common/StackedText';
 import { TokenIcon } from '../components/common/TokenIcon';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
 import { useWallet } from '../contexts/wallet';
+import { getTokenBalance } from '../external/token';
 import { useStore } from '../store/store';
 import theme from '../theme';
 import { toBalance, toPercentage } from '../utils/formatter';
@@ -26,6 +28,8 @@ const Backstop: NextPage = () => {
   const router = useRouter();
   const { connected, walletAddress, backstopClaim, backstopMintByDepositTokenAmount } = useWallet();
   const loadBlendData = useStore((state) => state.loadBlendData);
+  const network = useStore((state) => state.network);
+  const rpcServer = useStore((state) => state.rpcServer());
   const { poolId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
   const [availableToMint, setAvailableToMint] = useState<string>();
@@ -57,63 +61,82 @@ const Backstop: NextPage = () => {
     }
   };
 
+  async function getLPEstimate(amount: bigint, depositTokenAddress: string) {
+    const estimate =
+      (await backstopMintByDepositTokenAmount(
+        {
+          depositTokenAddress: depositTokenAddress,
+          depositTokenAmount: amount,
+          minLPTokenAmount: BigInt(0),
+          user: walletAddress,
+        },
+        true,
+        backstopData?.config.backstopTkn || ''
+      )) || BigInt(0);
+    return estimate;
+  }
+
+  async function estimateMaxAmountToMint() {
+    try {
+      /** load comet estimate for users full balance */
+      const usdcBalance = balancesByAddress.get(backstopData?.config.usdcTkn ?? '') || BigInt(0);
+      const blndBalance = balancesByAddress.get(backstopData?.config.blndTkn ?? '') || BigInt(0);
+      const usdcAddress = backstopData?.config.usdcTkn || '';
+      const blndAddress = backstopData?.config.blndTkn || '';
+
+      const cometPoolUSDCBalance = await getTokenBalance(
+        rpcServer,
+        network.passphrase,
+        usdcAddress,
+        Address.fromString(backstopData?.config.backstopTkn as string)
+      );
+      const cometPoolBLNDBalance = await getTokenBalance(
+        rpcServer,
+        network.passphrase,
+        blndAddress,
+        Address.fromString(backstopData?.config.backstopTkn as string)
+      );
+
+      if (usdcBalance > cometPoolUSDCBalance) {
+        const amountToUse = cometPoolUSDCBalance / BigInt(2) - BigInt(1);
+        const usdcEstimate = await getLPEstimate(amountToUse, usdcAddress);
+        setAvailableToMint(toBalance(usdcEstimate, 7));
+        setLoadingEstimate(false);
+        return;
+      }
+      if (blndBalance > cometPoolBLNDBalance) {
+        const amountToUse = cometPoolBLNDBalance / BigInt(2) - BigInt(1);
+        const blndEstimate = await getLPEstimate(amountToUse, blndAddress);
+        setAvailableToMint(toBalance(blndEstimate, 7));
+        setLoadingEstimate(false);
+        return;
+      }
+      const usdcEstimate = await getLPEstimate(usdcBalance, usdcAddress);
+      if (usdcEstimate > cometPoolUSDCBalance) {
+        // console.error('error getting usdc estimate');
+      }
+      const blndEstimate = await getLPEstimate(blndBalance, blndAddress);
+      if (blndEstimate || usdcEstimate) {
+        const totalEstimate = usdcEstimate + blndEstimate;
+        setAvailableToMint(toBalance(totalEstimate, 7));
+
+        setLoadingEstimate(false);
+      } else {
+        setLoadingEstimate(false);
+        setAvailableToMint('0');
+      }
+    } catch (e) {
+      console.error('error on claim fn ');
+      setLoadingEstimate(false);
+      setAvailableToMint('0');
+    }
+  }
+
   useEffect(() => {
     if (balancesByAddress.get(backstopData?.config.usdcTkn ?? '') === undefined) {
       loadUserData(walletAddress);
     }
-    /** load comet estimate for users full balance */
-    const usdcBalance = balancesByAddress.get(backstopData?.config.usdcTkn ?? '') || BigInt(0);
-    const blndBalance = balancesByAddress.get(backstopData?.config.blndTkn ?? '') || BigInt(0);
-    const usdcAddress = backstopData?.config.usdcTkn || '';
-    const blndAddress = backstopData?.config.blndTkn || '';
-
-    setLoadingEstimate(true);
-    backstopMintByDepositTokenAmount(
-      {
-        depositTokenAddress: usdcAddress,
-        depositTokenAmount: usdcBalance,
-        minLPTokenAmount: BigInt(0),
-        user: walletAddress,
-      },
-      true,
-      backstopData?.config.backstopTkn || ''
-    )
-      .then((usdcEstimate: bigint | undefined) => {
-        if (!usdcEstimate) {
-          // console.error('error getting usdc estimate');
-        }
-        backstopMintByDepositTokenAmount(
-          {
-            depositTokenAddress: blndAddress,
-            depositTokenAmount: blndBalance,
-            minLPTokenAmount: BigInt(0),
-            user: walletAddress,
-          },
-          true,
-          backstopData?.config.backstopTkn || ''
-        )
-          .then((blndEstimate: bigint | undefined) => {
-            if (blndEstimate || usdcEstimate) {
-              const totalEstimate = (usdcEstimate || BigInt(0)) + (blndEstimate || BigInt(0));
-              setAvailableToMint(toBalance(totalEstimate, 7));
-
-              setLoadingEstimate(false);
-            } else {
-              setLoadingEstimate(false);
-              setAvailableToMint('0');
-            }
-          })
-          .catch(() => {
-            console.error('error getting blnd estimate');
-            setLoadingEstimate(false);
-            setAvailableToMint('0');
-          });
-      })
-      .catch(() => {
-        console.error('error on claim fn ');
-        setLoadingEstimate(false);
-        setAvailableToMint('0');
-      });
+    estimateMaxAmountToMint();
   }, [balancesByAddress]);
 
   return (
