@@ -1,6 +1,8 @@
 import { Box, Typography, useTheme } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
+import { Address } from 'stellar-sdk';
 import { TxStatus, useWallet } from '../../contexts/wallet';
+import { getTokenBalance } from '../../external/token';
 import { useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
@@ -17,7 +19,11 @@ export const BackstopMintAnvil: React.FC<{
   currentDepositToken: { address: string | undefined; symbol: string };
   setCurrentDepositToken: (token: { address: string | undefined; symbol: string }) => void;
 }> = ({ currentDepositToken, setCurrentDepositToken }) => {
+  const [currentPoolUSDCBalance, setCurrentPoolUSDCBalance] = useState<bigint>();
+  const [currentPoolBLNDBalance, setCurrentPoolBLNDBalance] = useState<bigint>();
   const [toMint, setToMint] = useState<string>('');
+  const network = useStore((state) => state.network);
+  const rpcServer = useStore((state) => state.rpcServer());
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
   const [toSwap, setToSwap] = useState<string>('');
   /** run function on each state change */
@@ -26,7 +32,8 @@ export const BackstopMintAnvil: React.FC<{
   const { connected, walletAddress, txStatus, backstopMintByDepositTokenAmount } = useWallet();
   const backstopData = useStore((state) => state.backstop);
   const loadUserData = useStore((state) => state.loadUserData);
-
+  const usdcAddress = backstopData?.config.usdcTkn || '';
+  const blndAddress = backstopData?.config.blndTkn || '';
   const userBackstopData = useStore((state) => state.backstopUserData);
   const balancesByAddress = useStore((state) => state.balances);
   const userLPBalance = Number(userBackstopData?.tokens ?? BigInt(0)) / 1e7;
@@ -34,7 +41,9 @@ export const BackstopMintAnvil: React.FC<{
   if (txStatus === TxStatus.SUCCESS && Number(toMint) != 0) {
     setToMint('0');
   }
+
   // verify that the user can act
+
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
     const errorProps: SubmitError = {
       isSubmitDisabled: false,
@@ -64,6 +73,24 @@ export const BackstopMintAnvil: React.FC<{
       errorProps.isMaxDisabled = false;
       errorProps.reason = 'You do not have enough available balance to mint.';
       errorProps.disabledType = 'warning';
+    } else if (
+      currentDepositToken.address === blndAddress &&
+      !!currentPoolBLNDBalance &&
+      scaleInputToBigInt(toSwap, decimals) > currentPoolBLNDBalance / BigInt(2) - BigInt(1)
+    ) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = true;
+      errorProps.reason = 'Cannot deposit more than half of the pools token balance';
+      errorProps.disabledType = 'warning';
+    } else if (
+      currentDepositToken.address === usdcAddress &&
+      !!currentPoolUSDCBalance &&
+      scaleInputToBigInt(toSwap, decimals) > currentPoolUSDCBalance / BigInt(2) - BigInt(1)
+    ) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = true;
+      errorProps.reason = 'Cannot deposit more than half of the pools token balance';
+      errorProps.disabledType = 'warning';
     } else if (!toMint || !!loadingEstimate) {
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
@@ -74,7 +101,14 @@ export const BackstopMintAnvil: React.FC<{
       errorProps.isMaxDisabled = false;
     }
     return errorProps;
-  }, [toSwap, currentDepositToken.address, balancesByAddress, loadingEstimate]);
+  }, [
+    toSwap,
+    currentDepositToken.address,
+    balancesByAddress,
+    loadingEstimate,
+    currentPoolBLNDBalance,
+    currentPoolUSDCBalance,
+  ]);
 
   const handleMaxClick = () => {
     if (currentDepositToken.address) {
@@ -86,13 +120,23 @@ export const BackstopMintAnvil: React.FC<{
     }
   };
 
-  function handleSwapChange(value: string) {
+  async function handleSwapChange(value: string) {
     /**  get comet estimate LP token for the inputted swap token and set in mint input  */
     const isWrongDecimals = value.split('.')[1]?.length > decimals;
+
     if (currentDepositToken.address && !isWrongDecimals) {
       const bigintValue = scaleInputToBigInt(value, decimals);
       const currentDepositTokenBalance =
         balancesByAddress.get(currentDepositToken.address ?? '') || 0;
+      const isLargerUSDC =
+        !!currentPoolUSDCBalance && bigintValue > currentPoolUSDCBalance / BigInt(2) - BigInt(1);
+      const isLargerBLND =
+        !!currentPoolBLNDBalance && bigintValue > currentPoolBLNDBalance / BigInt(2) - BigInt(1);
+      if (isLargerBLND || isLargerUSDC) {
+        setLoadingEstimate(false);
+        setToMint('0');
+        return;
+      }
       if (bigintValue <= currentDepositTokenBalance) {
         backstopMintByDepositTokenAmount(
           {
@@ -138,11 +182,40 @@ export const BackstopMintAnvil: React.FC<{
     }
   }
 
+  async function loadCometBalances() {
+    if (
+      backstopData?.config.usdcTkn &&
+      backstopData?.config.blndTkn &&
+      backstopData.config.backstopTkn
+    ) {
+      if (!currentPoolUSDCBalance) {
+        const cometPoolUSDCBalance = await getTokenBalance(
+          rpcServer,
+          network.passphrase,
+          usdcAddress,
+          Address.fromString(backstopData?.config.backstopTkn as string)
+        );
+        setCurrentPoolUSDCBalance(cometPoolUSDCBalance);
+      }
+
+      if (!currentPoolBLNDBalance) {
+        const cometPoolBLNDBalance = await getTokenBalance(
+          rpcServer,
+          network.passphrase,
+          blndAddress,
+          Address.fromString(backstopData?.config.backstopTkn as string)
+        );
+        setCurrentPoolBLNDBalance(cometPoolBLNDBalance);
+      }
+    }
+  }
+
   useEffect(() => {
     if (!balancesByAddress.get(backstopData?.config.usdcTkn ?? '')) {
       loadUserData(walletAddress);
     }
-  }, []);
+    loadCometBalances();
+  }, [balancesByAddress]);
   useEffect(() => {
     handleSwapChange(toSwap);
   }, [currentDepositToken.address]);
