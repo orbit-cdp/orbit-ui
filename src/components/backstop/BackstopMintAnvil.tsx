@@ -80,7 +80,10 @@ export const BackstopMintAnvil: React.FC<{
     ) {
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = true;
-      errorProps.reason = 'Cannot deposit more than half of the pools token balance';
+      errorProps.reason = `Cannot deposit more than half of the pools token balance, estimated max deposit amount: ${toBalance(
+        currentPoolBLNDBalance / BigInt(2) - BigInt(1),
+        decimals
+      )}`;
       errorProps.disabledType = 'warning';
     } else if (
       currentDepositToken.address === usdcAddress &&
@@ -89,7 +92,10 @@ export const BackstopMintAnvil: React.FC<{
     ) {
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = true;
-      errorProps.reason = 'Cannot deposit more than half of the pools token balance';
+      errorProps.reason = `Cannot deposit more than half of the pools token balance, estimated max deposit amount: ${toBalance(
+        currentPoolUSDCBalance / BigInt(2) - BigInt(1),
+        decimals
+      )}`;
       errorProps.disabledType = 'warning';
     } else if (!toMint || !!loadingEstimate) {
       errorProps.isSubmitDisabled = true;
