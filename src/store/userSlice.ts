@@ -62,15 +62,18 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
       let user_pool_data = new Map<string, PoolUser>();
       let user_balances = new Map<string, bigint>();
       /**load usdc and blend balances manually first  */
-      const usdcReserve = new Asset(USDC_TESTNET_ASSET.asset_code, USDC_TESTNET_ASSET.asset_issuer);
+      const usdcReserve: Asset = new Asset(
+        USDC_TESTNET_ASSET.asset_code,
+        USDC_TESTNET_ASSET.asset_issuer
+      );
 
       //  fetch USDC balance from account response
       let usdcBalanceLine = account.balances.find((balance) => {
         return (
           // @ts-ignore
-          balance.asset_code === usdcReserve.asset_code &&
+          balance.asset_code === usdcReserve.code &&
           // @ts-ignore
-          balance.asset_issuer === usdcReserve.asset_issuer
+          balance.asset_issuer === usdcReserve.issuer
         );
       });
       let usdcBalanceString = usdcBalanceLine ? usdcBalanceLine.balance.replace('.', '') : '0';
@@ -83,9 +86,9 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
       let blendBalanceLine = account.balances.find((balance) => {
         return (
           // @ts-ignore
-          balance.asset_code === blendReserve.asset_code &&
+          balance.asset_code === blendReserve.code &&
           // @ts-ignore
-          balance.asset_issuer === blendReserve.asset_issuer
+          balance.asset_issuer === blendReserve.issuer
         );
       });
       let blendBalanceString = blendBalanceLine ? blendBalanceLine.balance.replace('.', '') : '0';
