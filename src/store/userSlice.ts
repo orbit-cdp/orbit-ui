@@ -1,7 +1,8 @@
 import { BackstopUser, PoolUser } from '@blend-capital/blend-sdk';
-import { Address, Horizon } from 'stellar-sdk';
+import { Address, Asset, Horizon } from 'stellar-sdk';
 import { StateCreator } from 'zustand';
 import { getTokenBalance } from '../external/token';
+import { BLEND_TESTNET_ASSET, USDC_TESTNET_ASSET } from '../utils/token_display';
 import { DataStore } from './store';
 
 /**
@@ -29,6 +30,7 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
     try {
       const network = get().network;
       const rpc = get().rpcServer();
+      const networkPassphrase = network.passphrase;
 
       if (get().latestLedgerTimestamp == 0) {
         await get().loadBlendData(true);
@@ -59,6 +61,39 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
       // load token balances for each unique reserve or fetch from the account response
       let user_pool_data = new Map<string, PoolUser>();
       let user_balances = new Map<string, bigint>();
+      /**load usdc and blend balances manually first  */
+      const usdcReserve: Asset = new Asset(
+        USDC_TESTNET_ASSET.asset_code,
+        USDC_TESTNET_ASSET.asset_issuer
+      );
+
+      //  fetch USDC balance from account response
+      let usdcBalanceLine = account.balances.find((balance) => {
+        return (
+          // @ts-ignore
+          balance.asset_code === usdcReserve.code &&
+          // @ts-ignore
+          balance.asset_issuer === usdcReserve.issuer
+        );
+      });
+      let usdcBalanceString = usdcBalanceLine ? usdcBalanceLine.balance.replace('.', '') : '0';
+      user_balances.set(usdcReserve.contractId(networkPassphrase), BigInt(usdcBalanceString));
+      const blendReserve = new Asset(
+        BLEND_TESTNET_ASSET.asset_code,
+        BLEND_TESTNET_ASSET.asset_issuer
+      );
+      //  fetch USDC balance from account response
+      let blendBalanceLine = account.balances.find((balance) => {
+        return (
+          // @ts-ignore
+          balance.asset_code === blendReserve.code &&
+          // @ts-ignore
+          balance.asset_issuer === blendReserve.issuer
+        );
+      });
+      let blendBalanceString = blendBalanceLine ? blendBalanceLine.balance.replace('.', '') : '0';
+      user_balances.set(blendReserve.contractId(networkPassphrase), BigInt(blendBalanceString));
+
       for (let [pool, pool_data] of Array.from(pools.entries())) {
         let pool_user = await pool_data.loadUser(network, id);
         user_pool_data.set(pool, pool_user);

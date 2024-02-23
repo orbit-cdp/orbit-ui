@@ -24,6 +24,11 @@ import { SorobanRpc, Transaction, xdr } from 'stellar-sdk';
 import { useLocalStorageState } from '../hooks';
 import { BACKSTOP_ID } from '../store/blendSlice';
 import { useStore } from '../store/store';
+import {
+  CometClient,
+  cometPoolDepositArgs,
+  cometPoolGetDepositAmountByLPArgs,
+} from '../utils/comet';
 import { useSettings } from './settings';
 
 export interface IWalletContext {
@@ -50,6 +55,16 @@ export interface IWalletContext {
   backstopQueueWithdrawal(args: PoolBackstopActionArgs, sim: boolean): Promise<Q4W | undefined>;
   backstopDequeueWithdrawal(args: PoolBackstopActionArgs, sim: boolean): Promise<undefined>;
   backstopClaim(args: BackstopClaimArgs, sim: boolean): Promise<bigint | undefined>;
+  backstopMintByDepositTokenAmount(
+    args: cometPoolDepositArgs,
+    sim: boolean,
+    lpTokenAddress: string
+  ): Promise<bigint | undefined>;
+  backstopMintByLPTokenAmount(
+    args: cometPoolGetDepositAmountByLPArgs,
+    sim: boolean,
+    lpTokenAddress: string
+  ): Promise<bigint | undefined>;
   faucet(): Promise<undefined>;
 }
 
@@ -187,6 +202,7 @@ export const WalletProvider = ({ children = null as any }) => {
       // submission calls `sign` internally which handles setting TxStatus
       setFailureMessage(undefined);
       setTxStatus(TxStatus.BUILDING);
+
       let result = await submission;
       setTxHash(result.hash);
       if (result.ok) {
@@ -428,6 +444,94 @@ export const WalletProvider = ({ children = null as any }) => {
       return submitTransaction<bigint>(submission);
     }
   }
+  /**
+   * Execute a mint for the Backstop LP token using deposit token amount
+   * @param args - The args of the deposit
+   * @param sim - "true" if simulating the transaction, "false" if submitting
+   * @returns The Positions, or undefined
+   */
+  async function backstopMintByDepositTokenAmount(
+    { depositTokenAddress, depositTokenAmount, minLPTokenAmount }: cometPoolDepositArgs,
+    sim: boolean,
+    lpTokenAddress: string
+  ) {
+    try {
+      if (connected) {
+        let txOptions: TxOptions = {
+          sim,
+          pollingInterval: 1000,
+          timeout: 15000,
+          builderOptions: {
+            fee: '10000',
+            timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
+            networkPassphrase: network.passphrase,
+          },
+        };
+        let cometClient = new CometClient(lpTokenAddress);
+        let submission = cometClient.depositTokenInGetLPOut(
+          sign,
+          network,
+          depositTokenAddress,
+          depositTokenAmount,
+          minLPTokenAmount,
+          walletAddress,
+          txOptions
+        );
+        if (sim) {
+          return (await submission).unwrap();
+        } else {
+          return submitTransaction<bigint>(submission);
+        }
+      } else {
+        return;
+      }
+    } catch (e) {
+      throw e;
+    }
+  }
+  /**
+   * Execute a mint for the Backstop LP token using LP token amount
+   * @param args - The args of the deposit
+   * @param sim - "true" if simulating the transaction, "false" if submitting
+   * @returns The Positions, or undefined
+   */
+  async function backstopMintByLPTokenAmount(
+    {
+      depositTokenAddress,
+      LPTokenAmount,
+      maxDepositTokenAmount,
+    }: cometPoolGetDepositAmountByLPArgs,
+    sim: boolean,
+    lpTokenAddress: string
+  ) {
+    if (connected) {
+      let txOptions: TxOptions = {
+        sim,
+        pollingInterval: 1000,
+        timeout: 15000,
+        builderOptions: {
+          fee: '10000',
+          timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
+          networkPassphrase: network.passphrase,
+        },
+      };
+      let cometClient = new CometClient(lpTokenAddress);
+      let submission = cometClient.depositTokenInGetLPOut(
+        sign,
+        network,
+        depositTokenAddress,
+        LPTokenAmount,
+        maxDepositTokenAmount,
+        walletAddress,
+        txOptions
+      );
+      if (sim) {
+        return (await submission).unwrap();
+      } else {
+        return submitTransaction<bigint>(submission);
+      }
+    }
+  }
 
   async function faucet(): Promise<undefined> {
     if (connected) {
@@ -513,6 +617,8 @@ export const WalletProvider = ({ children = null as any }) => {
         backstopQueueWithdrawal,
         backstopDequeueWithdrawal,
         backstopClaim,
+        backstopMintByDepositTokenAmount,
+        backstopMintByLPTokenAmount,
         faucet,
       }}
     >
