@@ -32,16 +32,17 @@ const Backstop: NextPage = () => {
   const rpcServer = useStore((state) => state.rpcServer());
   const { poolId } = router.query;
   const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
+
   const [availableToMint, setAvailableToMint] = useState<string>();
   const [loadingEstimate, setLoadingEstimate] = useState(false);
+
   const backstopPoolData = useStore((state) => state.backstop?.pools?.get(safePoolId));
   const poolData = useStore((state) => state.pools.get(safePoolId));
-  const userPoolData = useStore((state) => state.userPoolData.get(safePoolId));
   const backstopData = useStore((state) => state.backstop);
   const userBackstopData = useStore((state) => state.backstopUserData);
   const userEmissions = userBackstopData?.estimates.get(safePoolId)?.emissions;
-  const loadUserData = useStore((state) => state.loadUserData);
   const balancesByAddress = useStore((state) => state.balances);
+
   const estBackstopApy =
     backstopPoolData && poolData
       ? ((poolData.config.backstopRate / 1e7) *
@@ -112,11 +113,8 @@ const Backstop: NextPage = () => {
         return;
       }
       const usdcEstimate = await getLPEstimate(usdcBalance, usdcAddress);
-      if (usdcEstimate > cometPoolUSDCBalance) {
-        // console.error('error getting usdc estimate');
-      }
       const blndEstimate = await getLPEstimate(blndBalance, blndAddress);
-      if (blndEstimate || usdcEstimate) {
+      if (blndEstimate > BigInt(0) || usdcEstimate > BigInt(0)) {
         const totalEstimate = usdcEstimate + blndEstimate;
         setAvailableToMint(toBalance(totalEstimate, 7));
 
@@ -126,17 +124,16 @@ const Backstop: NextPage = () => {
         setAvailableToMint('0');
       }
     } catch (e) {
-      console.error('error on claim fn ');
+      console.error('Unable to estimate LP token mint amounts');
       setLoadingEstimate(false);
       setAvailableToMint('0');
     }
   }
 
   useEffect(() => {
-    if (balancesByAddress.get(backstopData?.config.usdcTkn ?? '') === undefined) {
-      loadUserData(walletAddress);
+    if (balancesByAddress.get(backstopData?.config.usdcTkn ?? '') !== undefined) {
+      estimateMaxAmountToMint();
     }
-    estimateMaxAmountToMint();
   }, [balancesByAddress]);
 
   return (
@@ -219,7 +216,7 @@ const Backstop: NextPage = () => {
                   <TokenIcon symbol="blnd" sx={{ marginRight: '12px' }}></TokenIcon>
                   <Box sx={{ display: 'flex', flexDirection: 'row' }}>
                     <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                      {userEmissions.toFixed(4)} BLND
+                      {toBalance(userEmissions)} BLND
                     </Typography>
                     <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
                       BLND

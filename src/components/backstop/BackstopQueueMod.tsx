@@ -40,8 +40,9 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
     exp: BigInt(0),
     amount: BigInt(0),
   };
+  const cur_time = Math.floor(Date.now() / 1000);
   for (const q4w of poolBackstopUserData.q4w) {
-    if (Number(q4w.exp) > latestLedgerTimestamp) {
+    if (Number(q4w.exp) > cur_time) {
       q4w_locked.push(q4w);
     } else {
       q4w_unlocked.amount += BigInt(q4w.amount);

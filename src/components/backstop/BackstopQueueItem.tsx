@@ -3,7 +3,6 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
-import { useStore } from '../../store/store';
 import theme from '../../theme';
 import { toBalance, toTimeSpan } from '../../utils/formatter';
 import { OpaqueButton } from '../common/OpaqueButton';
@@ -16,28 +15,23 @@ export interface BackstopQueueItemProps extends PoolComponentProps {
   inTokens: number;
 }
 export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({ q4w, inTokens, poolId }) => {
-  const { connected, walletAddress, backstopDequeueWithdrawal, backstopQueueWithdrawal } =
-    useWallet();
-  const loadUserData = useStore((state) => state.loadUserData);
+  const { connected, walletAddress, backstopDequeueWithdrawal, backstopWithdraw } = useWallet();
 
-  const NOW_SECONDS = Math.floor(Date.now() / 1000);
   const TOTAL_QUEUE_TIME_SECONDS = 21 * 24 * 60 * 60;
 
-  const [timeLeft, setTimeLeft] = useState<number>(Math.max(0, Number(q4w.exp) - NOW_SECONDS));
+  const [timeLeft, setTimeLeft] = useState<number>(
+    Math.max(0, Number(q4w.exp) - Math.floor(Date.now() / 1000))
+  );
   const timeWaitedPercentage = Math.min(1, 1 - timeLeft / TOTAL_QUEUE_TIME_SECONDS);
 
   useEffect(() => {
-    if (timeLeft > 0) {
-      const timeInterval = timeLeft > 24 * 60 * 60 ? 60 * 1000 : 1000;
-      const refreshInterval = setInterval(() => {
-        setTimeLeft(Math.min(0, NOW_SECONDS - Number(q4w.exp)));
-      }, timeInterval);
-      return () => clearInterval(refreshInterval);
-    } else if (timeLeft == 0 && connected) {
-      // q4w entry is unlocked, force an update
-      loadUserData(walletAddress);
-    }
-  }, [q4w, timeLeft, NOW_SECONDS, loadUserData, walletAddress, connected]);
+    const timeInterval =
+      Number(q4w.exp) - Math.floor(Date.now() / 1000) > 24 * 60 * 60 ? 60 * 1000 : 1000;
+    const refreshInterval = setInterval(() => {
+      setTimeLeft(Math.max(0, Number(q4w.exp) - Math.floor(Date.now() / 1000)));
+    }, timeInterval);
+    return () => clearInterval(refreshInterval);
+  }, [q4w]);
 
   const handleClick = async (amount: bigint) => {
     if (connected) {
@@ -49,7 +43,7 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({ q4w, inTok
       if (timeLeft > 0) {
         await backstopDequeueWithdrawal(actionArgs, false);
       } else {
-        await backstopQueueWithdrawal(actionArgs, false);
+        await backstopWithdraw(actionArgs, false);
       }
     }
   };
@@ -85,7 +79,7 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({ q4w, inTok
             </Typography>
           </Box>
           <Typography variant="h4" sx={{ marginRight: '6px' }}>
-            {toTimeSpan(timeLeft)}
+            {timeLeft > 0 ? toTimeSpan(timeLeft) : 'Unlocked'}
           </Typography>
         </Box>
       </Box>
