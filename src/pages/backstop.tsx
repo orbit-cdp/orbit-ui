@@ -131,7 +131,10 @@ const Backstop: NextPage = () => {
   }
 
   useEffect(() => {
-    if (balancesByAddress.get(backstopData?.config.usdcTkn ?? '') !== undefined) {
+    if (
+      balancesByAddress.get(backstopData?.config.usdcTkn ?? '') !== undefined ||
+      balancesByAddress.get(backstopData?.config.blndTkn ?? '') !== undefined
+    ) {
       estimateMaxAmountToMint();
     }
   }, [balancesByAddress]);
