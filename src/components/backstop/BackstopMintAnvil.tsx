@@ -19,31 +19,33 @@ export const BackstopMintAnvil: React.FC<{
   currentDepositToken: { address: string | undefined; symbol: string };
   setCurrentDepositToken: (token: { address: string | undefined; symbol: string }) => void;
 }> = ({ currentDepositToken, setCurrentDepositToken }) => {
+  const theme = useTheme();
+  const { walletAddress, txStatus, backstopMintByDepositTokenAmount } = useWallet();
+
   const [currentPoolUSDCBalance, setCurrentPoolUSDCBalance] = useState<bigint>();
   const [currentPoolBLNDBalance, setCurrentPoolBLNDBalance] = useState<bigint>();
-  const [toMint, setToMint] = useState<string>('');
+  const [toMint, setToMint] = useState<number>(0);
   const network = useStore((state) => state.network);
   const rpcServer = useStore((state) => state.rpcServer());
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
   const [toSwap, setToSwap] = useState<string>('');
   /** run function on each state change */
-  useDebouncedState(toSwap, 500, handleSwapChange);
-  const theme = useTheme();
-  const { connected, walletAddress, txStatus, backstopMintByDepositTokenAmount } = useWallet();
+  useDebouncedState(toSwap, 1000, handleSwapChange);
+
   const backstopData = useStore((state) => state.backstop);
   const loadUserData = useStore((state) => state.loadUserData);
   const usdcAddress = backstopData?.config.usdcTkn || '';
   const blndAddress = backstopData?.config.blndTkn || '';
   const userBackstopData = useStore((state) => state.backstopUserData);
   const balancesByAddress = useStore((state) => state.balances);
+
   const userLPBalance = Number(userBackstopData?.tokens ?? BigInt(0)) / 1e7;
   const decimals = 7;
   if (txStatus === TxStatus.SUCCESS && Number(toMint) != 0) {
-    setToMint('0');
+    setToMint(0);
   }
 
   // verify that the user can act
-
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
     const errorProps: SubmitError = {
       isSubmitDisabled: false,
@@ -140,7 +142,7 @@ export const BackstopMintAnvil: React.FC<{
         !!currentPoolBLNDBalance && bigintValue > currentPoolBLNDBalance / BigInt(2) - BigInt(1);
       if (isLargerBLND || isLargerUSDC) {
         setLoadingEstimate(false);
-        setToMint('0');
+        setToMint(0);
         return;
       }
       if (bigintValue <= currentDepositTokenBalance) {
@@ -155,7 +157,7 @@ export const BackstopMintAnvil: React.FC<{
           backstopData?.config.backstopTkn || ''
         ).then((val: bigint | undefined) => {
           setLoadingEstimate(false);
-          setToMint(toBalance(val || 0, decimals));
+          setToMint(val ? Number(val) / 1e7 : 0);
         });
       }
     }
@@ -295,7 +297,7 @@ export const BackstopMintAnvil: React.FC<{
                   variant="h5"
                   sx={{ color: theme.palette.text.secondary, marginLeft: '12px' }}
                 >
-                  {loadingEstimate ? 'Loading...' : toMint || 0}
+                  {loadingEstimate ? 'Loading...' : toBalance(toMint, 7) || 0}
                 </Typography>
                 <Typography
                   variant="h5"
@@ -321,7 +323,7 @@ export const BackstopMintAnvil: React.FC<{
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toMint ?? 0) * (backstopData?.lpTokenPrice ?? 1))}`}
+              {`$${toBalance(toMint * (backstopData?.lpTokenPrice ?? 1))}`}
             </Typography>
           </Box>
         </Box>
@@ -330,7 +332,7 @@ export const BackstopMintAnvil: React.FC<{
           <ValueChange
             title="Your total mint"
             curValue={`${toBalance(userLPBalance)} BLND-USDC LP`}
-            newValue={`${toBalance(userLPBalance + Number(toMint ?? '0'))} BLND-USDC LP`}
+            newValue={`${toBalance(userLPBalance + toMint)} BLND-USDC LP`}
           />
         </TxOverview>
       </Section>
