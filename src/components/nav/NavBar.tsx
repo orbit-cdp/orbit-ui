@@ -20,9 +20,10 @@ export const NavBar = () => {
       if (lastPool) {
         setPoolId(lastPool);
       } else if (rewardZone.length != 0) {
-        const rewardPoolId = rewardZone[0];
+        // get the last (oldest) pool in the reward zone
+        const rewardPoolId = rewardZone[rewardZone.length - 1];
         if (rewardPoolId !== poolId) {
-          setPoolId(rewardZone[0]);
+          setPoolId(rewardPoolId);
         }
       }
     }

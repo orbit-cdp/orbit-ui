@@ -32,7 +32,8 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
     return () => clearInterval(refreshInterval);
   }, [loadBlendData, connected, walletAddress]);
 
-  const faucet_pool = rewardZone.length > 0 ? rewardZone[0] : undefined;
+  // get the last (oldest) pool in the reward zone
+  const faucet_pool = rewardZone.length > 0 ? rewardZone[rewardZone.length - 1] : undefined;
 
   if (safePoolId && safePoolId !== lastPool) {
     setLastPool(safePoolId);
