@@ -1,15 +1,13 @@
 import {
   BackstopClaimArgs,
-  BackstopClient,
-  ContractResult,
+  BackstopContract,
+  ContractResponse,
   PoolBackstopActionArgs,
   PoolClaimArgs,
-  PoolClient,
+  PoolContract,
   Positions,
   Q4W,
-  Resources,
   SubmitArgs,
-  TxOptions,
 } from '@blend-capital/blend-sdk';
 import {
   FreighterModule,
@@ -20,7 +18,15 @@ import {
   xBullModule,
 } from '@creit.tech/stellar-wallets-kit/build/main';
 import React, { useContext, useEffect, useState } from 'react';
-import { SorobanRpc, Transaction, xdr } from 'stellar-sdk';
+import {
+  BASE_FEE,
+  Operation,
+  SorobanRpc,
+  Transaction,
+  TransactionBuilder,
+  scValToBigInt,
+  xdr,
+} from 'stellar-sdk';
 import { useLocalStorageState } from '../hooks';
 import { BACKSTOP_ID } from '../store/blendSlice';
 import { useStore } from '../store/store';
@@ -44,27 +50,42 @@ export interface IWalletContext {
     poolId: string,
     submitArgs: SubmitArgs,
     sim: boolean
-  ) => Promise<Positions | undefined>;
+  ) => Promise<ContractResponse<Positions> | undefined>;
   poolClaim: (
     poolId: string,
     claimArgs: PoolClaimArgs,
     sim: boolean
-  ) => Promise<bigint | undefined>;
-  backstopDeposit(args: PoolBackstopActionArgs, sim: boolean): Promise<bigint | undefined>;
-  backstopWithdraw(args: PoolBackstopActionArgs, sim: boolean): Promise<bigint | undefined>;
-  backstopQueueWithdrawal(args: PoolBackstopActionArgs, sim: boolean): Promise<Q4W | undefined>;
-  backstopDequeueWithdrawal(args: PoolBackstopActionArgs, sim: boolean): Promise<undefined>;
-  backstopClaim(args: BackstopClaimArgs, sim: boolean): Promise<bigint | undefined>;
+  ) => Promise<ContractResponse<bigint> | undefined>;
+  backstopDeposit(
+    args: PoolBackstopActionArgs,
+    sim: boolean
+  ): Promise<ContractResponse<bigint> | undefined>;
+  backstopWithdraw(
+    args: PoolBackstopActionArgs,
+    sim: boolean
+  ): Promise<ContractResponse<bigint> | undefined>;
+  backstopQueueWithdrawal(
+    args: PoolBackstopActionArgs,
+    sim: boolean
+  ): Promise<ContractResponse<Q4W> | undefined>;
+  backstopDequeueWithdrawal(
+    args: PoolBackstopActionArgs,
+    sim: boolean
+  ): Promise<ContractResponse<void> | undefined>;
+  backstopClaim(
+    args: BackstopClaimArgs,
+    sim: boolean
+  ): Promise<ContractResponse<bigint> | undefined>;
   backstopMintByDepositTokenAmount(
     args: cometPoolDepositArgs,
     sim: boolean,
     lpTokenAddress: string
-  ): Promise<bigint | undefined>;
+  ): Promise<ContractResponse<bigint> | undefined>;
   backstopMintByLPTokenAmount(
     args: cometPoolGetDepositAmountByLPArgs,
     sim: boolean,
     lpTokenAddress: string
-  ): Promise<bigint | undefined>;
+  ): Promise<ContractResponse<bigint> | undefined>;
   faucet(): Promise<undefined>;
 }
 
@@ -194,25 +215,116 @@ export const WalletProvider = ({ children = null as any }) => {
     }
   }
 
+  async function restore(
+    simulation: SorobanRpc.Api.SimulateTransactionRestoreResponse,
+    transaction: Transaction
+  ): Promise<ContractResponse<void>> {
+    let account = await rpc.getAccount(walletAddress);
+    // if (SorobanRpc.Api.isSimulationRestore(simulation)) {
+    setTxStatus(TxStatus.BUILDING);
+    let fee = parseInt(simulation.restorePreamble.minResourceFee) + parseInt(transaction.fee);
+    let restore_tx = new TransactionBuilder(account, { fee: fee.toString() })
+      .setNetworkPassphrase(network.passphrase)
+      .setSorobanData(simulation.restorePreamble.transactionData.build())
+      .addOperation(Operation.restoreFootprint({}))
+      .build();
+    let signed_restore_tx = new Transaction(await sign(restore_tx.toXDR()), network.passphrase);
+    setTxHash(signed_restore_tx.hash().toString('hex'));
+    let restore_tx_resp = await sendTransaction(signed_restore_tx, (result: string) => undefined);
+    if (restore_tx_resp) {
+      return restore_tx_resp;
+    } else {
+      throw new Error('Restore transaction failed');
+    }
+  }
+
+  async function sendTransaction<T>(
+    transaction: Transaction,
+    parser: (result: string) => T
+  ): Promise<ContractResponse<T> | undefined> {
+    let send_tx_response = await rpc.sendTransaction(transaction);
+    let curr_time = Date.now();
+    while (send_tx_response.status !== 'PENDING' && Date.now() - curr_time < 5000) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      send_tx_response = await rpc.sendTransaction(transaction);
+    }
+    if (send_tx_response.status !== 'PENDING') {
+      setFailureMessage(`Transaction failed to submit with, ${send_tx_response.status}`);
+      setTxStatus(TxStatus.FAIL);
+      return;
+    }
+
+    let get_tx_response = await rpc.getTransaction(send_tx_response.hash);
+    while (get_tx_response.status === 'NOT_FOUND') {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      get_tx_response = await rpc.getTransaction(send_tx_response.hash);
+    }
+    let tx_resp = ContractResponse.fromTransactionResponse(
+      get_tx_response,
+      transaction,
+      network.passphrase,
+      parser
+    );
+    setTxHash(tx_resp.hash);
+    if (tx_resp.result.isOk()) {
+      console.log('Successfully submitted transaction: ', tx_resp.hash);
+      setTxStatus(TxStatus.SUCCESS);
+    } else {
+      console.log('Failed submitted transaction: ', tx_resp.hash);
+      setFailureMessage(tx_resp.result.unwrapErr().message);
+      setTxStatus(TxStatus.FAIL);
+    }
+    return tx_resp;
+  }
+
   async function submitTransaction<T>(
-    submission: Promise<ContractResult<T>>,
+    operation: xdr.Operation,
+    parser: (result: string) => T,
+    sim: boolean,
     poolId?: string | undefined
-  ): Promise<T | undefined> {
+  ): Promise<ContractResponse<T> | undefined> {
     try {
       // submission calls `sign` internally which handles setting TxStatus
+      let account = await rpc.getAccount(walletAddress);
+      let tx_builder = new TransactionBuilder(account, {
+        networkPassphrase: network.passphrase,
+        fee: BASE_FEE,
+        timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
+      }).addOperation(operation);
+      let transaction = tx_builder.build();
+
+      let simulation = await rpc.simulateTransaction(transaction);
+      let sim_response = ContractResponse.fromSimulationResponse(
+        simulation,
+        transaction,
+        network.passphrase,
+        parser
+      );
+      if (sim) {
+        return sim_response;
+      }
+      if (sim_response.result.isErr()) {
+        if (SorobanRpc.Api.isSimulationRestore(simulation)) {
+          let response = await restore(simulation, transaction);
+          if (response.result.isErr()) {
+            return;
+          }
+          account.incrementSequenceNumber();
+          transaction = tx_builder.build();
+        } else {
+          // TODO: implement error message from type
+          setFailureMessage(sim_response.result.unwrapErr().message);
+          setTxStatus(TxStatus.FAIL);
+          return;
+        }
+      }
+
       setFailureMessage(undefined);
       setTxStatus(TxStatus.BUILDING);
-
-      let result = await submission;
-      setTxHash(result.hash);
-      if (result.ok) {
-        console.log('Successfully submitted transaction: ', result.hash);
-        setTxStatus(TxStatus.SUCCESS);
-      } else {
-        console.log('Failed submitted transaction: ', result.hash);
-        setFailureMessage(result.error?.message);
-        setTxStatus(TxStatus.FAIL);
-      }
+      let assembled_tx = SorobanRpc.assembleTransaction(transaction, simulation).build();
+      let signedTx = await sign(assembled_tx.toXDR());
+      let tx = new Transaction(signedTx, network.passphrase);
+      let tx_resp = await sendTransaction(tx, parser);
 
       // reload data after submission
       try {
@@ -221,7 +333,7 @@ export const WalletProvider = ({ children = null as any }) => {
         console.error('Failed reloading blend data for account: ', walletAddress);
       }
 
-      return result.unwrap();
+      return tx_resp;
     } catch (e: any) {
       console.error('Failed submitting transaction: ', e);
       setFailureMessage(e?.message);
@@ -249,21 +361,11 @@ export const WalletProvider = ({ children = null as any }) => {
     poolId: string,
     submitArgs: SubmitArgs,
     sim: boolean
-  ): Promise<Positions | undefined> {
+  ): Promise<ContractResponse<Positions> | undefined> {
     if (connected) {
-      let txOptions: TxOptions = {
-        sim,
-        pollingInterval: 1000,
-        timeout: 20000,
-        builderOptions: {
-          fee: '10000',
-          timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
-          networkPassphrase: network.passphrase,
-        },
-      };
-      let pool = new PoolClient(poolId);
-      let submission = pool.submit(walletAddress, sign, network, txOptions, submitArgs);
-      return submitTransaction<Positions>(submission, poolId);
+      let pool = new PoolContract(poolId);
+      let operation = xdr.Operation.fromXDR(pool.submit(submitArgs), 'base64');
+      return submitTransaction<Positions>(operation, pool.parsers['submit'], sim, poolId);
     }
   }
 
@@ -278,21 +380,11 @@ export const WalletProvider = ({ children = null as any }) => {
     poolId: string,
     claimArgs: PoolClaimArgs,
     sim: boolean
-  ): Promise<bigint | undefined> {
+  ): Promise<ContractResponse<bigint> | undefined> {
     if (connected) {
-      let txOptions: TxOptions = {
-        sim,
-        pollingInterval: 1000,
-        timeout: 15000,
-        builderOptions: {
-          fee: '10000',
-          timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
-          networkPassphrase: network.passphrase,
-        },
-      };
-      let pool = new PoolClient(poolId);
-      let submission = pool.claim(walletAddress, sign, network, txOptions, claimArgs);
-      return submitTransaction<bigint>(submission, poolId);
+      let pool = new PoolContract(poolId);
+      let operation = xdr.Operation.fromXDR(pool.claim(claimArgs), 'base64');
+      return submitTransaction<bigint>(operation, pool.parsers['claim'], sim, poolId);
     }
   }
 
@@ -307,21 +399,11 @@ export const WalletProvider = ({ children = null as any }) => {
   async function backstopDeposit(
     args: PoolBackstopActionArgs,
     sim: boolean
-  ): Promise<bigint | undefined> {
+  ): Promise<ContractResponse<bigint> | undefined> {
     if (connected) {
-      let txOptions: TxOptions = {
-        sim,
-        pollingInterval: 1000,
-        timeout: 15000,
-        builderOptions: {
-          fee: '10000',
-          timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
-          networkPassphrase: network.passphrase,
-        },
-      };
-      let backstopClient = new BackstopClient(BACKSTOP_ID);
-      let submission = backstopClient.deposit(walletAddress, sign, network, txOptions, args);
-      return submitTransaction<bigint>(submission);
+      let backstop = new BackstopContract(BACKSTOP_ID);
+      let operation = xdr.Operation.fromXDR(backstop.deposit(args), 'base64');
+      return submitTransaction<bigint>(operation, backstop.parsers['deposit'], sim);
     }
   }
 
@@ -334,21 +416,11 @@ export const WalletProvider = ({ children = null as any }) => {
   async function backstopWithdraw(
     args: PoolBackstopActionArgs,
     sim: boolean
-  ): Promise<bigint | undefined> {
+  ): Promise<ContractResponse<bigint> | undefined> {
     if (connected) {
-      let txOptions: TxOptions = {
-        sim,
-        pollingInterval: 1000,
-        timeout: 15000,
-        builderOptions: {
-          fee: '10000',
-          timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
-          networkPassphrase: network.passphrase,
-        },
-      };
-      let backstopClient = new BackstopClient(BACKSTOP_ID);
-      let submission = backstopClient.withdraw(walletAddress, sign, network, txOptions, args);
-      return submitTransaction<bigint>(submission);
+      let backstop = new BackstopContract(BACKSTOP_ID);
+      let operation = xdr.Operation.fromXDR(backstop.withdraw(args), 'base64');
+      return submitTransaction<bigint>(operation, backstop.parsers['withdraw'], sim);
     }
   }
 
@@ -361,27 +433,11 @@ export const WalletProvider = ({ children = null as any }) => {
   async function backstopQueueWithdrawal(
     args: PoolBackstopActionArgs,
     sim: boolean
-  ): Promise<Q4W | undefined> {
+  ): Promise<ContractResponse<Q4W> | undefined> {
     if (connected) {
-      let txOptions: TxOptions = {
-        sim,
-        pollingInterval: 1000,
-        timeout: 15000,
-        builderOptions: {
-          fee: '10000',
-          timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
-          networkPassphrase: network.passphrase,
-        },
-      };
-      let backstopClient = new BackstopClient(BACKSTOP_ID);
-      let submission = backstopClient.queueWithdrawal(
-        walletAddress,
-        sign,
-        network,
-        txOptions,
-        args
-      );
-      return submitTransaction<Q4W>(submission);
+      let backstop = new BackstopContract(BACKSTOP_ID);
+      let operation = xdr.Operation.fromXDR(backstop.queueWithdrawal(args), 'base64');
+      return submitTransaction<Q4W>(operation, backstop.parsers['queueWithdrawal'], sim);
     }
   }
 
@@ -394,27 +450,11 @@ export const WalletProvider = ({ children = null as any }) => {
   async function backstopDequeueWithdrawal(
     args: PoolBackstopActionArgs,
     sim: boolean
-  ): Promise<undefined> {
+  ): Promise<ContractResponse<void> | undefined> {
     if (connected) {
-      let txOptions: TxOptions = {
-        sim,
-        pollingInterval: 1000,
-        timeout: 15000,
-        builderOptions: {
-          fee: '10000',
-          timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
-          networkPassphrase: network.passphrase,
-        },
-      };
-      let backstopClient = new BackstopClient(BACKSTOP_ID);
-      let submission = backstopClient.dequeueWithdrawal(
-        walletAddress,
-        sign,
-        network,
-        txOptions,
-        args
-      );
-      return submitTransaction<undefined>(submission);
+      let backstop = new BackstopContract(BACKSTOP_ID);
+      let operation = xdr.Operation.fromXDR(backstop.dequeueWithdrawal(args), 'base64');
+      return submitTransaction<void>(operation, backstop.parsers['dequeueWithdrawal'], sim);
     }
   }
 
@@ -427,21 +467,11 @@ export const WalletProvider = ({ children = null as any }) => {
   async function backstopClaim(
     claimArgs: BackstopClaimArgs,
     sim: boolean
-  ): Promise<bigint | undefined> {
+  ): Promise<ContractResponse<bigint> | undefined> {
     if (connected) {
-      let txOptions: TxOptions = {
-        sim,
-        pollingInterval: 1000,
-        timeout: 15000,
-        builderOptions: {
-          fee: '10000',
-          timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
-          networkPassphrase: network.passphrase,
-        },
-      };
-      let backstopClient = new BackstopClient(BACKSTOP_ID);
-      let submission = backstopClient.claim(walletAddress, sign, network, txOptions, claimArgs);
-      return submitTransaction<bigint>(submission);
+      let backstop = new BackstopContract(BACKSTOP_ID);
+      let operation = xdr.Operation.fromXDR(backstop.claim(claimArgs), 'base64');
+      return submitTransaction<bigint>(operation, backstop.parsers['claim'], sim);
     }
   }
   /**
@@ -457,33 +487,20 @@ export const WalletProvider = ({ children = null as any }) => {
   ) {
     try {
       if (connected) {
-        let txOptions: TxOptions = {
-          sim,
-          pollingInterval: 1000,
-          timeout: 15000,
-          builderOptions: {
-            fee: '10000',
-            timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
-            networkPassphrase: network.passphrase,
-          },
-        };
         let cometClient = new CometClient(lpTokenAddress);
-        let submission = cometClient.depositTokenInGetLPOut(
-          sign,
-          network,
+        let operation = cometClient.depositTokenInGetLPOut(
           depositTokenAddress,
           depositTokenAmount,
           minLPTokenAmount,
-          walletAddress,
-          txOptions
+          walletAddress
         );
-        if (sim) {
-          return (await submission).unwrap();
-        } else {
-          return submitTransaction<bigint>(submission);
-        }
-      } else {
-        return;
+        return submitTransaction<bigint>(
+          operation,
+          (result: string) => {
+            return scValToBigInt(xdr.ScVal.fromXDR(result as string, 'base64'));
+          },
+          sim
+        );
       }
     } catch (e) {
       throw e;
@@ -505,31 +522,20 @@ export const WalletProvider = ({ children = null as any }) => {
     lpTokenAddress: string
   ) {
     if (connected) {
-      let txOptions: TxOptions = {
-        sim,
-        pollingInterval: 1000,
-        timeout: 15000,
-        builderOptions: {
-          fee: '10000',
-          timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
-          networkPassphrase: network.passphrase,
-        },
-      };
       let cometClient = new CometClient(lpTokenAddress);
-      let submission = cometClient.depositTokenInGetLPOut(
-        sign,
-        network,
+      let operation = cometClient.depositTokenInGetLPOut(
         depositTokenAddress,
         LPTokenAmount,
         maxDepositTokenAmount,
-        walletAddress,
-        txOptions
+        walletAddress
       );
-      if (sim) {
-        return (await submission).unwrap();
-      } else {
-        return submitTransaction<bigint>(submission);
-      }
+      return submitTransaction<bigint>(
+        operation,
+        (result: string) => {
+          return scValToBigInt(xdr.ScVal.fromXDR(result as string, 'base64'));
+        },
+        sim
+      );
     }
   }
 
@@ -546,38 +552,8 @@ export const WalletProvider = ({ children = null as any }) => {
         );
 
         let signedTx = new Transaction(await sign(transaction.toXDR()), network.passphrase);
-        let response:
-          | SorobanRpc.Api.SendTransactionResponse
-          | SorobanRpc.Api.GetTransactionResponse = await rpc.sendTransaction(signedTx);
-        let status: string = response.status;
-        const resources = new Resources(0, 0, 0, 0, 0, 0, 0);
-        const tx_hash = response.hash;
-        setTxHash(tx_hash);
-
-        // Poll this until the status is not "NOT_FOUND"
-        const pollingStartTime = Date.now();
-        while (status === 'PENDING' || status === 'NOT_FOUND') {
-          if (pollingStartTime + 15000 < Date.now()) {
-            console.error(`Transaction timed out with status ${status}`);
-          }
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          // See if the transaction is complete
-          response = await rpc.getTransaction(tx_hash);
-          status = response.status;
-        }
-        // @ts-ignore
-        const result = ContractResult.fromResponse(tx_hash, resources, response, () => undefined);
+        await sendTransaction(signedTx, (result: string) => undefined);
         try {
-          if (result.ok) {
-            console.log('Successfully submitted transaction: ', result.hash);
-            setFailureMessage('');
-            setTxStatus(TxStatus.SUCCESS);
-          } else {
-            console.log('Failed submitted transaction: ', result.hash);
-            setFailureMessage(result.error?.message);
-            setTxStatus(TxStatus.FAIL);
-          }
-
           // reload Horizon account after submission
           try {
             await loadUserData(walletAddress);
@@ -585,17 +561,14 @@ export const WalletProvider = ({ children = null as any }) => {
             console.error('Failed loading account: ', walletAddress);
           }
 
-          return result.unwrap();
+          return;
         } catch (e: any) {
           console.error('Failed submitting transaction: ', e);
           setFailureMessage(e?.message);
           setTxStatus(TxStatus.FAIL);
           return undefined;
         }
-      } catch (e) {
-        setTxStatus(TxStatus.FAIL);
-        console.error('Faucet Failed', e);
-      }
+      } catch (e) {}
     }
   }
 
