@@ -284,7 +284,6 @@ export const WalletProvider = ({ children = null as any }) => {
     poolId?: string | undefined
   ): Promise<ContractResponse<T> | undefined> {
     try {
-      // submission calls `sign` internally which handles setting TxStatus
       let account = await rpc.getAccount(walletAddress);
       let tx_builder = new TransactionBuilder(account, {
         networkPassphrase: network.passphrase,
@@ -356,7 +355,7 @@ export const WalletProvider = ({ children = null as any }) => {
     if (connected) {
       let pool = new PoolContract(poolId);
       let operation = xdr.Operation.fromXDR(pool.submit(submitArgs), 'base64');
-      return invokeSorobanOperation<Positions>(operation, pool.parsers['submit'], sim, poolId);
+      return invokeSorobanOperation<Positions>(operation, pool.parsers.submit, sim, poolId);
     }
   }
 
@@ -375,7 +374,7 @@ export const WalletProvider = ({ children = null as any }) => {
     if (connected) {
       let pool = new PoolContract(poolId);
       let operation = xdr.Operation.fromXDR(pool.claim(claimArgs), 'base64');
-      return invokeSorobanOperation<bigint>(operation, pool.parsers['claim'], sim, poolId);
+      return invokeSorobanOperation<bigint>(operation, pool.parsers.claim, sim, poolId);
     }
   }
 
@@ -394,7 +393,7 @@ export const WalletProvider = ({ children = null as any }) => {
     if (connected) {
       let backstop = new BackstopContract(BACKSTOP_ID);
       let operation = xdr.Operation.fromXDR(backstop.deposit(args), 'base64');
-      return invokeSorobanOperation<bigint>(operation, backstop.parsers['deposit'], sim);
+      return invokeSorobanOperation<bigint>(operation, backstop.parsers.deposit, sim);
     }
   }
 
@@ -411,7 +410,7 @@ export const WalletProvider = ({ children = null as any }) => {
     if (connected) {
       let backstop = new BackstopContract(BACKSTOP_ID);
       let operation = xdr.Operation.fromXDR(backstop.withdraw(args), 'base64');
-      return invokeSorobanOperation<bigint>(operation, backstop.parsers['withdraw'], sim);
+      return invokeSorobanOperation<bigint>(operation, backstop.parsers.withdraw, sim);
     }
   }
 
@@ -428,7 +427,7 @@ export const WalletProvider = ({ children = null as any }) => {
     if (connected) {
       let backstop = new BackstopContract(BACKSTOP_ID);
       let operation = xdr.Operation.fromXDR(backstop.queueWithdrawal(args), 'base64');
-      return invokeSorobanOperation<Q4W>(operation, backstop.parsers['queueWithdrawal'], sim);
+      return invokeSorobanOperation<Q4W>(operation, backstop.parsers.queueWithdrawal, sim);
     }
   }
 
@@ -445,7 +444,7 @@ export const WalletProvider = ({ children = null as any }) => {
     if (connected) {
       let backstop = new BackstopContract(BACKSTOP_ID);
       let operation = xdr.Operation.fromXDR(backstop.dequeueWithdrawal(args), 'base64');
-      return invokeSorobanOperation<void>(operation, backstop.parsers['dequeueWithdrawal'], sim);
+      return invokeSorobanOperation<void>(operation, backstop.parsers.dequeueWithdrawal, sim);
     }
   }
 
@@ -462,7 +461,7 @@ export const WalletProvider = ({ children = null as any }) => {
     if (connected) {
       let backstop = new BackstopContract(BACKSTOP_ID);
       let operation = xdr.Operation.fromXDR(backstop.claim(claimArgs), 'base64');
-      return invokeSorobanOperation<bigint>(operation, backstop.parsers['claim'], sim);
+      return invokeSorobanOperation<bigint>(operation, backstop.parsers.claim, sim);
     }
   }
   /**
