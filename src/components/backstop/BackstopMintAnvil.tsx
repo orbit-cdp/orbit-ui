@@ -1,3 +1,4 @@
+import { ContractResponse } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Address } from 'stellar-sdk';
@@ -155,9 +156,14 @@ export const BackstopMintAnvil: React.FC<{
           },
           true,
           backstopData?.config.backstopTkn || ''
-        ).then((val: bigint | undefined) => {
+        ).then((val: ContractResponse<bigint> | undefined) => {
+          if (val === undefined) {
+            setLoadingEstimate(false);
+            setToMint(0);
+            return;
+          }
           setLoadingEstimate(false);
-          setToMint(val ? Number(val) / 1e7 : 0);
+          setToMint(val.result.isOk() ? Number(val.result.unwrap()) / 1e7 : 0);
         });
       }
     }
