@@ -6,7 +6,7 @@ import { MarketCard } from '../components/markets/MarketCard';
 import { useStore } from '../store/store';
 
 const Markets: NextPage = () => {
-  const rewardZone = useStore((state) => state.backstop?.config?.rewardZone ?? []);
+  const pools = useStore((state) => state.pools);
 
   return (
     <>
@@ -16,7 +16,7 @@ const Markets: NextPage = () => {
         </SectionBase>
       </Row>
       <Divider />
-      {rewardZone.map((poolId) => (
+      {Array.from(pools.keys()).map((poolId) => (
         <MarketCard key={poolId} poolId={poolId}></MarketCard>
       ))}
     </>
