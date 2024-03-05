@@ -278,7 +278,7 @@ export const WalletProvider = ({ children = null as any }) => {
     return tx_resp;
   }
 
-  async function submitTransaction<T>(
+  async function invokeSorobanOperation<T>(
     operation: xdr.Operation,
     parser: (result: string) => T,
     sim: boolean,
@@ -366,7 +366,7 @@ export const WalletProvider = ({ children = null as any }) => {
     if (connected) {
       let pool = new PoolContract(poolId);
       let operation = xdr.Operation.fromXDR(pool.submit(submitArgs), 'base64');
-      return submitTransaction<Positions>(operation, pool.parsers['submit'], sim, poolId);
+      return invokeSorobanOperation<Positions>(operation, pool.parsers['submit'], sim, poolId);
     }
   }
 
@@ -385,7 +385,7 @@ export const WalletProvider = ({ children = null as any }) => {
     if (connected) {
       let pool = new PoolContract(poolId);
       let operation = xdr.Operation.fromXDR(pool.claim(claimArgs), 'base64');
-      return submitTransaction<bigint>(operation, pool.parsers['claim'], sim, poolId);
+      return invokeSorobanOperation<bigint>(operation, pool.parsers['claim'], sim, poolId);
     }
   }
 
@@ -404,7 +404,7 @@ export const WalletProvider = ({ children = null as any }) => {
     if (connected) {
       let backstop = new BackstopContract(BACKSTOP_ID);
       let operation = xdr.Operation.fromXDR(backstop.deposit(args), 'base64');
-      return submitTransaction<bigint>(operation, backstop.parsers['deposit'], sim);
+      return invokeSorobanOperation<bigint>(operation, backstop.parsers['deposit'], sim);
     }
   }
 
@@ -421,7 +421,7 @@ export const WalletProvider = ({ children = null as any }) => {
     if (connected) {
       let backstop = new BackstopContract(BACKSTOP_ID);
       let operation = xdr.Operation.fromXDR(backstop.withdraw(args), 'base64');
-      return submitTransaction<bigint>(operation, backstop.parsers['withdraw'], sim);
+      return invokeSorobanOperation<bigint>(operation, backstop.parsers['withdraw'], sim);
     }
   }
 
@@ -438,7 +438,7 @@ export const WalletProvider = ({ children = null as any }) => {
     if (connected) {
       let backstop = new BackstopContract(BACKSTOP_ID);
       let operation = xdr.Operation.fromXDR(backstop.queueWithdrawal(args), 'base64');
-      return submitTransaction<Q4W>(operation, backstop.parsers['queueWithdrawal'], sim);
+      return invokeSorobanOperation<Q4W>(operation, backstop.parsers['queueWithdrawal'], sim);
     }
   }
 
@@ -455,7 +455,7 @@ export const WalletProvider = ({ children = null as any }) => {
     if (connected) {
       let backstop = new BackstopContract(BACKSTOP_ID);
       let operation = xdr.Operation.fromXDR(backstop.dequeueWithdrawal(args), 'base64');
-      return submitTransaction<void>(operation, backstop.parsers['dequeueWithdrawal'], sim);
+      return invokeSorobanOperation<void>(operation, backstop.parsers['dequeueWithdrawal'], sim);
     }
   }
 
@@ -472,7 +472,7 @@ export const WalletProvider = ({ children = null as any }) => {
     if (connected) {
       let backstop = new BackstopContract(BACKSTOP_ID);
       let operation = xdr.Operation.fromXDR(backstop.claim(claimArgs), 'base64');
-      return submitTransaction<bigint>(operation, backstop.parsers['claim'], sim);
+      return invokeSorobanOperation<bigint>(operation, backstop.parsers['claim'], sim);
     }
   }
   /**
@@ -495,7 +495,7 @@ export const WalletProvider = ({ children = null as any }) => {
           minLPTokenAmount,
           walletAddress
         );
-        return submitTransaction<bigint>(
+        return invokeSorobanOperation<bigint>(
           operation,
           (result: string) => {
             return scValToBigInt(xdr.ScVal.fromXDR(result as string, 'base64'));
@@ -530,7 +530,7 @@ export const WalletProvider = ({ children = null as any }) => {
         maxDepositTokenAmount,
         walletAddress
       );
-      return submitTransaction<bigint>(
+      return invokeSorobanOperation<bigint>(
         operation,
         (result: string) => {
           return scValToBigInt(xdr.ScVal.fromXDR(result as string, 'base64'));
