@@ -67,7 +67,7 @@ export default function NetworkPage(){
      <Input placeholder="Input RPC Url" type="text" value={newNetworkRPCUrl} onChange={(e) => setNewNetworkRPCUrl(e.target.value)} />
       <Input placeholder="Input Passphrase " type="text" value={newNetworkPassphrase} onChange={(e) => setNewNetworkPassphrase(e.target.value)} />
       <OpaqueButton sx={{width:"20rem",margin:"auto"}} palette={{
-      main: theme.palette.text.secondary,
+        main: theme.palette.text.primary,
       opaque: theme.palette.menu.light,
       contrastText: theme.palette.text.primary,
       light: theme.palette.text.secondary,
