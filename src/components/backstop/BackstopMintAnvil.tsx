@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Address } from 'stellar-sdk';
 import { TxStatus, useWallet } from '../../contexts/wallet';
 import { getTokenBalance } from '../../external/token';
-import { useDebouncedState } from '../../hooks/debounce';
+import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
 import { scaleInputToBigInt } from '../../utils/scval';
@@ -31,7 +31,7 @@ export const BackstopMintAnvil: React.FC<{
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
   const [toSwap, setToSwap] = useState<string>('');
   /** run function on each state change */
-  useDebouncedState(toSwap, 1000, handleSwapChange);
+  useDebouncedState(toSwap, RPC_DEBOUNCE_DELAY, handleSwapChange);
 
   const backstopData = useStore((state) => state.backstop);
   const loadUserData = useStore((state) => state.loadUserData);

@@ -9,7 +9,7 @@ import {
 import { Box, Typography, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { TxStatus, useWallet } from '../../contexts/wallet';
-import { useDebouncedState } from '../../hooks/debounce';
+import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { scaleInputToBigInt } from '../../utils/scval';
@@ -28,20 +28,16 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
 
   const poolData = useStore((state) => state.pools.get(poolId));
   const userPoolData = useStore((state) => state.userPoolData.get(poolId));
-  const reserve = poolData?.reserves.get(assetId);
-  const assetToBase = reserve?.oraclePrice ?? 1;
 
   const [toBorrow, setToBorrow] = useState<string>('');
   const [simResult, setSimResult] = useState<ContractResponse<Positions>>();
   const [validDecimals, setValidDecimals] = useState<boolean>(true);
 
-  const decimals = reserve?.config.decimals ?? 7;
-  const symbol = reserve?.tokenMetadata?.symbol ?? '';
-
   if (txStatus === TxStatus.SUCCESS && Number(toBorrow) != 0) {
     setToBorrow('0');
   }
-  useDebouncedState(toBorrow, 500, async () => {
+
+  useDebouncedState(toBorrow, RPC_DEBOUNCE_DELAY, async () => {
     if (validDecimals) {
       let sim = await handleSubmitTransaction(true);
       if (sim) {
@@ -50,10 +46,35 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     }
   });
 
-  let newPositionEstimates =
+  let newPositionEstimate =
     poolData && simResult && simResult.result.isOk()
       ? PositionEstimates.build(poolData, simResult.result.unwrap())
       : undefined;
+
+  const reserve = poolData?.reserves.get(assetId);
+  const assetToBase = reserve?.oraclePrice ?? 1;
+  const decimals = reserve?.config.decimals ?? 7;
+  const symbol = reserve?.tokenMetadata?.symbol ?? '';
+
+  const assetToEffectiveLiability = reserve
+    ? assetToBase * reserve.getLiabilityFactor()
+    : undefined;
+  const curBorrowCap =
+    userPoolData && assetToEffectiveLiability
+      ? userPoolData.positionEstimates.borrowCap / assetToEffectiveLiability
+      : undefined;
+  const nextBorrowCap =
+    newPositionEstimate && assetToEffectiveLiability
+      ? newPositionEstimate.borrowCap / assetToEffectiveLiability
+      : undefined;
+  const curBorrowLimit =
+    userPoolData && Number.isFinite(userPoolData?.positionEstimates.borrowLimit)
+      ? userPoolData?.positionEstimates?.borrowLimit
+      : 0;
+  const nextBorrowLimit =
+    newPositionEstimate && Number.isFinite(newPositionEstimate?.borrowLimit)
+      ? newPositionEstimate?.borrowLimit
+      : 0;
 
   // verify that the user can act
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
@@ -177,27 +198,19 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
               decimals
             )} ${symbol}`}
             newValue={`${toBalance(
-              newPositionEstimates?.liabilities.get(assetId) ?? 0,
+              newPositionEstimate?.liabilities.get(assetId) ?? 0,
               decimals
             )} ${symbol}`}
           />
           <ValueChange
             title="Borrow capacity"
-            curValue={`${toBalance(userPoolData?.positionEstimates.borrowCap)} ${symbol}`}
-            newValue={`${toBalance(newPositionEstimates?.borrowCap)} ${symbol}`}
+            curValue={`${toBalance(curBorrowCap)} ${symbol}`}
+            newValue={`${toBalance(nextBorrowCap)} ${symbol}`}
           />
           <ValueChange
             title="Borrow limit"
-            curValue={toPercentage(
-              Number.isFinite(userPoolData?.positionEstimates.borrowLimit)
-                ? userPoolData?.positionEstimates?.borrowLimit
-                : 0
-            )}
-            newValue={toPercentage(
-              Number.isFinite(newPositionEstimates?.borrowLimit)
-                ? newPositionEstimates?.borrowLimit
-                : 0
-            )}
+            curValue={toPercentage(curBorrowLimit)}
+            newValue={toPercentage(nextBorrowLimit)}
           />
         </TxOverview>
       </Section>

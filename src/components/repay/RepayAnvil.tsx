@@ -9,7 +9,7 @@ import {
 import { Box, Typography, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { TxStatus, useWallet } from '../../contexts/wallet';
-import { useDebouncedState } from '../../hooks/debounce';
+import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { getAssetReserve } from '../../utils/horizon';
@@ -31,18 +31,12 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   const poolData = useStore((state) => state.pools.get(poolId));
   const userPoolData = useStore((state) => state.userPoolData.get(poolId));
   const userBalance = useStore((state) => state.balances.get(assetId)) ?? BigInt(0);
-  const reserve = poolData?.reserves.get(assetId);
-  const assetPrice = reserve?.oraclePrice ?? 1;
 
   const [toRepay, setToRepay] = useState<string>('');
   const [simResult, setSimResult] = useState<ContractResponse<Positions> | undefined>();
   const [validDecimals, setValidDecimals] = useState<boolean>(true);
 
-  const decimals = reserve?.config.decimals ?? 7;
-  const scalar = 10 ** decimals;
-  const symbol = reserve?.tokenMetadata?.symbol ?? '';
-
-  useDebouncedState(toRepay, 500, async () => {
+  useDebouncedState(toRepay, RPC_DEBOUNCE_DELAY, async () => {
     if (validDecimals) {
       let sim = await handleSubmitTransaction(true);
       if (sim) {
@@ -54,6 +48,23 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
     poolData && simResult && simResult.result.isOk()
       ? PositionEstimates.build(poolData, simResult.result.unwrap())
       : undefined;
+
+  const reserve = poolData?.reserves.get(assetId);
+  const assetToBase = reserve?.oraclePrice ?? 1;
+  const decimals = reserve?.config.decimals ?? 7;
+  const scalar = 10 ** decimals;
+  const symbol = reserve?.tokenMetadata?.symbol ?? '';
+
+  const curBorrowCap = userPoolData ? userPoolData.positionEstimates.borrowCap : undefined;
+  const nextBorrowCap = newPositionEstimate ? newPositionEstimate.borrowCap : undefined;
+  const curBorrowLimit =
+    userPoolData && Number.isFinite(userPoolData?.positionEstimates.borrowLimit)
+      ? userPoolData?.positionEstimates?.borrowLimit
+      : 0;
+  const nextBorrowLimit =
+    newPositionEstimate && Number.isFinite(newPositionEstimate?.borrowLimit)
+      ? newPositionEstimate?.borrowLimit
+      : 0;
 
   // calculate current wallet state
   let stellar_reserve_amount = getAssetReserve(account, reserve?.tokenMetadata?.asset);
@@ -172,7 +183,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toRepay ?? 0) * assetPrice, decimals)}`}
+              {`$${toBalance(Number(toRepay ?? 0) * assetToBase, decimals)}`}
             </Typography>
           </Box>
         </Box>
@@ -194,21 +205,13 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
           />
           <ValueChange
             title="Borrow capacity"
-            curValue={`$${toBalance(userPoolData?.positionEstimates.borrowCap)}`}
-            newValue={`$${toBalance(newPositionEstimate?.borrowCap)}`}
+            curValue={`$${toBalance(curBorrowCap)}`}
+            newValue={`$${toBalance(nextBorrowCap)}`}
           />
           <ValueChange
             title="Borrow limit"
-            curValue={toPercentage(
-              Number.isFinite(userPoolData?.positionEstimates.borrowLimit)
-                ? userPoolData?.positionEstimates.borrowLimit
-                : 0
-            )}
-            newValue={toPercentage(
-              Number.isFinite(newPositionEstimate?.borrowLimit)
-                ? newPositionEstimate?.borrowLimit
-                : 0
-            )}
+            curValue={toPercentage(curBorrowLimit)}
+            newValue={toPercentage(nextBorrowLimit)}
           />
         </TxOverview>
       </Section>
