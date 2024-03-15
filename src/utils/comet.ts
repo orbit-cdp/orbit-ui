@@ -1,5 +1,4 @@
-import { Network, TxOptions, i128, invokeOperation } from '@blend-capital/blend-sdk';
-import { Contract, nativeToScVal, scValToBigInt, xdr } from 'stellar-sdk';
+import { Contract, nativeToScVal } from 'stellar-sdk';
 
 export class CometClient {
   comet: Contract;
@@ -14,14 +13,11 @@ export class CometClient {
     min_pool_amount_out: i128,
     user: Address,
  */
-  public async depositTokenInGetLPOut(
-    sign: (txXdr: string) => Promise<string>,
-    network: Network,
+  public depositTokenInGetLPOut(
     depositTokenAddress: string,
     depositTokenAmount: bigint,
     minLPTokenAmount: bigint,
-    user: string,
-    txOptions: TxOptions
+    user: string
   ) {
     const invokeArgs = {
       method: 'dep_tokn_amt_in_get_lp_tokns_out',
@@ -33,21 +29,7 @@ export class CometClient {
       ],
     };
     const operation = this.comet.call(invokeArgs.method, ...invokeArgs.args);
-    return await invokeOperation<i128>(
-      user,
-      sign,
-      network,
-      txOptions,
-      (value: string | xdr.ScVal | undefined): i128 | undefined => {
-        if (value == undefined) {
-          return undefined;
-        }
-        const scVal = scValToBigInt(xdr.ScVal.fromXDR(value as string, 'base64'));
-
-        return scVal;
-      },
-      operation.toXDR('base64')
-    );
+    return operation;
   }
   /**
   // To get Y amount of LP tokens, how much of token will be required
@@ -56,14 +38,11 @@ export class CometClient {
         max_amount_in: i128,
         user: Address,
  */
-  public async getTokenAmountInByLPAmount(
-    sign: (txXdr: string) => Promise<string>,
-    network: Network,
+  public getTokenAmountInByLPAmount(
     depositTokenAddress: string,
     LPTokenAmount: bigint,
     maxDepositTokenAmount: bigint,
-    user: string,
-    txOptions: TxOptions
+    user: string
   ) {
     const invokeArgs = {
       method: 'dep_lp_tokn_amt_out_get_tokn_in',
@@ -75,20 +54,7 @@ export class CometClient {
       ],
     };
     const operation = this.comet.call(invokeArgs.method, ...invokeArgs.args);
-    return await invokeOperation<i128>(
-      user,
-      sign,
-      network,
-      txOptions,
-      (value: string | xdr.ScVal | undefined): i128 | undefined => {
-        if (value == undefined) {
-          return undefined;
-        }
-        const scVal = scValToBigInt(xdr.ScVal.fromXDR(value as string, 'base64'));
-        return scVal;
-      },
-      operation.toXDR('base64')
-    );
+    return operation;
   }
 }
 export interface cometPoolDepositArgs {

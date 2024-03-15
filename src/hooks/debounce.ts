@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+export const RPC_DEBOUNCE_DELAY = 750;
+
 /**
  *
  * @param value state To listen updates from

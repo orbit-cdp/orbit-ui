@@ -63,18 +63,20 @@ const Backstop: NextPage = () => {
   };
 
   async function getLPEstimate(amount: bigint, depositTokenAddress: string) {
-    const estimate =
-      (await backstopMintByDepositTokenAmount(
-        {
-          depositTokenAddress: depositTokenAddress,
-          depositTokenAmount: amount,
-          minLPTokenAmount: BigInt(0),
-          user: walletAddress,
-        },
-        true,
-        backstopData?.config.backstopTkn || ''
-      )) || BigInt(0);
-    return estimate;
+    let response = await backstopMintByDepositTokenAmount(
+      {
+        depositTokenAddress: depositTokenAddress,
+        depositTokenAmount: amount,
+        minLPTokenAmount: BigInt(0),
+        user: walletAddress,
+      },
+      true,
+      backstopData?.config.backstopTkn || ''
+    );
+    if (response) {
+      return response.result.isOk() ? response.result.unwrap() : BigInt(0);
+    }
+    return BigInt(0);
   }
 
   async function estimateMaxAmountToMint() {
@@ -98,26 +100,18 @@ const Backstop: NextPage = () => {
         Address.fromString(backstopData?.config.backstopTkn as string)
       );
 
-      if (usdcBalance > cometPoolUSDCBalance) {
-        const amountToUse = cometPoolUSDCBalance / BigInt(2) - BigInt(1);
-        const usdcEstimate = await getLPEstimate(amountToUse, usdcAddress);
-        setAvailableToMint(toBalance(usdcEstimate, 7));
-        setLoadingEstimate(false);
-        return;
-      }
-      if (blndBalance > cometPoolBLNDBalance) {
-        const amountToUse = cometPoolBLNDBalance / BigInt(2) - BigInt(1);
-        const blndEstimate = await getLPEstimate(amountToUse, blndAddress);
-        setAvailableToMint(toBalance(blndEstimate, 7));
-        setLoadingEstimate(false);
-        return;
-      }
-      const usdcEstimate = await getLPEstimate(usdcBalance, usdcAddress);
-      const blndEstimate = await getLPEstimate(blndBalance, blndAddress);
+      let usdcEstimate =
+        usdcBalance > cometPoolUSDCBalance
+          ? await getLPEstimate(cometPoolUSDCBalance / BigInt(2) - BigInt(1), usdcAddress)
+          : await getLPEstimate(usdcBalance, usdcAddress);
+      let blndEstimate =
+        blndBalance > cometPoolBLNDBalance
+          ? await getLPEstimate(cometPoolBLNDBalance / BigInt(2) - BigInt(1), blndAddress)
+          : await getLPEstimate(blndBalance, blndAddress);
+
       if (blndEstimate > BigInt(0) || usdcEstimate > BigInt(0)) {
         const totalEstimate = usdcEstimate + blndEstimate;
         setAvailableToMint(toBalance(totalEstimate, 7));
-
         setLoadingEstimate(false);
       } else {
         setLoadingEstimate(false);
