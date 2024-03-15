@@ -8,7 +8,7 @@ import {
 } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
-import { TxStatus, useWallet } from '../../contexts/wallet';
+import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
@@ -64,8 +64,8 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
       ? newPositionEstimate?.borrowLimit
       : 0;
 
-  if (txStatus === TxStatus.SUCCESS && Number(toWithdraw) != 0) {
-    setToWithdraw('0');
+  if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toWithdraw) != 0) {
+    setToWithdraw('');
   }
   // verify that the user can act
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {

@@ -39,7 +39,7 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
   const [toDeposit, setToDeposit] = useState<string>('');
   const [simResponse, setSimResponse] = useState<ContractResponse<bigint>>();
 
-  if (txStatus === TxStatus.SUCCESS && TxType && Number(toDeposit) != 0) {
+  if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toDeposit) != 0) {
     setToDeposit('');
   }
 

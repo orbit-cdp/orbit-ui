@@ -6,7 +6,7 @@ import {
 } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
-import { useWallet } from '../../contexts/wallet';
+import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
@@ -22,7 +22,7 @@ import { ValueChange } from '../common/ValueChange';
 
 export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, backstopQueueWithdrawal, txType } = useWallet();
+  const { connected, walletAddress, backstopQueueWithdrawal, txType, txStatus } = useWallet();
 
   const backstop = useStore((state) => state.backstop);
   const backstopPoolData = useStore((state) => state.backstop?.pools?.get(poolId));
@@ -44,6 +44,10 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   useDebouncedState(toQueue, 500, txType, async () => {
     handleSubmitTransaction(true);
   });
+
+  if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toQueue) != 0) {
+    setToQueue('');
+  }
 
   // verify that the user can act
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {

@@ -2,7 +2,7 @@ import { ContractResponse } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Address } from 'stellar-sdk';
-import { TxStatus, useWallet } from '../../contexts/wallet';
+import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { getTokenBalance } from '../../external/token';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
@@ -44,7 +44,7 @@ export const BackstopMintAnvil: React.FC<{
 
   const userLPBalance = Number(userBackstopData?.tokens ?? BigInt(0)) / 1e7;
   const decimals = 7;
-  if (txStatus === TxStatus.SUCCESS && Number(toSwap) != 0) {
+  if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toSwap) != 0) {
     setToSwap('');
   }
 
@@ -133,8 +133,7 @@ export const BackstopMintAnvil: React.FC<{
 
   async function handleSwapChange(value: string) {
     /**  get comet estimate LP token for the inputted swap token and set in mint input  */
-    const validDecimals = value.split('.')[1]?.length <= decimals;
-
+    const validDecimals = value.split('.')[1]?.length ?? 0 <= decimals;
     if (currentDepositToken.address && validDecimals) {
       const bigintValue = scaleInputToBigInt(value, decimals);
       const currentDepositTokenBalance =
@@ -143,6 +142,14 @@ export const BackstopMintAnvil: React.FC<{
         !!currentPoolUSDCBalance && bigintValue > currentPoolUSDCBalance / BigInt(2) - BigInt(1);
       const isLargerBLND =
         !!currentPoolBLNDBalance && bigintValue > currentPoolBLNDBalance / BigInt(2) - BigInt(1);
+      console.log(
+        currentDepositToken,
+        isLargerBLND,
+        isLargerUSDC,
+        bigintValue,
+        currentDepositTokenBalance
+      );
+
       if (isLargerBLND || isLargerUSDC) {
         setLoadingEstimate(false);
         setToMint(0);

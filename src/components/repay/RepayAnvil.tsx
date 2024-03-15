@@ -8,7 +8,7 @@ import {
 } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
-import { TxStatus, useWallet } from '../../contexts/wallet';
+import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
@@ -77,8 +77,8 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
     Number(toRepay) > (userPoolData.positionEstimates.liabilities.get(assetId) ?? 0)
       ? Number(toRepay) - (userPoolData.positionEstimates.liabilities.get(assetId) ?? 0)
       : 0;
-  if (txStatus === TxStatus.SUCCESS && Number(toRepay) != 0) {
-    setToRepay('0');
+  if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toRepay) != 0) {
+    setToRepay('');
   }
   // verify that the user can act
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
