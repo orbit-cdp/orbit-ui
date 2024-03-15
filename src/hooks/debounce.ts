@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { TxType } from '../contexts/wallet';
 
+export const RPC_DEBOUNCE_DELAY = 750;
+
 /**
  *
  * @param value state To listen updates from

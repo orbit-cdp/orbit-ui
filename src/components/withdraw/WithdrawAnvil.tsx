@@ -9,7 +9,7 @@ import {
 import { Box, Typography, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { TxStatus, useWallet } from '../../contexts/wallet';
-import { useDebouncedState } from '../../hooks/debounce';
+import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { scaleInputToBigInt } from '../../utils/scval';
@@ -28,15 +28,13 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
 
   const poolData = useStore((state) => state.pools.get(poolId));
   const userPoolData = useStore((state) => state.userPoolData.get(poolId));
-  const reserve = poolData?.reserves.get(assetId);
-  const assetPrice = reserve?.oraclePrice ?? 1;
 
   const [toWithdrawSubmit, setToWithdrawSubmit] = useState<string | undefined>(undefined);
   const [toWithdraw, setToWithdraw] = useState<string>('');
   const [simResponse, setSimResponse] = useState<ContractResponse<Positions>>();
   const [validDecimals, setValidDecimals] = useState<boolean>(true);
 
-  useDebouncedState(toWithdrawSubmit, 500, txType, async () => {
+  useDebouncedState(toWithdrawSubmit, RPC_DEBOUNCE_DELAY, txType, async () => {
     if (validDecimals) {
       let response = await handleSubmitTransaction(true);
       if (response) {
@@ -50,8 +48,21 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
       ? PositionEstimates.build(poolData, simResponse.result.unwrap())
       : undefined;
 
+  const reserve = poolData?.reserves.get(assetId);
+  const assetToBase = reserve?.oraclePrice ?? 1;
   const decimals = reserve?.config.decimals ?? 7;
   const symbol = reserve?.tokenMetadata?.symbol ?? '';
+
+  const curBorrowCap = userPoolData ? userPoolData.positionEstimates.borrowCap : undefined;
+  const nextBorrowCap = newPositionEstimate ? newPositionEstimate.borrowCap : undefined;
+  const curBorrowLimit =
+    userPoolData && Number.isFinite(userPoolData?.positionEstimates.borrowLimit)
+      ? userPoolData?.positionEstimates?.borrowLimit
+      : 0;
+  const nextBorrowLimit =
+    newPositionEstimate && Number.isFinite(newPositionEstimate?.borrowLimit)
+      ? newPositionEstimate?.borrowLimit
+      : 0;
 
   if (txStatus === TxStatus.SUCCESS && Number(toWithdraw) != 0) {
     setToWithdraw('0');
@@ -112,7 +123,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
           (userPoolData.positionEstimates.totalEffectiveCollateral -
             userPoolData.positionEstimates.totalEffectiveLiabilities * 1.02) /
           1.02;
-        let to_wd = to_bounded_hf / (assetPrice * reserve.getCollateralFactor());
+        let to_wd = to_bounded_hf / (assetToBase * reserve.getCollateralFactor());
         let withdrawAmount = Math.min(to_wd, curSupplied) + 1 / 10 ** decimals;
         handleWithdrawAmountChange(Math.max(withdrawAmount, 0).toFixed(decimals));
       }
@@ -185,7 +196,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
           </Box>
           <Box sx={{ marginLeft: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toWithdraw ?? 0) * assetPrice, decimals)}`}
+              {`$${toBalance(Number(toWithdraw ?? 0) * assetToBase, decimals)}`}
             </Typography>
           </Box>
         </Box>
@@ -209,21 +220,13 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
           />
           <ValueChange
             title="Borrow capacity"
-            curValue={`$${toBalance(userPoolData?.positionEstimates.borrowCap)}`}
-            newValue={`$${toBalance(newPositionEstimate?.borrowCap)}`}
+            curValue={`$${toBalance(curBorrowCap)}`}
+            newValue={`$${toBalance(nextBorrowCap)}`}
           />
           <ValueChange
             title="Borrow limit"
-            curValue={toPercentage(
-              Number.isFinite(userPoolData?.positionEstimates.borrowLimit)
-                ? userPoolData?.positionEstimates.borrowLimit
-                : 0
-            )}
-            newValue={toPercentage(
-              Number.isFinite(newPositionEstimate?.borrowLimit)
-                ? newPositionEstimate?.borrowLimit
-                : 0
-            )}
+            curValue={toPercentage(curBorrowLimit)}
+            newValue={toPercentage(nextBorrowLimit)}
           />
         </TxOverview>
       </Section>

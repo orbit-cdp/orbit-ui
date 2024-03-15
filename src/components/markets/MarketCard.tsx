@@ -80,19 +80,27 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
         <Row>
           <StackedTextHLBox
             name="Supplied"
-            text={`$${toBalance(poolData.estimates.totalSupply)}`}
+            text={`$${toBalance(
+              isFinite(poolData.estimates.totalSupply) ? poolData.estimates.totalSupply : 0
+            )}`}
             palette={theme.palette.lend}
             sx={{ width: '33.33%' }}
           ></StackedTextHLBox>
           <StackedTextHLBox
             name="Borrowed"
-            text={`$${toBalance(poolData.estimates.totalBorrow)}`}
+            text={`$${toBalance(
+              isFinite(poolData.estimates.totalBorrow) ? poolData.estimates.totalBorrow : 0
+            )}`}
             palette={theme.palette.borrow}
             sx={{ width: '33.33%' }}
           ></StackedTextHLBox>
           <StackedTextHLBox
             name="Backstop"
-            text={`$${toBalance(backstopPoolData.estimates.totalSpotValue)}`}
+            text={`$${toBalance(
+              isFinite(backstopPoolData.estimates.totalSpotValue)
+                ? backstopPoolData.estimates.totalSpotValue
+                : 0
+            )}`}
             palette={theme.palette.backstop}
             sx={{ width: '33.33%' }}
           ></StackedTextHLBox>
