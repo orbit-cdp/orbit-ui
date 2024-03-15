@@ -37,7 +37,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   const [validDecimals, setValidDecimals] = useState<boolean>(true);
 
   useDebouncedState(toLend, RPC_DEBOUNCE_DELAY, txType, async () => {
-    if (validDecimals || txType === TxType.RESTORE) {
+    if (validDecimals) {
       let response = await handleSubmitTransaction(true);
       if (response) {
         setSimResponse(response);
