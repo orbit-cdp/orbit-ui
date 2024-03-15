@@ -1,7 +1,13 @@
-import { PoolBackstopActionArgs } from '@blend-capital/blend-sdk';
+import {
+  ContractErrorType,
+  ContractResponse,
+  PoolBackstopActionArgs,
+  Q4W,
+} from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { useWallet } from '../../contexts/wallet';
+import { useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
 import { scaleInputToBigInt } from '../../utils/scval';
@@ -16,30 +22,29 @@ import { ValueChange } from '../common/ValueChange';
 
 export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, backstopQueueWithdrawal } = useWallet();
+  const { connected, walletAddress, backstopQueueWithdrawal, txType } = useWallet();
 
   const backstop = useStore((state) => state.backstop);
   const backstopPoolData = useStore((state) => state.backstop?.pools?.get(poolId));
   const userBackstopData = useStore((state) => state.backstopUserData);
-  const userPoolBackstopBalance = userBackstopData?.balances.get(poolId);
   const userPoolBackstopEst = userBackstopData?.estimates.get(poolId);
-
   const backstopTokenPrice = backstop?.lpTokenPrice ?? 1;
   const decimals = 7;
-  const [toQueue, setToQueue] = useState<string>('');
-
-  const sharesToTokens = backstopPoolData
-    ? Number(backstopPoolData.poolBalance.tokens) / Number(backstopPoolData.poolBalance.shares)
-    : 1;
-
-  const queuedBalance =
-    userPoolBackstopEst && userPoolBackstopBalance
-      ? (Number(userPoolBackstopBalance.shares - userPoolBackstopEst.notLockedShares) / 1e7) *
-        sharesToTokens
+  const sharesToTokens =
+    Number(backstopPoolData?.poolBalance.tokens) / Number(backstopPoolData?.poolBalance.shares);
+  const userBackstopTokens =
+    userPoolBackstopEst && backstop
+      ? userPoolBackstopEst?.totalSpotValue / backstop.lpTokenPrice
       : 0;
-  const availableToQueue = userPoolBackstopEst
-    ? (Number(userPoolBackstopEst.notLockedShares) / 1e7) * sharesToTokens
-    : 0;
+
+  const [toQueue, setToQueue] = useState<string>('');
+  const [simResponse, setSimResponse] = useState<ContractResponse<Q4W>>();
+  const [validDecimals, setValidDecimals] = useState<boolean>(true);
+
+  useDebouncedState(toQueue, 500, txType, async () => {
+    handleSubmitTransaction(true);
+  });
+
   // verify that the user can act
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
     const errorProps: SubmitError = {
@@ -48,47 +53,36 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
       reason: undefined,
       disabledType: undefined,
     };
-    if (availableToQueue <= 0) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = true;
-      errorProps.reason = 'You do not have any deposits to withdraw.';
-      errorProps.disabledType = 'warning';
-    } else if (!toQueue) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = 'Please enter an amount to queue for withdrawal.';
-      errorProps.disabledType = 'info';
-    } else if (Number(toQueue) > availableToQueue) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = 'You do not have enough available deposits to withdrawal.';
-      errorProps.disabledType = 'warning';
-    } else if (toQueue.split('.')[1]?.length > decimals) {
+    if (toQueue.split('.')[1]?.length > decimals) {
+      setValidDecimals(false);
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
       errorProps.reason = `You cannot supply more than ${decimals} decimal places.`;
       errorProps.disabledType = 'warning';
-    } else {
-      errorProps.isSubmitDisabled = false;
+    } else if (simResponse?.result.isErr()) {
+      errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
+      errorProps.reason = ContractErrorType[simResponse?.result.unwrapErr().type];
+      errorProps.disabledType = 'warning';
     }
     return errorProps;
-  }, [toQueue, availableToQueue]);
+  }, [toQueue, userBackstopData]);
 
   const handleQueueMax = () => {
-    if (availableToQueue > 0) {
-      setToQueue(availableToQueue.toFixed(7));
+    if (userBackstopTokens > 0) {
+      setToQueue(userBackstopTokens.toFixed(7));
     }
   };
 
-  const handleSubmitTransaction = async () => {
-    if (toQueue && connected) {
+  const handleSubmitTransaction = async (sim: boolean) => {
+    if (toQueue && connected && validDecimals) {
       let depositArgs: PoolBackstopActionArgs = {
         from: walletAddress,
         pool_address: poolId,
         amount: scaleInputToBigInt(toQueue, 7),
       };
-      await backstopQueueWithdrawal(depositArgs, false);
+      let response = await backstopQueueWithdrawal(depositArgs, sim);
+      setSimResponse(response);
     }
   };
 
@@ -130,7 +124,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
               isMaxDisabled={isMaxDisabled}
             />
             <OpaqueButton
-              onClick={handleSubmitTransaction}
+              onClick={() => handleSubmitTransaction(false)}
               palette={theme.palette.backstop}
               sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
               disabled={isSubmitDisabled}
@@ -144,16 +138,27 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
             </Typography>
           </Box>
         </Box>
-        <TxOverview isDisabled={isSubmitDisabled} disabledType={disabledType} reason={reason}>
+        <TxOverview
+          isDisabled={isSubmitDisabled}
+          disabledType={disabledType}
+          reason={reason}
+          simulation={simResponse?.simulation}
+        >
           <Value title="Amount to queue" value={`${toQueue ?? '0'} BLND-USDC LP`} />
           <Value
             title="New queue expiration"
             value={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
           />
+
           <ValueChange
             title="Your total amount queued"
-            curValue={`${toBalance(queuedBalance)} BLND-USDC LP`}
-            newValue={`${toBalance(queuedBalance + Number(toQueue ?? '0'))} BLND-USDC LP`}
+            curValue={`${toBalance(userPoolBackstopEst?.totalQueuedTokens)} BLND-USDC LP`}
+            newValue={`${toBalance(
+              userPoolBackstopEst
+                ? userPoolBackstopEst.totalQueuedTokens +
+                    (Number(simResponse?.result.unwrap().amount) / 1e7) * sharesToTokens
+                : 0
+            )} BLND-USDC LP`}
           />
         </TxOverview>
       </Section>

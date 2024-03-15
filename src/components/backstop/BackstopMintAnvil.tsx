@@ -21,7 +21,7 @@ export const BackstopMintAnvil: React.FC<{
   setCurrentDepositToken: (token: { address: string | undefined; symbol: string }) => void;
 }> = ({ currentDepositToken, setCurrentDepositToken }) => {
   const theme = useTheme();
-  const { walletAddress, txStatus, backstopMintByDepositTokenAmount } = useWallet();
+  const { walletAddress, txStatus, backstopMintByDepositTokenAmount, txType } = useWallet();
 
   const [currentPoolUSDCBalance, setCurrentPoolUSDCBalance] = useState<bigint>();
   const [currentPoolBLNDBalance, setCurrentPoolBLNDBalance] = useState<bigint>();
@@ -30,8 +30,10 @@ export const BackstopMintAnvil: React.FC<{
   const rpcServer = useStore((state) => state.rpcServer());
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
   const [toSwap, setToSwap] = useState<string>('');
+  const [simResponse, setSimResponse] = useState<ContractResponse<bigint>>();
+
   /** run function on each state change */
-  useDebouncedState(toSwap, 1000, handleSwapChange);
+  useDebouncedState(toSwap, 1000, txType, handleSwapChange);
 
   const backstopData = useStore((state) => state.backstop);
   const loadUserData = useStore((state) => state.loadUserData);
@@ -42,8 +44,8 @@ export const BackstopMintAnvil: React.FC<{
 
   const userLPBalance = Number(userBackstopData?.tokens ?? BigInt(0)) / 1e7;
   const decimals = 7;
-  if (txStatus === TxStatus.SUCCESS && Number(toMint) != 0) {
-    setToMint(0);
+  if (txStatus === TxStatus.SUCCESS && Number(toSwap) != 0) {
+    setToSwap('');
   }
 
   // verify that the user can act
@@ -131,9 +133,9 @@ export const BackstopMintAnvil: React.FC<{
 
   async function handleSwapChange(value: string) {
     /**  get comet estimate LP token for the inputted swap token and set in mint input  */
-    const isWrongDecimals = value.split('.')[1]?.length > decimals;
+    const validDecimals = value.split('.')[1]?.length <= decimals;
 
-    if (currentDepositToken.address && !isWrongDecimals) {
+    if (currentDepositToken.address && validDecimals) {
       const bigintValue = scaleInputToBigInt(value, decimals);
       const currentDepositTokenBalance =
         balancesByAddress.get(currentDepositToken.address ?? '') || 0;
@@ -163,14 +165,15 @@ export const BackstopMintAnvil: React.FC<{
             return;
           }
           setLoadingEstimate(false);
-          setToMint(val.result.isOk() ? Number(val.result.unwrap()) / 1e7 : 0);
+          setToMint(val.result.isOk() ? Number(val.result?.unwrap()) / 1e7 : 0);
+          setSimResponse(val);
         });
       }
     }
   }
 
-  function handleSubmitTransaction() {
-    backstopMintByDepositTokenAmount(
+  async function handleSubmitTransaction() {
+    await backstopMintByDepositTokenAmount(
       {
         depositTokenAddress: currentDepositToken.address || '',
         depositTokenAmount: scaleInputToBigInt(toSwap, decimals),
@@ -333,7 +336,12 @@ export const BackstopMintAnvil: React.FC<{
             </Typography>
           </Box>
         </Box>
-        <TxOverview isDisabled={isSubmitDisabled} disabledType={disabledType} reason={reason}>
+        <TxOverview
+          simulation={simResponse?.simulation}
+          isDisabled={isSubmitDisabled}
+          disabledType={disabledType}
+          reason={reason}
+        >
           <Value title="Amount to mint" value={`${toMint ?? '0'} BLND-USDC LP`} />
           <ValueChange
             title="Your total mint"
