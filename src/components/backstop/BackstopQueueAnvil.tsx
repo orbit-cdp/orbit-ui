@@ -7,7 +7,7 @@ import {
 import { Box, Typography, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
-import { useDebouncedState } from '../../hooks/debounce';
+import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
 import { scaleInputToBigInt } from '../../utils/scval';
@@ -41,7 +41,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const [simResponse, setSimResponse] = useState<ContractResponse<Q4W>>();
   const [validDecimals, setValidDecimals] = useState<boolean>(true);
 
-  useDebouncedState(toQueue, 500, txType, async () => {
+  useDebouncedState(toQueue, RPC_DEBOUNCE_DELAY, txType, async () => {
     handleSubmitTransaction(true);
   });
 
