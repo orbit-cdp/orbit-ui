@@ -2,6 +2,7 @@ import { Reserve } from '@blend-capital/blend-sdk';
 import { Box, BoxProps, Typography, useTheme } from '@mui/material';
 import { ViewType, useSettings } from '../../contexts';
 import * as formatter from '../../utils/formatter';
+import { getTokenLinkFromReserve } from '../../utils/token';
 import { TokenHeader } from '../common/TokenHeader';
 import { StackedApr } from './StackedApr';
 
@@ -25,9 +26,14 @@ export const MarketsListItem: React.FC<MarketsListItemProps> = ({ reserveData, s
         marginBottom: '12px',
         borderRadius: '5px',
         '&:hover': {
+          cursor: 'pointer',
           background: theme.palette.menu.light,
         },
         ...sx,
+      }}
+      onClick={() => {
+        const link = getTokenLinkFromReserve(reserveData);
+        window.open(link, '_blank')
       }}
       {...props}
     >
