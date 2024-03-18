@@ -75,7 +75,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     newPositionEstimate && Number.isFinite(newPositionEstimate?.borrowLimit)
       ? newPositionEstimate?.borrowLimit
       : 0;
-
+  const balancesByAddress = useStore((state) => state.balances);
   // verify that the user can act
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
     const errorProps: SubmitError = {
@@ -84,7 +84,14 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
       reason: undefined,
       disabledType: undefined,
     };
-    if (!toBorrow) {
+    const hasTokenTrustline = balancesByAddress.has(assetId);
+    console.log({ hasTokenTrustline })
+    if (!hasTokenTrustline) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = true;
+      errorProps.reason = 'You need a trustline for this asset in order to borrow it. Add the asset to your wallet to create one.';
+      errorProps.disabledType = 'warning';
+    } else if (!toBorrow) {
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
       errorProps.reason = 'Please enter an amount to borrow.';
@@ -102,7 +109,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
       errorProps.disabledType = 'warning';
     }
     return errorProps;
-  }, [toBorrow, simResult, userPoolData?.positionEstimates]);
+  }, [toBorrow, simResult, userPoolData?.positionEstimates, assetId]);
 
   const handleBorrowMax = () => {
     if (reserve && userPoolData) {
@@ -113,7 +120,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
       let to_borrow = Math.min(
         to_bounded_hf / (assetToBase * reserve.getLiabilityFactor()),
         reserve.estimates.supplied * (reserve.config.max_util / 1e7 - 0.01) -
-          reserve.estimates.borrowed
+        reserve.estimates.borrowed
       );
       setToBorrow(Math.max(to_borrow, 0).toFixed(7));
     }
