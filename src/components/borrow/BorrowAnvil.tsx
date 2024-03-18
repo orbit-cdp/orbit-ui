@@ -75,7 +75,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     newPositionEstimate && Number.isFinite(newPositionEstimate?.borrowLimit)
       ? newPositionEstimate?.borrowLimit
       : 0;
-  const balancesByAddress = useStore((state) => state.balances);
+  const hasTrustline = useStore((state) => state.hasTrustline);
   // verify that the user can act
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
     const errorProps: SubmitError = {
@@ -84,8 +84,8 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
       reason: undefined,
       disabledType: undefined,
     };
-    const hasTokenTrustline = balancesByAddress.has(assetId);
-    console.log({ hasTokenTrustline })
+    const hasTokenTrustline = hasTrustline.get(assetId)
+
     if (!hasTokenTrustline) {
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = true;
