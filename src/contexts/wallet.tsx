@@ -45,6 +45,7 @@ export interface IWalletContext {
   txStatus: TxStatus;
   lastTxHash: string | undefined;
   lastTxFailure: string | undefined;
+  walletId: string|undefined;
   connect: () => Promise<void>;
   disconnect: () => void;
   clearLastTx: () => void;
@@ -169,6 +170,7 @@ export const WalletProvider = ({ children = null as any }) => {
     try {
       await walletKit.openModal({
         onWalletSelected: async (option: ISupportedWallet) => {
+          console.log({option})
           walletKit.setWallet(option.id);
           setAutoConnect(option.id);
           await handleSetWalletAddress();
@@ -587,6 +589,7 @@ export const WalletProvider = ({ children = null as any }) => {
         txStatus,
         lastTxHash: txHash,
         lastTxFailure: txFailure,
+        walletId:autoConnect,
         connect,
         disconnect,
         clearLastTx,

@@ -8,11 +8,11 @@ import { useStore } from "../store/store";
 import theme from "../theme";
 
 export default function NetworkPage(){
-  const {walletAddress,getNetworkDetails} = useWallet();
+  const {walletAddress,getNetworkDetails,walletId} = useWallet();
   const {network,setNetwork} = useStore((state) => state);
   const [newNetworkRPCUrl,setNewNetworkRPCUrl] = useState<string>();
   const [newNetworkPassphrase,setNewNetworkPassphrase] = useState<string>();
-
+  const loadBlendData = useStore((state) => state.loadBlendData);
   function fetchFromWallet(){
     getNetworkDetails().then((networkDetails) => {
       if(networkDetails.rpc){
@@ -22,9 +22,10 @@ export default function NetworkPage(){
     })
   }
 
-  function handleUpdatenetworkClick(){
+  function handleUpdateNetworkClick(){
     if(newNetworkRPCUrl && newNetworkPassphrase){
       setNetwork(newNetworkRPCUrl,newNetworkPassphrase);
+      loadBlendData(true);
     }
   }
 
@@ -66,15 +67,15 @@ export default function NetworkPage(){
      <Row sx={{flexDirection:"column",display:"flex",gap:"1rem"}}>
      <Input placeholder="Input RPC Url" type="text" value={newNetworkRPCUrl} onChange={(e) => setNewNetworkRPCUrl(e.target.value)} />
       <Input placeholder="Input Passphrase " type="text" value={newNetworkPassphrase} onChange={(e) => setNewNetworkPassphrase(e.target.value)} />
-      <OpaqueButton sx={{width:"20rem",margin:"auto"}} palette={{
+      {walletId === "freighter"  &&  <OpaqueButton sx={{width:"20rem",margin:"auto"}} palette={{
         main: theme.palette.text.primary,
       opaque: theme.palette.menu.light,
       contrastText: theme.palette.text.primary,
       light: theme.palette.text.secondary,
       dark: theme.palette.text.secondary,
 
-    }} onClick={fetchFromWallet}>Fetch from Wallet</OpaqueButton>
-      <OpaqueButton sx={{width:"20rem",margin:"auto"}} palette={theme.palette.primary} onClick={handleUpdatenetworkClick}>Update</OpaqueButton>
+    }} onClick={fetchFromWallet}>Fetch from Wallet</OpaqueButton>}
+      <OpaqueButton sx={{width:"20rem",margin:"auto"}} palette={theme.palette.primary} onClick={handleUpdateNetworkClick}>Update</OpaqueButton>
      </Row>
       </Row>
 
