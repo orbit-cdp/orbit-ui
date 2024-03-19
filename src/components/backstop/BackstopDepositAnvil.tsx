@@ -1,10 +1,7 @@
-import {
-  ContractErrorType,
-  ContractResponse,
-  PoolBackstopActionArgs,
-} from '@blend-capital/blend-sdk';
+import { BackstopContract, PoolBackstopActionArgs, parseResult } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
+import { SorobanRpc } from 'stellar-sdk';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
@@ -37,8 +34,8 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
     ? Number(backstopPoolData.poolBalance.tokens) / Number(backstopPoolData.poolBalance.shares)
     : 0;
   const [toDeposit, setToDeposit] = useState<string>('');
-  const [simResponse, setSimResponse] = useState<ContractResponse<bigint>>();
-
+  const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
+  const [parsedSimResult, setParsedSimResult] = useState<bigint>();
   if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toDeposit) != 0) {
     setToDeposit('');
   }
@@ -60,11 +57,6 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
       errorProps.isMaxDisabled = false;
       errorProps.reason = `You cannot supply more than ${decimals} decimal places.`;
       errorProps.disabledType = 'warning';
-    } else if (simResponse?.result.isErr()) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = ContractErrorType[simResponse.result.unwrapErr().type];
-      errorProps.disabledType = 'warning';
     }
     return errorProps;
   }, [toDeposit, userBalance]);
@@ -77,13 +69,19 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
 
   const handleSubmitTransaction = async (sim: boolean) => {
     if (toDeposit && connected) {
-      let depositArgs: PoolBackstopActionArgs = {
+      const depositArgs: PoolBackstopActionArgs = {
         from: walletAddress,
         pool_address: poolId,
         amount: scaleInputToBigInt(toDeposit, 7),
       };
-      let response = await backstopDeposit(depositArgs, sim);
-      setSimResponse(response);
+      const response = await backstopDeposit(depositArgs, sim);
+      if (response) {
+        setSimResponse(response);
+        if (SorobanRpc.Api.isSimulationSuccess(response)) {
+          const result = parseResult(response, BackstopContract.parsers.deposit);
+          setParsedSimResult(result);
+        }
+      }
     }
   };
 
@@ -140,18 +138,18 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
           </Box>
         </Box>
         <TxOverview
-          simulation={simResponse?.simulation}
           isDisabled={isSubmitDisabled}
           disabledType={disabledType}
           reason={reason}
+          simResponse={simResponse}
         >
           <Value title="Amount to deposit" value={`${toDeposit ?? '0'} BLND-USDC LP`} />
           <ValueChange
             title="Your total deposit"
             curValue={`${toBalance(userBackstopTokens)} BLND-USDC LP`}
             newValue={`${toBalance(
-              simResponse
-                ? userBackstopTokens + (Number(simResponse.result.unwrap()) / 1e7) * sharesToTokens
+              parsedSimResult
+                ? userBackstopTokens + (Number(parsedSimResult) / 1e7) * sharesToTokens
                 : 0
             )} BLND-USDC LP`}
           />

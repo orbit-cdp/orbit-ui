@@ -1,7 +1,7 @@
-import { ContractResponse } from '@blend-capital/blend-sdk';
+import { parseResult } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
-import { Address } from 'stellar-sdk';
+import { Address, SorobanRpc, scValToBigInt, xdr } from 'stellar-sdk';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { getTokenBalance } from '../../external/token';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
@@ -30,7 +30,7 @@ export const BackstopMintAnvil: React.FC<{
   const rpcServer = useStore((state) => state.rpcServer());
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
   const [toSwap, setToSwap] = useState<string>('');
-  const [simResponse, setSimResponse] = useState<ContractResponse<bigint>>();
+  const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
 
   /** run function on each state change */
   useDebouncedState(toSwap, RPC_DEBOUNCE_DELAY, txType, handleSwapChange);
@@ -142,13 +142,6 @@ export const BackstopMintAnvil: React.FC<{
         !!currentPoolUSDCBalance && bigintValue > currentPoolUSDCBalance / BigInt(2) - BigInt(1);
       const isLargerBLND =
         !!currentPoolBLNDBalance && bigintValue > currentPoolBLNDBalance / BigInt(2) - BigInt(1);
-      console.log(
-        currentDepositToken,
-        isLargerBLND,
-        isLargerUSDC,
-        bigintValue,
-        currentDepositTokenBalance
-      );
 
       if (isLargerBLND || isLargerUSDC) {
         setLoadingEstimate(false);
@@ -165,15 +158,20 @@ export const BackstopMintAnvil: React.FC<{
           },
           true,
           backstopData?.config.backstopTkn || ''
-        ).then((val: ContractResponse<bigint> | undefined) => {
-          if (val === undefined) {
+        ).then((sim: SorobanRpc.Api.SimulateTransactionResponse | undefined) => {
+          if (sim === undefined) {
             setLoadingEstimate(false);
             setToMint(0);
             return;
           }
           setLoadingEstimate(false);
-          setToMint(val.result.isOk() ? Number(val.result?.unwrap()) / 1e7 : 0);
-          setSimResponse(val);
+          if (SorobanRpc.Api.isSimulationSuccess(sim)) {
+            let result = parseResult(sim, (xdrString: string) => {
+              return scValToBigInt(xdr.ScVal.fromXDR(xdrString, 'base64'));
+            });
+            setToMint(result ? Number(result) / 1e7 : 0);
+            setSimResponse(sim);
+          }
         });
       }
     }
@@ -344,10 +342,10 @@ export const BackstopMintAnvil: React.FC<{
           </Box>
         </Box>
         <TxOverview
-          simulation={simResponse?.simulation}
           isDisabled={isSubmitDisabled}
           disabledType={disabledType}
           reason={reason}
+          simResponse={simResponse}
         >
           <Value title="Amount to mint" value={`${toMint ?? '0'} BLND-USDC LP`} />
           <ValueChange

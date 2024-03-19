@@ -1,13 +1,14 @@
 import {
-  ContractErrorType,
-  ContractResponse,
+  Parsers,
   PositionEstimates,
-  Positions,
   RequestType,
   SubmitArgs,
+  UserPositions,
+  parseResult,
 } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
+import { SorobanRpc } from 'stellar-sdk';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
@@ -33,8 +34,8 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
   const userBalance = useStore((state) => state.balances.get(assetId)) ?? BigInt(0);
 
   const [toRepay, setToRepay] = useState<string>('');
-  const [simResponse, setSimResponse] = useState<ContractResponse<Positions>>();
-
+  const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
+  const [parsedSimResult, setParsedSimResult] = useState<UserPositions>();
   const [validDecimals, setValidDecimals] = useState<boolean>(true);
 
   useDebouncedState(toRepay, RPC_DEBOUNCE_DELAY, txType, async () => {
@@ -42,13 +43,14 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
       let response = await handleSubmitTransaction(true);
       if (response) {
         setSimResponse(response);
+        if (SorobanRpc.Api.isSimulationSuccess(response)) {
+          setParsedSimResult(parseResult(response, Parsers.pool.submit));
+        }
       }
     }
   });
   let newPositionEstimate =
-    poolData && simResponse && simResponse.result.isOk()
-      ? PositionEstimates.build(poolData, simResponse.result.unwrap())
-      : undefined;
+    poolData && parsedSimResult ? PositionEstimates.build(poolData, parsedSimResult) : undefined;
 
   const reserve = poolData?.reserves.get(assetId);
   const assetToBase = reserve?.oraclePrice ?? 1;
@@ -98,11 +100,6 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
       errorProps.reason = `You cannot supply more than ${decimals} decimal places.`;
-      errorProps.disabledType = 'warning';
-    } else if (simResponse?.result.isErr()) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = ContractErrorType[simResponse.result.unwrapErr().type];
       errorProps.disabledType = 'warning';
     }
 
@@ -189,7 +186,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
           </Box>
         </Box>
         <TxOverview
-          simulation={simResponse?.simulation}
+          simResponse={simResponse}
           isDisabled={isSubmitDisabled}
           disabledType={disabledType}
           reason={reason}

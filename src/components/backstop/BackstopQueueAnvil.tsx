@@ -1,11 +1,12 @@
 import {
-  ContractErrorType,
-  ContractResponse,
+  BackstopContract,
   PoolBackstopActionArgs,
   Q4W,
+  parseResult,
 } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
+import { SorobanRpc } from 'stellar-sdk';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
@@ -38,7 +39,8 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
       : 0;
 
   const [toQueue, setToQueue] = useState<string>('');
-  const [simResponse, setSimResponse] = useState<ContractResponse<Q4W>>();
+  const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
+  const [parsedSimResult, setParsedSimResult] = useState<Q4W>();
   const [validDecimals, setValidDecimals] = useState<boolean>(true);
 
   useDebouncedState(toQueue, RPC_DEBOUNCE_DELAY, txType, async () => {
@@ -63,11 +65,6 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
       errorProps.isMaxDisabled = false;
       errorProps.reason = `You cannot supply more than ${decimals} decimal places.`;
       errorProps.disabledType = 'warning';
-    } else if (simResponse?.result.isErr()) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = ContractErrorType[simResponse?.result.unwrapErr().type];
-      errorProps.disabledType = 'warning';
     }
     return errorProps;
   }, [toQueue, userBackstopData]);
@@ -77,7 +74,6 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
       setToQueue(userBackstopTokens.toFixed(7));
     }
   };
-
   const handleSubmitTransaction = async (sim: boolean) => {
     if (toQueue && connected && validDecimals) {
       let depositArgs: PoolBackstopActionArgs = {
@@ -86,7 +82,12 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
         amount: scaleInputToBigInt(toQueue, 7),
       };
       let response = await backstopQueueWithdrawal(depositArgs, sim);
-      setSimResponse(response);
+      if (response) {
+        setSimResponse(response);
+        if (SorobanRpc.Api.isSimulationSuccess(response)) {
+          setParsedSimResult(parseResult(response, BackstopContract.parsers.queueWithdrawal));
+        }
+      }
     }
   };
 
@@ -146,7 +147,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
           isDisabled={isSubmitDisabled}
           disabledType={disabledType}
           reason={reason}
-          simulation={simResponse?.simulation}
+          simResponse={simResponse}
         >
           <Value title="Amount to queue" value={`${toQueue ?? '0'} BLND-USDC LP`} />
           <Value
@@ -158,9 +159,9 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
             title="Your total amount queued"
             curValue={`${toBalance(userPoolBackstopEst?.totalQueuedTokens)} BLND-USDC LP`}
             newValue={`${toBalance(
-              userPoolBackstopEst
+              userPoolBackstopEst && parsedSimResult
                 ? userPoolBackstopEst.totalQueuedTokens +
-                    (Number(simResponse?.result.unwrap().amount) / 1e7) * sharesToTokens
+                    (Number(parsedSimResult.amount) / 1e7) * sharesToTokens
                 : 0
             )} BLND-USDC LP`}
           />

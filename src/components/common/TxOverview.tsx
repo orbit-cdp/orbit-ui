@@ -1,3 +1,4 @@
+import { ContractErrorType, parseError } from '@blend-capital/blend-sdk';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Alert, AlertColor, Box, BoxProps, Typography } from '@mui/material';
 import { SorobanRpc } from 'stellar-sdk';
@@ -8,7 +9,7 @@ export interface TxOverviewProps extends BoxProps {
   isDisabled: boolean;
   disabledType: AlertColor | undefined;
   reason: string | undefined;
-  simulation?: SorobanRpc.Api.SimulateTransactionResponse;
+  simResponse: SorobanRpc.Api.SimulateTransactionResponse | undefined;
 }
 
 export interface SubmitError {
@@ -22,7 +23,7 @@ export const TxOverview: React.FC<TxOverviewProps> = ({
   isDisabled,
   disabledType,
   reason,
-  simulation,
+  simResponse,
   children,
   sx,
   ...props
@@ -32,11 +33,13 @@ export const TxOverview: React.FC<TxOverviewProps> = ({
   const message = reason ?? 'Unable to process your transaction.';
 
   function handleRestore() {
-    if (simulation && SorobanRpc.Api.isSimulationRestore(simulation)) restore(simulation);
+    if (simResponse && SorobanRpc.Api.isSimulationRestore(simResponse)) {
+      restore(simResponse);
+    }
   }
 
-  function checkError() {
-    if (message === 'InvokeHostFunctionEntryArchived') {
+  function displayError() {
+    if (simResponse && SorobanRpc.Api.isSimulationRestore(simResponse)) {
       return (
         <Box
           sx={{
@@ -81,6 +84,16 @@ export const TxOverview: React.FC<TxOverviewProps> = ({
           </OpaqueButton>
         </Box>
       );
+    } else if (simResponse && SorobanRpc.Api.isSimulationError(simResponse)) {
+      const error = parseError(simResponse);
+      return (
+        <Alert
+          severity={'warning'}
+          sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}
+        >
+          <Typography variant="body2">{ContractErrorType[error.type]}</Typography>
+        </Alert>
+      );
     } else {
       return (
         <Alert
@@ -92,9 +105,7 @@ export const TxOverview: React.FC<TxOverviewProps> = ({
       );
     }
   }
-  if (isDisabled) {
-    return checkError();
-  }
+
   return (
     <Box
       sx={{
@@ -106,8 +117,11 @@ export const TxOverview: React.FC<TxOverviewProps> = ({
         borderRadius: '5px',
       }}
     >
-      {isDisabled ? (
-        checkError()
+      {isDisabled ||
+      (simResponse &&
+        (SorobanRpc.Api.isSimulationError(simResponse) ||
+          SorobanRpc.Api.isSimulationRestore(simResponse))) ? (
+        displayError()
       ) : (
         <>
           <Typography
