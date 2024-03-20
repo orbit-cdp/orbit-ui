@@ -35,7 +35,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const queuedBalance =
     userPoolBackstopEst && userPoolBackstopBalance
       ? (Number(userPoolBackstopBalance.shares - userPoolBackstopEst.notLockedShares) / 1e7) *
-        sharesToTokens
+      sharesToTokens
       : 0;
   const availableToQueue = userPoolBackstopEst
     ? (Number(userPoolBackstopEst.notLockedShares) / 1e7) * sharesToTokens
@@ -66,7 +66,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
     } else if (toQueue.split('.')[1]?.length > decimals) {
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
-      errorProps.reason = `You cannot supply more than ${decimals} decimal places.`;
+      errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
       errorProps.disabledType = 'warning';
     } else {
       errorProps.isSubmitDisabled = false;
