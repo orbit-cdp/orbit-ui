@@ -119,11 +119,6 @@ export const WalletProvider = ({ children = null as any }) => {
   // wallet state
   const [walletAddress, setWalletAddress] = useState<string>('');
 
-  const [simulation, setSimulation] = useState<
-    SorobanRpc.Api.SimulateTransactionResponse | undefined
-  >();
-  const [transaction, setTransaction] = useState<Transaction | undefined>();
-
   const walletKit: StellarWalletsKit = new StellarWalletsKit({
     network: network.passphrase as WalletNetwork,
     selectedWalletId: autoConnect !== undefined && autoConnect !== 'false' ? autoConnect : XBULL_ID,
@@ -293,7 +288,6 @@ export const WalletProvider = ({ children = null as any }) => {
       }).addOperation(operation);
       let transaction = tx_builder.build();
       let simResponse = await simulateOperation(operation);
-      simResponse = simResponse as any;
       let assembled_tx = SorobanRpc.assembleTransaction(transaction, simResponse).build();
       let signedTx = await sign(assembled_tx.toXDR());
       let tx = new Transaction(signedTx, network.passphrase);
@@ -317,8 +311,6 @@ export const WalletProvider = ({ children = null as any }) => {
     setTxHash(undefined);
     setTxFailure(undefined);
     setTxType(TxType.CONTRACT);
-    setSimulation(undefined);
-    setTransaction(undefined);
   }
 
   //********** Pool Functions ***********/
