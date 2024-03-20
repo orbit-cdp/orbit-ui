@@ -1,5 +1,5 @@
 import {
-  Parsers,
+  PoolContract,
   PositionEstimates,
   RequestType,
   SubmitArgs,
@@ -44,7 +44,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
       if (response) {
         setSimResponse(response);
         if (SorobanRpc.Api.isSimulationSuccess(response)) {
-          setParsedSimResult(parseResult(response, Parsers.pool.submit));
+          setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
         }
       }
     }
