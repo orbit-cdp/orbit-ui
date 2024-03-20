@@ -26,12 +26,10 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
   const userBackstopEst = userBackstopData?.estimates.get(poolId);
   const userBalance = Number(userBackstopData?.tokens ?? BigInt(0)) / 1e7;
   const decimals = 7;
-  let userBackstopTokens =
-    userBackstopEst && backstopData
-      ? userBackstopEst.totalSpotValue / backstopData.lpTokenPrice
-      : 0;
   let sharesToTokens = backstopPoolData
-    ? Number(backstopPoolData.poolBalance.tokens) / Number(backstopPoolData.poolBalance.shares)
+    ? Number(backstopPoolData.poolBalance.tokens) /
+      Number(backstopPoolData.poolBalance.shares) /
+      1e7
     : 0;
   const [toDeposit, setToDeposit] = useState<string>('');
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
@@ -146,10 +144,10 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
           <Value title="Amount to deposit" value={`${toDeposit ?? '0'} BLND-USDC LP`} />
           <ValueChange
             title="Your total deposit"
-            curValue={`${toBalance(userBackstopTokens)} BLND-USDC LP`}
+            curValue={`${toBalance(userBackstopEst?.tokens)} BLND-USDC LP`}
             newValue={`${toBalance(
-              parsedSimResult
-                ? userBackstopTokens + (Number(parsedSimResult) / 1e7) * sharesToTokens
+              parsedSimResult && userBackstopEst
+                ? userBackstopEst.tokens + Number(parsedSimResult) * sharesToTokens
                 : 0
             )} BLND-USDC LP`}
           />

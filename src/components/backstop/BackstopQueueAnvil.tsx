@@ -32,11 +32,9 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const backstopTokenPrice = backstop?.lpTokenPrice ?? 1;
   const decimals = 7;
   const sharesToTokens =
-    Number(backstopPoolData?.poolBalance.tokens) / Number(backstopPoolData?.poolBalance.shares);
-  const userBackstopTokens =
-    userPoolBackstopEst && backstop
-      ? userPoolBackstopEst?.totalSpotValue / backstop.lpTokenPrice
-      : 0;
+    Number(backstopPoolData?.poolBalance.tokens) /
+    Number(backstopPoolData?.poolBalance.shares) /
+    1e7;
 
   const [toQueue, setToQueue] = useState<string>('');
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
@@ -70,8 +68,8 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   }, [toQueue, userBackstopData]);
 
   const handleQueueMax = () => {
-    if (userBackstopTokens > 0) {
-      setToQueue(userBackstopTokens.toFixed(7));
+    if (userPoolBackstopEst && userPoolBackstopEst.tokens > 0) {
+      setToQueue(userPoolBackstopEst.tokens.toFixed(7));
     }
   };
   const handleSubmitTransaction = async (sim: boolean) => {
@@ -157,11 +155,10 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
 
           <ValueChange
             title="Your total amount queued"
-            curValue={`${toBalance(userPoolBackstopEst?.totalQueuedTokens)} BLND-USDC LP`}
+            curValue={`${toBalance(userPoolBackstopEst?.totalQ4W)} BLND-USDC LP`}
             newValue={`${toBalance(
               userPoolBackstopEst && parsedSimResult
-                ? userPoolBackstopEst.totalQueuedTokens +
-                    (Number(parsedSimResult.amount) / 1e7) * sharesToTokens
+                ? userPoolBackstopEst.totalQ4W + Number(parsedSimResult.amount) * sharesToTokens
                 : 0
             )} BLND-USDC LP`}
           />
