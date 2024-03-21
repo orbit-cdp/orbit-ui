@@ -5,8 +5,9 @@ import { TOKEN_META } from '../utils/token_display';
 export type StellarTokenMetadata = {
   assetId: string;
   code: string;
-  domain: string;
-  image: string;
+  domain?: string;
+  image?: string;
+  issuer: string;
 };
 
 export async function getTokenMetadataFromTOML(
@@ -14,13 +15,14 @@ export async function getTokenMetadataFromTOML(
   reserve: Reserve
 ): Promise<StellarTokenMetadata> {
   const assetId = reserve.assetId;
-  const code = TOKEN_META[assetId as keyof typeof TOKEN_META]?.code ?? 'stellar';
+  const code = TOKEN_META[assetId as keyof typeof TOKEN_META]?.code;
   // set default stellar token metadata values
   let iconData: StellarTokenMetadata = {
     assetId,
     code,
     domain: '',
-    image: `/icons/tokens/${code.toLowerCase()}.svg`,
+    image: code ? `/icons/tokens/${code.toLowerCase()}.svg` : undefined,
+    issuer: '',
   };
   let toml;
 
@@ -35,6 +37,7 @@ export async function getTokenMetadataFromTOML(
       code: 'XLM',
       domain: '',
       image: `/icons/tokens/xlm.svg`,
+      issuer: '',
     };
     return iconData;
   } else {
@@ -55,6 +58,7 @@ export async function getTokenMetadataFromTOML(
           ...iconData,
           assetId,
           code: assetCode,
+          issuer: assetIssuer,
         };
       }
       /* 2. Use their domain from their API account and use it attempt to load their stellar.toml */

@@ -4,7 +4,6 @@ import { Box, Collapse, Skeleton, useTheme } from '@mui/material';
 import { useState } from 'react';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
-import { TOKEN_META } from '../../utils/token_display';
 import { LinkBox } from '../common/LinkBox';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
@@ -123,12 +122,11 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
           >
             <Box sx={{ margin: '6px', height: '30px' }}>
               {poolData.config.reserveList.map((reserveId) => {
-                const code = TOKEN_META[reserveId as keyof typeof TOKEN_META]?.code ?? 'unknown';
                 return (
                   <TokenIcon
                     assetId={reserveId}
                     key={reserveId}
-                    symbol={code}
+                    symbol={reserveId}
                     sx={{ marginRight: '6px' }}
                   />
                 );
