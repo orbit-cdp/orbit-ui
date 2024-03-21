@@ -22,7 +22,7 @@ export const BorrowCapRing: React.FC<BorrowCapRingProps> = ({ poolId, ...props }
     poolUserEstimate,
     val: poolUserEstimate?.positionEstimates.totalEffectiveLiabilities,
   });
-  const capacityPercentage = 25;
+  const capacityPercentage = 60;
 
   function getIconByCapacity(capacity: number) {
     if (capacity > 80) {
@@ -100,11 +100,26 @@ export const BorrowCapRing: React.FC<BorrowCapRingProps> = ({ poolId, ...props }
         }}
       >
         <CircularProgress
-          sx={{ color: getColorByCapacity(capacityPercentage), marginLeft: '18px' }}
+          sx={{
+            color: getColorByCapacity(capacityPercentage),
+            marginLeft: '18px',
+            position: 'absolute',
+          }}
           size="30px"
           thickness={4.5}
           variant="determinate"
           value={capacityPercentage}
+        />
+        <CircularProgress
+          sx={{
+            color: getBackgroundByCapacity(capacityPercentage),
+            marginLeft: '18px',
+            position: 'absolute',
+          }}
+          size="30px"
+          thickness={4.5}
+          variant="determinate"
+          value={100}
         />
         <Box
           style={{
