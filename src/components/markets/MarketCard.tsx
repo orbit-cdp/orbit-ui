@@ -124,7 +124,14 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
             <Box sx={{ margin: '6px', height: '30px' }}>
               {poolData.config.reserveList.map((reserveId) => {
                 const code = TOKEN_META[reserveId as keyof typeof TOKEN_META]?.code ?? 'unknown';
-                return <TokenIcon key={reserveId} symbol={code} sx={{ marginRight: '6px' }} />;
+                return (
+                  <TokenIcon
+                    assetId={reserveId}
+                    key={reserveId}
+                    symbol={code}
+                    sx={{ marginRight: '6px' }}
+                  />
+                );
               })}
             </Box>
             <Box sx={{ padding: '6px', display: 'flex', flexDirection: 'row', height: '30px' }}>

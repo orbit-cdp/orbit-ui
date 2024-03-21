@@ -10,7 +10,7 @@ export interface TokenHeaderProps extends BoxProps {
 
 export const TokenHeader: React.FC<TokenHeaderProps> = ({ id, sx, ...props }) => {
   // TODO: Find a better way to do this
-  const code = TOKEN_META[id as keyof typeof TOKEN_META]?.code ?? 'unknown';
+  const code = TOKEN_META[id as keyof typeof TOKEN_META]?.code ?? 'unkown';
   const issuer = TOKEN_META[id as keyof typeof TOKEN_META]?.issuer ?? '';
   return (
     <Box
@@ -24,7 +24,11 @@ export const TokenHeader: React.FC<TokenHeaderProps> = ({ id, sx, ...props }) =>
       }}
       {...props}
     >
-      <TokenIcon symbol={code} sx={{ width: '32px', height: '32px', marginRight: '6px' }} />
+      <TokenIcon
+        assetId={id}
+        symbol={code}
+        sx={{ width: '32px', height: '32px', marginRight: '6px' }}
+      />
       <Box
         sx={{
           display: 'flex',
