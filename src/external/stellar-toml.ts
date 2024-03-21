@@ -9,8 +9,6 @@ export type StellarTokenMetadata = {
   image: string;
 };
 
-export const STELLAR_EXPERT_API_URL = 'https://api.stellar.expert/explorer/';
-
 export async function getTokenMetadataFromTOML(
   horizonServer: Horizon.Server,
   reserve: Reserve
