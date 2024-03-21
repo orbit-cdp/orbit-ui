@@ -35,7 +35,7 @@ export async function getTokenMetadataFromTOML(
     iconData = {
       assetId: 'XLM',
       code: 'XLM',
-      domain: '',
+      domain: 'stellar.org',
       image: `/icons/tokens/xlm.svg`,
       issuer: '',
     };

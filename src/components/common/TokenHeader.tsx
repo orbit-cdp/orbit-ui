@@ -1,6 +1,7 @@
 import { Box, BoxProps, Typography } from '@mui/material';
 
 import { useStore } from '../../store/store';
+import { toCompactAddress } from '../../utils/formatter';
 import { TokenIcon } from './TokenIcon';
 
 /// @dev TODO: Consider consolidation of icons / headers
@@ -14,7 +15,6 @@ export const TokenHeader: React.FC<TokenHeaderProps> = ({ id, sx, ...props }) =>
   const tokenMetadata = assetStellarMetadata.get(id);
   const code = tokenMetadata?.code || id;
   const domain = tokenMetadata?.domain || tokenMetadata?.issuer;
-  console.log({ code });
   return (
     <Box
       sx={{
@@ -42,7 +42,7 @@ export const TokenHeader: React.FC<TokenHeaderProps> = ({ id, sx, ...props }) =>
       >
         <Typography variant="body1">{code}</Typography>
         <Typography variant="body2" color="text.secondary">
-          {domain}
+          {domain?.length === 56 ? toCompactAddress(domain) : domain}
         </Typography>
       </Box>
     </Box>

@@ -80,7 +80,7 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
           assetId: usdcAssetId,
           tokenMetadata: {
             asset: usdcReserve,
-            name: 'Blend',
+            name: usdcReserve.code,
             symbol: usdcReserve.code,
             decimals: 7,
           },
