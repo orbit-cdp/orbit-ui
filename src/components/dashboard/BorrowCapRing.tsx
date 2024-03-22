@@ -10,19 +10,10 @@ export interface BorrowCapRingProps extends BoxProps {
 export const BorrowCapRing: React.FC<BorrowCapRingProps> = ({ poolId, ...props }) => {
   const theme = useTheme();
 
-  const poolUserEstimate = useStore((state) => state.userPoolData.get(poolId));
-
-  const borrow_capacity_fill = poolUserEstimate
-    ? (poolUserEstimate.positionEstimates.totalEffectiveLiabilities /
-        poolUserEstimate.positionEstimates.totalEffectiveLiabilities) *
-      100
-    : 100;
-  console.log({
-    borrow_capacity_fill,
-    poolUserEstimate,
-    val: poolUserEstimate?.positionEstimates.totalEffectiveLiabilities,
-  });
-  const capacityPercentage = 60;
+  const userPoolData = useStore((state) => state.userPoolData.get(poolId));
+  const borrowLimit = userPoolData?.positionEstimates?.borrowLimit;
+  console.log({ borrowLimit });
+  const capacityPercentage = Math.round(Number(((borrowLimit || 0) * 100).toFixed(2)));
 
   function getIconByCapacity(capacity: number) {
     if (capacity > 80) {

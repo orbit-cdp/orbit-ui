@@ -19,19 +19,10 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
   const { connected, walletAddress, poolClaim } = useWallet();
 
-  const poolData = useStore((state) => state.pools.get(poolId));
   const userPoolData = useStore((state) => state.userPoolData.get(poolId));
   const loadBlendData = useStore((state) => state.loadBlendData);
 
-  const borrow_capacity = userPoolData
-    ? userPoolData.positionEstimates.totalEffectiveCollateral -
-      userPoolData.positionEstimates.totalEffectiveLiabilities
-    : 0;
-  const borrow_capacity_fill = userPoolData
-    ? (userPoolData.positionEstimates.totalEffectiveLiabilities /
-        userPoolData.positionEstimates.totalEffectiveCollateral) *
-      100
-    : 100;
+  const borrow_capacity = userPoolData?.positionEstimates?.borrowCap;
   const net_apy = Number.isFinite(userPoolData?.positionEstimates?.netApy)
     ? userPoolData?.positionEstimates?.netApy
     : 0;
