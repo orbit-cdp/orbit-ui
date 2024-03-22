@@ -87,7 +87,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
       disabledType: undefined,
     };
 
-    const hasTokenTrustline = requiresTrustline(userAccount, reserve?.tokenMetadata?.asset);
+    const hasTokenTrustline = !requiresTrustline(userAccount, reserve?.tokenMetadata?.asset);
 
     if (!hasTokenTrustline) {
       errorProps.isSubmitDisabled = true;
