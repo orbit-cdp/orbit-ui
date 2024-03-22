@@ -30,6 +30,8 @@ export const LetterIcon: React.FC<LetterIconProps> = ({
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
+        fontSize: '1.2rem',
+        fontWeight: 'bolder',
         ...sx,
       }}
       {...props}
