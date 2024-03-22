@@ -1,5 +1,6 @@
 import { Icon as MuiIcon, IconProps as MuiIconProps } from '@mui/material';
-
+import stellarDefaultIcon from '../../../public/icons/tokens/stellar.svg';
+import theme from '../../theme';
 export interface LetterIconProps extends MuiIconProps {
   height?: string;
   width?: string;
@@ -24,8 +25,11 @@ export const LetterIcon: React.FC<LetterIconProps> = ({
         borderRadius: resolvedIsCircle ? '50%' : '5px',
         height: resolvedHeight,
         width: resolvedWidth,
-        background: 'white',
-        color: 'black',
+        backgroundImage: `url(${stellarDefaultIcon.src})`,
+        color: theme.palette.primary.main,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         ...sx,
       }}
       {...props}

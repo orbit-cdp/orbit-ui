@@ -120,7 +120,7 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
               alignItems: 'center',
             }}
           >
-            <Box sx={{ margin: '6px', height: '30px' }}>
+            <Box sx={{ margin: '6px', height: '30px', display: 'flex' }}>
               {poolData.config.reserveList.map((reserveId) => {
                 return (
                   <TokenIcon
