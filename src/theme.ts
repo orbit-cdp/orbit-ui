@@ -95,6 +95,10 @@ const theme: Theme = createTheme({
       main: '#FFCB00',
       opaque: '#FFCB0026',
     },
+    error: {
+      main: '#FF3366',
+      opaque: '#FF336626',
+    },
   },
   typography: {
     fontFamily: FONT,
