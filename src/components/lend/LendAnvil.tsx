@@ -84,13 +84,13 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
     if (!toLend) {
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
-      errorProps.reason = 'Please enter an amount to supply.';
+      errorProps.reason = 'Please enter an amount to lend.';
       errorProps.disabledType = 'info';
     } else if (toLend.split('.')[1]?.length > decimals) {
       setValidDecimals(false);
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
-      errorProps.reason = `You cannot supply more than ${decimals} decimal places.`;
+      errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
       errorProps.disabledType = 'warning';
     } else if (simResult?.result.isErr()) {
       errorProps.isSubmitDisabled = true;

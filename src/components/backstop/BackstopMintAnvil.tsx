@@ -69,7 +69,7 @@ export const BackstopMintAnvil: React.FC<{
     } else if (toSwap.split('.')[1]?.length > decimals) {
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
-      errorProps.reason = `You cannot supply more than ${decimals} decimal places.`;
+      errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
       errorProps.disabledType = 'warning';
     } else if (scaleInputToBigInt(toSwap, decimals) > currentDepositTokenBalance) {
       errorProps.isSubmitDisabled = true;
