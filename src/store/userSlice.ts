@@ -127,7 +127,7 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
       });
       let blendBalanceString = blendBalanceLine ? blendBalanceLine.balance.replace('.', '') : '0';
       user_balances.set(blendReserve.contractId(networkPassphrase), BigInt(blendBalanceString));
-      console.log('running load ');
+
       for (let [pool, pool_data] of Array.from(pools.entries())) {
         let pool_user = await pool_data.loadUser(network, id);
         user_pool_data.set(pool, pool_user);

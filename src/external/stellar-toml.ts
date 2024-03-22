@@ -9,7 +9,9 @@ export type StellarTokenMetadata = {
   image?: string;
   issuer: string;
 };
-
+/**
+ * based on an implementation from the freighter api https://github.com/stellar/freighter/blob/8cc2db65c2fcb0a1ce515431bc1c9212a06f682a/%40shared/api/helpers/getIconUrlFromIssuer.ts
+ */
 export async function getTokenMetadataFromTOML(
   horizonServer: Horizon.Server,
   reserve: Reserve
