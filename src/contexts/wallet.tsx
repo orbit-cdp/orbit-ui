@@ -19,7 +19,7 @@ import {
   XBULL_ID,
   xBullModule,
 } from '@creit.tech/stellar-wallets-kit/build/main';
-import { getNetworkDetails as getFreighterNetwork } from "@stellar/freighter-api";
+import { getNetworkDetails as getFreighterNetwork } from '@stellar/freighter-api';
 import React, { useContext, useEffect, useState } from 'react';
 import {
   BASE_FEE,
@@ -45,7 +45,7 @@ export interface IWalletContext {
   txStatus: TxStatus;
   lastTxHash: string | undefined;
   lastTxFailure: string | undefined;
-  walletId: string|undefined;
+  walletId: string | undefined;
   connect: () => Promise<void>;
   disconnect: () => void;
   clearLastTx: () => void;
@@ -90,7 +90,7 @@ export interface IWalletContext {
     lpTokenAddress: string
   ): Promise<ContractResponse<bigint> | undefined>;
   faucet(): Promise<undefined>;
-  getNetworkDetails(): Promise<Network>;
+  getNetworkDetails(): Promise<Network & { horizonUrl: string }>;
 }
 
 export enum TxStatus {
@@ -170,7 +170,7 @@ export const WalletProvider = ({ children = null as any }) => {
     try {
       await walletKit.openModal({
         onWalletSelected: async (option: ISupportedWallet) => {
-          console.log({option})
+          console.log({ option });
           walletKit.setWallet(option.id);
           setAutoConnect(option.id);
           await handleSetWalletAddress();
@@ -567,18 +567,20 @@ export const WalletProvider = ({ children = null as any }) => {
     }
   }
 
-  async function getNetworkDetails(){
-   try{
-    const freighterDetails = await getFreighterNetwork()
-      return  {
-          rpc: freighterDetails.sorobanRpcUrl,
-          passphrase: freighterDetails.networkPassphrase,
-          maxConcurrentRequests: network.maxConcurrentRequests
-        } as Network
-   }catch(e){
-      console.error('Failed to get network details from freighter', e)
-      return network
-   }
+  async function getNetworkDetails() {
+    try {
+      const freighterDetails: any = await getFreighterNetwork();
+      console.log({ freighterDetails, rpc: freighterDetails.sorobanRpcUrl });
+      return {
+        rpc: freighterDetails.sorobanRpcUrl,
+        passphrase: freighterDetails.networkPassphrase,
+        maxConcurrentRequests: network.maxConcurrentRequests,
+        horizonUrl: freighterDetails.networkUrl,
+      };
+    } catch (e) {
+      console.error('Failed to get network details from freighter', e);
+      return network;
+    }
   }
 
   return (
@@ -589,7 +591,7 @@ export const WalletProvider = ({ children = null as any }) => {
         txStatus,
         lastTxHash: txHash,
         lastTxFailure: txFailure,
-        walletId:autoConnect,
+        walletId: autoConnect,
         connect,
         disconnect,
         clearLastTx,
@@ -603,15 +605,13 @@ export const WalletProvider = ({ children = null as any }) => {
         backstopMintByDepositTokenAmount,
         backstopMintByLPTokenAmount,
         faucet,
-        getNetworkDetails
+        getNetworkDetails,
       }}
     >
       {children}
     </WalletContext.Provider>
   );
 };
-
-
 
 export const useWallet = () => {
   const context = useContext(WalletContext);
