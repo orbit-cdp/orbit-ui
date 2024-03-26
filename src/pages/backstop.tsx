@@ -1,11 +1,11 @@
-import { BackstopClaimArgs } from '@blend-capital/blend-sdk';
+import { BackstopClaimArgs, parseResult } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import HelpOutline from '@mui/icons-material/HelpOutline';
 import { Box, Tooltip, Typography } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { Address } from 'stellar-sdk';
+import { Address, SorobanRpc, scValToBigInt, xdr } from 'stellar-sdk';
 import { BackstopBalanceCard } from '../components/backstop/BackstopBalanceCard';
 import { BackstopQueueMod } from '../components/backstop/BackstopQueueMod';
 import { CustomButton } from '../components/common/CustomButton';
@@ -74,7 +74,11 @@ const Backstop: NextPage = () => {
       backstopData?.config.backstopTkn || ''
     );
     if (response) {
-      return response.result.isOk() ? response.result.unwrap() : BigInt(0);
+      return SorobanRpc.Api.isSimulationSuccess(response)
+        ? parseResult(response, (xdrString: string) => {
+            return scValToBigInt(xdr.ScVal.fromXDR(xdrString, 'base64'));
+          })
+        : BigInt(0);
     }
     return BigInt(0);
   }
@@ -102,12 +106,14 @@ const Backstop: NextPage = () => {
 
       let usdcEstimate =
         usdcBalance > cometPoolUSDCBalance
-          ? await getLPEstimate(cometPoolUSDCBalance / BigInt(2) - BigInt(1), usdcAddress)
-          : await getLPEstimate(usdcBalance, usdcAddress);
+          ? (await getLPEstimate(cometPoolUSDCBalance / BigInt(2) - BigInt(1), usdcAddress)) ??
+            BigInt(0)
+          : (await getLPEstimate(usdcBalance, usdcAddress)) ?? BigInt(0);
       let blndEstimate =
         blndBalance > cometPoolBLNDBalance
-          ? await getLPEstimate(cometPoolBLNDBalance / BigInt(2) - BigInt(1), blndAddress)
-          : await getLPEstimate(blndBalance, blndAddress);
+          ? (await getLPEstimate(cometPoolBLNDBalance / BigInt(2) - BigInt(1), blndAddress)) ??
+            BigInt(0)
+          : (await getLPEstimate(blndBalance, blndAddress)) ?? BigInt(0);
 
       if (blndEstimate > BigInt(0) || usdcEstimate > BigInt(0)) {
         const totalEstimate = usdcEstimate + blndEstimate;
