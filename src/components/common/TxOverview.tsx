@@ -1,7 +1,7 @@
 import { ContractErrorType, parseError } from '@blend-capital/blend-sdk';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Alert, AlertColor, Box, BoxProps, Typography } from '@mui/material';
-import { SorobanRpc } from 'stellar-sdk';
+import { SorobanRpc } from '@stellar/stellar-sdk';
 import { useWallet } from '../../contexts/wallet';
 import theme from '../../theme';
 import { OpaqueButton } from './OpaqueButton';

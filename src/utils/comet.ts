@@ -1,4 +1,4 @@
-import { Contract, nativeToScVal } from 'stellar-sdk';
+import { Contract, nativeToScVal } from '@stellar/stellar-sdk';
 
 export class CometClient {
   comet: Contract;

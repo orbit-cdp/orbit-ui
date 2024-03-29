@@ -1,5 +1,5 @@
 import { BackstopUser, PoolUser, Reserve } from '@blend-capital/blend-sdk';
-import { Address, Asset, Horizon } from 'stellar-sdk';
+import { Address, Asset, Horizon } from '@stellar/stellar-sdk';
 import { StateCreator } from 'zustand';
 import { StellarTokenMetadata, getTokenMetadataFromTOML } from '../external/stellar-toml';
 import { getTokenBalance } from '../external/token';

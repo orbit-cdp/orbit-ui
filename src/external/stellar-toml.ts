@@ -1,5 +1,5 @@
 import { Reserve } from '@blend-capital/blend-sdk';
-import { Horizon, StellarToml } from 'stellar-sdk';
+import { Horizon, StellarToml } from '@stellar/stellar-sdk';
 import { TOKEN_META } from '../utils/token_display';
 
 export type StellarTokenMetadata = {

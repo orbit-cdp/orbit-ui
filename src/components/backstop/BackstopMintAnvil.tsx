@@ -1,7 +1,7 @@
 import { parseResult } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
+import { Address, SorobanRpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
 import { useEffect, useMemo, useState } from 'react';
-import { Address, SorobanRpc, scValToBigInt, xdr } from 'stellar-sdk';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { getTokenBalance } from '../../external/token';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';

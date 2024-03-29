@@ -19,8 +19,15 @@ import {
   xBullModule,
 } from '@creit.tech/stellar-wallets-kit/build/main';
 import { getNetworkDetails as getFreighterNetwork } from '@stellar/freighter-api';
+import {
+  BASE_FEE,
+  Operation,
+  SorobanRpc,
+  Transaction,
+  TransactionBuilder,
+  xdr,
+} from '@stellar/stellar-sdk';
 import React, { useContext, useEffect, useState } from 'react';
-import { BASE_FEE, Operation, SorobanRpc, Transaction, TransactionBuilder, xdr } from 'stellar-sdk';
 import { useLocalStorageState } from '../hooks';
 import { BACKSTOP_ID } from '../store/blendSlice';
 import { useStore } from '../store/store';

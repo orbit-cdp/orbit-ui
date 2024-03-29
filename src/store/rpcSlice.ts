@@ -1,5 +1,5 @@
 import { Network } from '@blend-capital/blend-sdk';
-import { Horizon, SorobanRpc } from 'stellar-sdk';
+import { Horizon, SorobanRpc } from '@stellar/stellar-sdk';
 import { StateCreator } from 'zustand';
 import { DataStore } from './store';
 

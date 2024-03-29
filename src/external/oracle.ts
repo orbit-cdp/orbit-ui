@@ -1,5 +1,5 @@
 import { i128, u64 } from '@blend-capital/blend-sdk';
-import { scValToBigInt, xdr } from 'stellar-sdk';
+import { scValToBigInt, xdr } from '@stellar/stellar-sdk';
 
 export interface AssetPrices {
   price: bigint;

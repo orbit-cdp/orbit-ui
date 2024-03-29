@@ -1,7 +1,7 @@
 //! Collection of utility functions to help with Horizon data
 
 import { Reserve } from '@blend-capital/blend-sdk';
-import { Asset, Horizon } from 'stellar-sdk';
+import { Asset, Horizon } from '@stellar/stellar-sdk';
 
 export function requiresTrustlineReserve(
   account: Horizon.AccountResponse | undefined,
