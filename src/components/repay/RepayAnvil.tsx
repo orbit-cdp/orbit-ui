@@ -75,8 +75,8 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
 
   let returnedTokens =
     toRepay != undefined &&
-    userPoolData &&
-    Number(toRepay) > (userPoolData.positionEstimates.liabilities.get(assetId) ?? 0)
+      userPoolData &&
+      Number(toRepay) > (userPoolData.positionEstimates.liabilities.get(assetId) ?? 0)
       ? Number(toRepay) - (userPoolData.positionEstimates.liabilities.get(assetId) ?? 0)
       : 0;
   if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toRepay) != 0) {
@@ -99,7 +99,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
       setValidDecimals(false);
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
-      errorProps.reason = `You cannot supply more than ${decimals} decimal places.`;
+      errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
       errorProps.disabledType = 'warning';
     }
 

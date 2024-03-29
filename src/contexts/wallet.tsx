@@ -2,6 +2,7 @@ import {
   BackstopClaimArgs,
   BackstopContract,
   ContractErrorType,
+  Network,
   PoolBackstopActionArgs,
   PoolClaimArgs,
   PoolContract,
@@ -17,6 +18,7 @@ import {
   XBULL_ID,
   xBullModule,
 } from '@creit.tech/stellar-wallets-kit/build/main';
+import { getNetworkDetails as getFreighterNetwork } from '@stellar/freighter-api';
 import React, { useContext, useEffect, useState } from 'react';
 import { BASE_FEE, Operation, SorobanRpc, Transaction, TransactionBuilder, xdr } from 'stellar-sdk';
 import { useLocalStorageState } from '../hooks';
@@ -36,6 +38,7 @@ export interface IWalletContext {
   lastTxHash: string | undefined;
   lastTxFailure: string | undefined;
   txType: TxType;
+  walletId: string | undefined;
   connect: () => Promise<void>;
   disconnect: () => void;
   clearLastTx: () => void;
@@ -81,6 +84,7 @@ export interface IWalletContext {
     lpTokenAddress: string
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse | undefined>;
   faucet(): Promise<undefined>;
+  getNetworkDetails(): Promise<Network & { horizonUrl: string }>;
 }
 
 export enum TxStatus {
@@ -166,6 +170,7 @@ export const WalletProvider = ({ children = null as any }) => {
     try {
       await walletKit.openModal({
         onWalletSelected: async (option: ISupportedWallet) => {
+          console.log({ option });
           walletKit.setWallet(option.id);
           setAutoConnect(option.id);
           await handleSetWalletAddress();
@@ -552,6 +557,22 @@ export const WalletProvider = ({ children = null as any }) => {
     }
   }
 
+  async function getNetworkDetails() {
+    try {
+      const freighterDetails: any = await getFreighterNetwork();
+      console.log({ freighterDetails, rpc: freighterDetails.sorobanRpcUrl });
+      return {
+        rpc: freighterDetails.sorobanRpcUrl,
+        passphrase: freighterDetails.networkPassphrase,
+        maxConcurrentRequests: network.maxConcurrentRequests,
+        horizonUrl: freighterDetails.networkUrl,
+      };
+    } catch (e) {
+      console.error('Failed to get network details from freighter', e);
+      return network;
+    }
+  }
+
   return (
     <WalletContext.Provider
       value={{
@@ -561,6 +582,7 @@ export const WalletProvider = ({ children = null as any }) => {
         lastTxHash: txHash,
         lastTxFailure: txFailure,
         txType,
+        walletId: autoConnect,
         connect,
         disconnect,
         clearLastTx,
@@ -575,6 +597,7 @@ export const WalletProvider = ({ children = null as any }) => {
         backstopMintByDepositTokenAmount,
         backstopMintByLPTokenAmount,
         faucet,
+        getNetworkDetails,
       }}
     >
       {children}
