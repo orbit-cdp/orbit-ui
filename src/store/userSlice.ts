@@ -1,7 +1,7 @@
 import { BackstopUser, PoolUser, Reserve } from '@blend-capital/blend-sdk';
 import { Address, Asset, Horizon } from 'stellar-sdk';
 import { StateCreator } from 'zustand';
-import { getTokenMetadataFromTOML, StellarTokenMetadata } from '../external/stellar-toml';
+import { StellarTokenMetadata, getTokenMetadataFromTOML } from '../external/stellar-toml';
 import { getTokenBalance } from '../external/token';
 import { BLEND_TESTNET_ASSET, USDC_TESTNET_ASSET } from '../utils/token_display';
 import { DataStore } from './store';
