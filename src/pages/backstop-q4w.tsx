@@ -57,7 +57,7 @@ const BackstopQ4W: NextPage = () => {
                 Available to queue
               </Typography>
               <Typography variant="h4" sx={{ color: theme.palette.backstop.main }}>
-                {toBalance(backstopUserEstimates?.notLockedShares ?? 0, 7)}
+                {toBalance(backstopUserEstimates?.tokens ?? 0, 7)}
               </Typography>
             </Box>
             <Box>
