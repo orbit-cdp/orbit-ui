@@ -1,6 +1,5 @@
 import { Reserve } from '@blend-capital/blend-sdk';
 import { Horizon, StellarToml } from '@stellar/stellar-sdk';
-import { TOKEN_META } from '../utils/token_display';
 
 export type StellarTokenMetadata = {
   assetId: string;
@@ -17,7 +16,7 @@ export async function getTokenMetadataFromTOML(
   reserve: Reserve
 ): Promise<StellarTokenMetadata> {
   const assetId = reserve.assetId;
-  const code = TOKEN_META[assetId as keyof typeof TOKEN_META]?.code;
+  const code = reserve.tokenMetadata.symbol;
   // set default stellar token metadata values
   let iconData: StellarTokenMetadata = {
     assetId,

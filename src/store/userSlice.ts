@@ -177,6 +177,7 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
           }
         }
       }
+
       set({
         account,
         isFunded: true,
