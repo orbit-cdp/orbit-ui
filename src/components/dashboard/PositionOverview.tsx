@@ -124,10 +124,18 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
         </Row>
       )}
       {viewType !== ViewType.REGULAR && (
-        <Row sx={{ display: 'flex', flexDirection: 'column' }}>
+        <Row
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '0px 12px',
+            gap: '12px',
+            alignItems: 'center',
+          }}
+        >
           <Box
             sx={{
-              marginTop: '18px',
+              margin: '12px 0px',
               display: 'flex',
               flexDirection: 'row',
               alignItems: 'center',
@@ -152,7 +160,6 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
                 src={'/icons/dashboard/net_apr.svg'}
                 alt={`backstop size icon`}
                 isCircle={false}
-                sx={{ marginLeft: '18px' }}
               />
             </Box>
             <Box
@@ -160,7 +167,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginLeft: '48px',
+                marginLeft: 'auto',
               }}
             >
               <StackedText
@@ -173,7 +180,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
               <BorrowCapRing poolId={poolId} />
             </Box>
           </Box>
-          <LinkBox sx={{ width: '93%' }} to={{ pathname: '/backstop', query: { poolId: poolId } }}>
+          <LinkBox sx={{ width: '100%' }} to={{ pathname: '/backstop', query: { poolId: poolId } }}>
             <CustomButton
               sx={{
                 width: '100%',

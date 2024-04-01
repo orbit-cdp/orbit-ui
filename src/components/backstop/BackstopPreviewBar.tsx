@@ -123,14 +123,20 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
         <Section
           type="alt"
           width={SectionSize.FULL}
-          sx={{ display: 'flex', flexWrap: 'wrap', margin: 'none' }}
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            margin: 'none',
+            padding: '0px 12px',
+            width: '100%',
+          }}
         >
           <Box
             sx={{
               width: '100%',
               display: 'flex',
               flexDirection: 'row',
-              justifyContent: 'space-around',
+              justifyContent: 'space-between',
               alignItems: 'center',
               marginTop: '12px',
             }}
@@ -168,7 +174,6 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                 backgroundColor: theme.palette.background.default,
                 padding: '12px',
                 borderRadius: '5px',
-                marginRight: '-30px',
               }}
             >
               <PoolStatusBox
@@ -180,7 +185,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
             </Box>
           </Box>
           <LinkBox
-            sx={{ width: '100%', margin: '6px' }}
+            sx={{ width: '100%' }}
             to={{ pathname: '/backstop-q4w', query: { poolId: 'poolId' } }}
           >
             <CustomButton
@@ -195,11 +200,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
               }}
             >
               <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                <Icon
-                  src={'/icons/dashboard/emissions_icon.svg'}
-                  alt={`emissions icon`}
-                  sx={{ marginRight: '12px' }}
-                />
+                <Icon src={'/icons/dashboard/emissions_icon.svg'} alt={`emissions icon`} />
                 <StackedText
                   title="Your Backstop Balance"
                   titleColor="inherit"
