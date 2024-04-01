@@ -6,7 +6,7 @@ import {
   SorobanRpc,
   TransactionBuilder,
   xdr,
-} from 'stellar-sdk';
+} from '@stellar/stellar-sdk';
 
 export async function createTxBuilder(
   stellar_rpc: SorobanRpc.Server,

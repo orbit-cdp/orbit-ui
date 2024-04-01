@@ -5,8 +5,8 @@ import {
   parseResult,
 } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
+import { SorobanRpc } from '@stellar/stellar-sdk';
 import { useMemo, useState } from 'react';
-import { SorobanRpc } from 'stellar-sdk';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';

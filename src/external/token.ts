@@ -5,7 +5,7 @@ import {
   SorobanRpc,
   TransactionBuilder,
   scValToNative,
-} from 'stellar-sdk';
+} from '@stellar/stellar-sdk';
 
 export async function getTokenBalance(
   stellar_rpc: SorobanRpc.Server,

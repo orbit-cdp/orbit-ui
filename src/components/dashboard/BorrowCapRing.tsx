@@ -12,7 +12,6 @@ export const BorrowCapRing: React.FC<BorrowCapRingProps> = ({ poolId, ...props }
 
   const userPoolData = useStore((state) => state.userPoolData.get(poolId));
   const borrowLimit = userPoolData?.positionEstimates?.borrowLimit;
-  console.log({ borrowLimit });
   const capacityPercentage = Math.round(Number(((borrowLimit || 0) * 100).toFixed(2)));
 
   function getIconByCapacity(capacity: number) {

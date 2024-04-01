@@ -7,8 +7,8 @@ import {
   parseResult,
 } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
+import { SorobanRpc } from '@stellar/stellar-sdk';
 import { useMemo, useState } from 'react';
-import { SorobanRpc } from 'stellar-sdk';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
@@ -75,8 +75,8 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
 
   let returnedTokens =
     toRepay != undefined &&
-      userPoolData &&
-      Number(toRepay) > (userPoolData.positionEstimates.liabilities.get(assetId) ?? 0)
+    userPoolData &&
+    Number(toRepay) > (userPoolData.positionEstimates.liabilities.get(assetId) ?? 0)
       ? Number(toRepay) - (userPoolData.positionEstimates.liabilities.get(assetId) ?? 0)
       : 0;
   if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toRepay) != 0) {

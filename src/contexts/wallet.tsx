@@ -19,8 +19,15 @@ import {
   xBullModule,
 } from '@creit.tech/stellar-wallets-kit/build/main';
 import { getNetworkDetails as getFreighterNetwork } from '@stellar/freighter-api';
+import {
+  BASE_FEE,
+  Operation,
+  SorobanRpc,
+  Transaction,
+  TransactionBuilder,
+  xdr,
+} from '@stellar/stellar-sdk';
 import React, { useContext, useEffect, useState } from 'react';
-import { BASE_FEE, Operation, SorobanRpc, Transaction, TransactionBuilder, xdr } from 'stellar-sdk';
 import { useLocalStorageState } from '../hooks';
 import { BACKSTOP_ID } from '../store/blendSlice';
 import { useStore } from '../store/store';
@@ -170,7 +177,6 @@ export const WalletProvider = ({ children = null as any }) => {
     try {
       await walletKit.openModal({
         onWalletSelected: async (option: ISupportedWallet) => {
-          console.log({ option });
           walletKit.setWallet(option.id);
           setAutoConnect(option.id);
           await handleSetWalletAddress();
@@ -235,7 +241,7 @@ export const WalletProvider = ({ children = null as any }) => {
     await sendTransaction(signed_restore_tx);
   }
 
-  async function sendTransaction(transaction: Transaction) {
+  async function sendTransaction(transaction: Transaction): Promise<boolean> {
     let send_tx_response = await rpc.sendTransaction(transaction);
     let curr_time = Date.now();
 
@@ -261,11 +267,13 @@ export const WalletProvider = ({ children = null as any }) => {
     if (get_tx_response.status === 'SUCCESS') {
       console.log('Successfully submitted transaction: ', hash);
       setTxStatus(TxStatus.SUCCESS);
+      return true;
     } else {
       console.log('Failed Transaction Hash: ', hash);
       let error = parseError(get_tx_response);
       setFailureMessage(ContractErrorType[error.type]);
       setTxStatus(TxStatus.FAIL);
+      return false;
     }
   }
 
@@ -296,8 +304,8 @@ export const WalletProvider = ({ children = null as any }) => {
       let assembled_tx = SorobanRpc.assembleTransaction(transaction, simResponse).build();
       let signedTx = await sign(assembled_tx.toXDR());
       let tx = new Transaction(signedTx, network.passphrase);
-      await sendTransaction(tx);
-      if (txStatus == TxStatus.SUCCESS && poolId !== undefined) {
+      let result = await sendTransaction(tx);
+      if (result) {
         try {
           await loadBlendData(true, poolId, walletAddress);
         } catch {
@@ -560,7 +568,6 @@ export const WalletProvider = ({ children = null as any }) => {
   async function getNetworkDetails() {
     try {
       const freighterDetails: any = await getFreighterNetwork();
-      console.log({ freighterDetails, rpc: freighterDetails.sorobanRpcUrl });
       return {
         rpc: freighterDetails.sorobanRpcUrl,
         passphrase: freighterDetails.networkPassphrase,
