@@ -21,7 +21,7 @@ export const LendPositions: React.FC<PoolComponentProps> = ({ poolId }) => {
         width={SectionSize.FULL}
         sx={{ flexDirection: 'column', paddingTop: '12px' }}
       >
-        <Row sx={{ padding: '6px' }}>
+        <Row>
           <LendBanner totalSupplied={userPoolData.positionEstimates.totalSupplied} />
         </Row>
         <LendPositionList poolId={poolId} />

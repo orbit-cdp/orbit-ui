@@ -41,7 +41,16 @@ const Dashboard: NextPage = () => {
   return (
     <>
       <PoolExploreBar poolId={safePoolId} />
+      <Divider />
       <BackstopPreviewBar poolId={safePoolId} />
+      <Divider />
+      <Row>
+        <Box sx={{ paddingLeft: '6px' }}>
+          <Typography variant="h2" sx={{ padding: '6px' }}>
+            Your positions
+          </Typography>
+        </Box>
+      </Row>
       <PositionOverview poolId={safePoolId} />
       <LendPositions poolId={safePoolId} />
       <BorrowPositions poolId={safePoolId} />
@@ -67,14 +76,12 @@ const Dashboard: NextPage = () => {
         </Section>
       </Row>
       <Row sx={{ padding: '6px', justifyContent: 'space-between' }}>
-        <Typography variant="body1" sx={{ margin: '6px' }}>{`Assets to ${
-          showLend ? 'supply' : 'borrow'
-        }`}</Typography>
+        <Typography variant="body1">{`Assets to ${showLend ? 'supply' : 'borrow'}`}</Typography>
         <Box
           sx={{
             display: 'flex',
             alignItems: 'baseline',
-            margin: '6px',
+            padding: '6px',
           }}
         >
           <Typography variant="body2" mr={1}>

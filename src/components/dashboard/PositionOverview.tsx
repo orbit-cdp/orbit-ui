@@ -47,11 +47,9 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   return (
     <>
       {viewType === ViewType.REGULAR && (
-        <Row>
+        <Row sx={{ padding: '0px 12px' }}>
           <Box
             sx={{
-              margin: '12px',
-              marginTop: '18px',
               display: 'flex',
               flexDirection: 'row',
               alignItems: 'center',
@@ -84,7 +82,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginLeft: '48px',
+                marginLeft: 'auto',
               }}
             >
               <StackedText
@@ -97,10 +95,9 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
               <BorrowCapRing poolId={poolId} />
             </Box>
           </Box>
-          <Box sx={{ width: '45%', marginRight: '12px' }}>
+          <Box sx={{ width: '45%', display: 'flex' }}>
             <CustomButton
               sx={{
-                margin: '6px',
                 width: '100%',
                 padding: '12px',
                 color: theme.palette.text.primary,
@@ -130,7 +127,6 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
         <Row sx={{ display: 'flex', flexDirection: 'column' }}>
           <Box
             sx={{
-              margin: '12px',
               marginTop: '18px',
               display: 'flex',
               flexDirection: 'row',
@@ -177,13 +173,9 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
               <BorrowCapRing poolId={poolId} />
             </Box>
           </Box>
-          <LinkBox
-            sx={{ width: '93%', margin: '12px' }}
-            to={{ pathname: '/backstop', query: { poolId: poolId } }}
-          >
+          <LinkBox sx={{ width: '93%' }} to={{ pathname: '/backstop', query: { poolId: poolId } }}>
             <CustomButton
               sx={{
-                margin: '6px',
                 width: '100%',
                 padding: '12px',
                 color: theme.palette.text.primary,

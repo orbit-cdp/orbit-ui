@@ -22,7 +22,7 @@ export const BorrowPositions: React.FC<PoolComponentProps> = ({ poolId }) => {
         width={SectionSize.FULL}
         sx={{ flexDirection: 'column', paddingTop: '12px' }}
       >
-        <Row sx={{ padding: '6px' }}>
+        <Row>
           <BorrowBanner totalBorrowed={userPoolData.positionEstimates.totalBorrowed} />
         </Row>
         <BorrowPositionList poolId={poolId} />
