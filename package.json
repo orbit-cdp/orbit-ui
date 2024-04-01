@@ -1,6 +1,6 @@
 {
   "name": "blend-ui",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@blend-capital/blend-sdk": "../blend-sdk-js",
+    "@blend-capital/blend-sdk": "^1.0.0",
     "@creit.tech/stellar-wallets-kit": "^0.5.0",
     "@emotion/react": "^11.9.3",
     "@emotion/styled": "^11.9.3",
