@@ -43,7 +43,9 @@ const Dashboard: NextPage = () => {
       <PoolExploreBar poolId={safePoolId} />
       <BackstopPreviewBar poolId={safePoolId} />
       <PositionOverview poolId={safePoolId} />
-      {showLend ? <LendPositions poolId={safePoolId} /> : <BorrowPositions poolId={safePoolId} />}
+      <LendPositions poolId={safePoolId} />
+      <BorrowPositions poolId={safePoolId} />
+      <Divider />
       <Row>
         <Section width={SectionSize.FULL} sx={{ padding: '0px' }}>
           <ToggleButton

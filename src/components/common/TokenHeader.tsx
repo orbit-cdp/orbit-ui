@@ -8,9 +8,17 @@ import { TokenIcon } from './TokenIcon';
 
 export interface TokenHeaderProps extends BoxProps {
   id: string;
+  hideDomain?: boolean;
+  iconSize?: string;
 }
 
-export const TokenHeader: React.FC<TokenHeaderProps> = ({ id, sx, ...props }) => {
+export const TokenHeader: React.FC<TokenHeaderProps> = ({
+  id,
+  sx,
+  hideDomain,
+  iconSize,
+  ...props
+}) => {
   const assetStellarMetadata = useStore((state) => state.assetStellarMetadata);
   const tokenMetadata = assetStellarMetadata.get(id);
   const code = tokenMetadata?.code || id;
@@ -30,7 +38,7 @@ export const TokenHeader: React.FC<TokenHeaderProps> = ({ id, sx, ...props }) =>
       <TokenIcon
         assetId={id}
         symbol={code}
-        sx={{ width: '32px', height: '32px', marginRight: '6px' }}
+        sx={{ width: iconSize || '32px', height: iconSize || '32px', marginRight: '6px' }}
       />
       <Box
         sx={{
@@ -41,9 +49,11 @@ export const TokenHeader: React.FC<TokenHeaderProps> = ({ id, sx, ...props }) =>
         }}
       >
         <Typography variant="body1">{code}</Typography>
-        <Typography variant="body2" color="text.secondary">
-          {domain?.length === 56 ? toCompactAddress(domain) : domain}
-        </Typography>
+        {!hideDomain && (
+          <Typography variant="body2" color="text.secondary">
+            {domain?.length === 56 ? toCompactAddress(domain) : domain}
+          </Typography>
+        )}
       </Box>
     </Box>
   );

@@ -4,11 +4,10 @@ import { Box, Typography, useTheme } from '@mui/material';
 import { ViewType, useSettings } from '../../contexts';
 import * as formatter from '../../utils/formatter';
 import { getEmissionsPerDayPerUnit } from '../../utils/token';
-import { CustomButton } from '../common/CustomButton';
 import { FlameIcon } from '../common/FlameIcon';
 import { LinkBox } from '../common/LinkBox';
+import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
-import { SectionBase } from '../common/SectionBase';
 import { TokenHeader } from '../common/TokenHeader';
 
 export interface LendPositionCardProps extends PoolComponentProps {
@@ -32,81 +31,73 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
 
   const tableNum = viewType === ViewType.REGULAR ? 5 : 4;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
+  const buttonWidth = `${((100 / tableNum) * 1.5).toFixed(2)}%`;
   return (
-    <SectionBase
-      type="alt"
-      sx={{
-        display: 'flex',
-        width: '100%',
-        marginBottom: '12px',
-        ...sx,
-      }}
-      {...props}
-    >
-      <LinkBox
-        sx={{ width: '100%' }}
-        to={{ pathname: '/withdraw', query: { poolId: poolId, assetId: reserve.assetId } }}
+    <Box sx={{ width: '100%', display: 'flex' }}>
+      <TokenHeader iconSize="24px" hideDomain id={reserve.assetId} sx={{ width: tableWidth }} />
+      <Box
+        sx={{
+          width: tableWidth,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
       >
-        <CustomButton
+        <Typography variant="body1">{formatter.toBalance(totalSupplyEst)}</Typography>
+      </Box>
+      <Box
+        sx={{
+          width: tableWidth,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <Typography variant="body1">
+          {formatter.toPercentage(reserve.estimates.supplyApy)}
+        </Typography>
+        {!!reserve.supplyEmissions && (
+          <FlameIcon
+            width={22}
+            height={22}
+            title={formatter.getEmissionTextFromValue(
+              getEmissionsPerDayPerUnit(
+                reserve.supplyEmissions?.config.eps || BigInt(0),
+                reserve.estimates.supplied,
+                reserve.config.decimals
+              ),
+              reserve.tokenMetadata.symbol
+            )}
+          />
+        )}
+      </Box>
+      {/* {tableNum >= 5 && <Box sx={{ width: tableWidth }} />} */}
+      <LinkBox
+        to={{ pathname: '/withdraw', query: { poolId: poolId, assetId: reserve.assetId } }}
+        sx={{
+          display: 'flex',
+          justifyContent: 'end',
+          marginLeft: 'auto',
+          // flexGrow: 1,
+          alignItems: 'center',
+          width: buttonWidth,
+        }}
+      >
+        <OpaqueButton
+          palette={theme.palette.lend}
           sx={{
             width: '100%',
-            padding: '12px',
-            backgroundColor: theme.palette.background.default,
-            '&:hover': {
-              color: theme.palette.lend.main,
-            },
+            margin: '6px',
+            padding: '6px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
           }}
         >
-          <TokenHeader id={reserve.assetId} sx={{ width: tableWidth }} />
-          <Box
-            sx={{
-              width: tableWidth,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <Typography variant="body1">{formatter.toBalance(totalSupplyEst)}</Typography>
-          </Box>
-          <Box
-            sx={{
-              width: tableWidth,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <Typography variant="body1">
-              {formatter.toPercentage(reserve.estimates.supplyApy)}
-            </Typography>
-            {!!reserve.supplyEmissions && (
-              <FlameIcon
-                width={22}
-                height={22}
-                title={formatter.getEmissionTextFromValue(
-                  getEmissionsPerDayPerUnit(
-                    reserve.supplyEmissions?.config.eps || BigInt(0),
-                    reserve.estimates.supplied,
-                    reserve.config.decimals
-                  ),
-                  reserve.tokenMetadata.symbol
-                )}
-              />
-            )}
-          </Box>
-          {tableNum >= 5 && <Box sx={{ width: tableWidth }} />}
-          <Box
-            sx={{
-              width: tableWidth,
-              display: 'flex',
-              justifyContent: 'flex-end',
-              alignItems: 'center',
-            }}
-          >
-            <ArrowForwardIcon fontSize="inherit" />
-          </Box>
-        </CustomButton>
+          Withdraw
+          <ArrowForwardIcon fontSize="inherit" />
+        </OpaqueButton>
       </LinkBox>
-    </SectionBase>
+    </Box>
   );
 };
