@@ -7,8 +7,9 @@ export const Divider: React.FC = () => {
       sx={{
         background: theme.palette.background.paper,
         height: '2px',
-        width: 'calc(100% - 24px)',
-        margin: '12px',
+        width: '100%',
+        marginTop: '12px',
+        marginBottom: '12px',
       }}
     ></Box>
   );

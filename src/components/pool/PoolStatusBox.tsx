@@ -15,6 +15,7 @@ export const PoolStatusBox: React.FC<PoolStatusBoxProps> = ({
   status,
   ...props
 }) => {
+  const theme = useTheme();
   const textType = type ? type : 'normal';
   const textVariant = textType == 'large' ? 'h2' : 'h4';
   const muiTitleColor = titleColor ? titleColor : 'text.secondary';
@@ -22,44 +23,43 @@ export const PoolStatusBox: React.FC<PoolStatusBoxProps> = ({
   const statusTextColor = poolStatus == 'Active' ? 'primary.main' : 'secondary.main';
   const statusBackColor = poolStatus == 'Active' ? 'primary.opaque' : 'secondary.opaque';
   const statusIcon = poolStatus == 'Active' ? <CheckIcon /> : <AcUnitIcon />;
-  const theme = useTheme();
   return (
     <Box
       sx={{
         display: 'flex',
-        flexDirection: 'column',
         justifyContent: 'center',
-        alignItems: 'flex-start',
+        alignItems: 'center',
+        gap: '6px',
         ...props.sx,
       }}
     >
-      <Typography variant="body2" color={muiTitleColor}>
-        Pool Status
-      </Typography>
+      <Box
+        sx={{
+          backgroundColor: theme.palette.background.default,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px',
+        }}
+      >
+        <Typography variant="body2" color={muiTitleColor}>
+          Pool Status
+        </Typography>
+        <Typography variant={textVariant} color={theme.palette.text.primary}>
+          {poolStatus}
+        </Typography>
+      </Box>
       <Box sx={{ display: 'flex', flexDirection: 'row' }}>
         <Box
           sx={{
             backgroundColor: statusBackColor,
-            paddingTop: '2px',
-            paddingBottom: '2px',
-            paddingLeft: '8px',
-            paddingRight: '8px',
-            marginRight: '6px',
-            borderRadius: '5px',
-          }}
-        >
-          <Typography variant={textVariant} color={statusTextColor}>
-            {poolStatus}
-          </Typography>
-        </Box>
-        <Box
-          sx={{
-            backgroundColor: statusBackColor,
             color: statusTextColor,
-            width: '30px',
-            height: '30px',
-            borderRadius: '50%',
-            padding: '3px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: '36px',
+            height: '36px',
+            borderRadius: '100px',
+            padding: '4px',
           }}
         >
           {statusIcon}

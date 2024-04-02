@@ -58,19 +58,22 @@ export const BorrowPositionList: React.FC<PoolComponentProps> = ({ poolId }) => 
         <Box sx={{ width: headerWidth }} />
         {headerNum >= 5 && <Box sx={{ width: headerWidth }} />}
       </Box>
-      {Array.from(poolData.reserves.values())
-        .filter(
-          (reserve) =>
-            (userPoolData.positions.liabilities.get(reserve.config.index) ?? BigInt(0)) != BigInt(0)
-        )
-        .map((reserve) => (
-          <BorrowPositionCard
-            key={reserve.assetId}
-            poolId={poolId}
-            reserve={reserve}
-            userPoolData={userPoolData}
-          />
-        ))}
+      <Box sx={{ width: '100%', gap: '.5rem', display: 'flex', flexDirection: 'column' }}>
+        {Array.from(poolData.reserves.values())
+          .filter(
+            (reserve) =>
+              (userPoolData.positions.liabilities.get(reserve.config.index) ?? BigInt(0)) !=
+              BigInt(0)
+          )
+          .map((reserve) => (
+            <BorrowPositionCard
+              key={reserve.assetId}
+              poolId={poolId}
+              reserve={reserve}
+              userPoolData={userPoolData}
+            />
+          ))}
+      </Box>
     </Box>
   );
 };
