@@ -1,7 +1,6 @@
-import { BackstopUser, PoolUser, Reserve } from '@blend-capital/blend-sdk';
+import { BackstopUser, PoolUser } from '@blend-capital/blend-sdk';
 import { Address, Asset, Horizon } from '@stellar/stellar-sdk';
 import { StateCreator } from 'zustand';
-import { StellarTokenMetadata, getTokenMetadataFromTOML } from '../external/stellar-toml';
 import { getTokenBalance } from '../external/token';
 import { BLEND_TESTNET_ASSET, USDC_TESTNET_ASSET } from '../utils/token_display';
 import { DataStore } from './store';
@@ -13,8 +12,6 @@ export interface UserSlice {
   account: Horizon.AccountResponse | undefined;
   isFunded: boolean | undefined;
   balances: Map<string, bigint>;
-  hasTrustline: Map<string, boolean>;
-  assetStellarMetadata: Map<string, StellarTokenMetadata>;
   backstopUserData: BackstopUser | undefined;
   userPoolData: Map<string, PoolUser>;
 
@@ -27,7 +24,6 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
   isFunded: undefined,
   balances: new Map<string, bigint>(),
   hasTrustline: new Map<string, boolean>(),
-  assetStellarMetadata: new Map<string, StellarTokenMetadata>(),
   backstopUserData: undefined,
   userPoolData: new Map<string, PoolUser>(),
 
@@ -67,66 +63,33 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
       // load token balances for each unique reserve or fetch from the account response
       let user_pool_data = new Map<string, PoolUser>();
       let user_balances = new Map<string, bigint>();
-      let hasTrustline = new Map<string, boolean>();
-      let assetStellarMetadata = new Map<string, StellarTokenMetadata>();
-      /**load usdc and blend balances manually first  */
-      const usdcReserve: Asset = new Asset(
-        USDC_TESTNET_ASSET.asset_code,
-        USDC_TESTNET_ASSET.asset_issuer
-      );
-      const usdcAssetId = usdcReserve.contractId(networkPassphrase);
-      if (!!horizonServer) {
-        let metadata = await getTokenMetadataFromTOML(horizonServer, {
-          assetId: usdcAssetId,
-          tokenMetadata: {
-            asset: usdcReserve,
-            name: usdcReserve.code,
-            symbol: usdcReserve.code,
-            decimals: 7,
-          },
-        } as Reserve);
-        assetStellarMetadata.set(usdcAssetId, metadata);
-      }
 
-      //  fetch USDC balance from account response
+      /** load USDC and BLND balances manually **/
+      const usdcAsset = new Asset(USDC_TESTNET_ASSET.asset_code, USDC_TESTNET_ASSET.asset_issuer);
+      const usdcContractId = usdcAsset.contractId(networkPassphrase);
       let usdcBalanceLine = account.balances.find((balance) => {
         return (
           // @ts-ignore
-          balance.asset_code === usdcReserve.code &&
+          balance.asset_code === USDC_TESTNET_ASSET.asset_code &&
           // @ts-ignore
-          balance.asset_issuer === usdcReserve.issuer
+          balance.asset_issuer === USDC_TESTNET_ASSET.asset_issuer
         );
       });
-      let usdcBalanceString = usdcBalanceLine ? usdcBalanceLine.balance.replace('.', '') : '0';
-      user_balances.set(usdcReserve.contractId(networkPassphrase), BigInt(usdcBalanceString));
-      const blendReserve = new Asset(
-        BLEND_TESTNET_ASSET.asset_code,
-        BLEND_TESTNET_ASSET.asset_issuer
-      );
-      const blendAssetId = blendReserve.contractId(networkPassphrase);
-      if (!!horizonServer) {
-        let metadata = await getTokenMetadataFromTOML(horizonServer, {
-          assetId: blendAssetId,
-          tokenMetadata: {
-            asset: blendReserve,
-            name: 'Blend',
-            symbol: blendReserve.code,
-            decimals: 7,
-          },
-        } as Reserve);
-        assetStellarMetadata.set(blendAssetId, metadata);
-      }
-      //  fetch USDC balance from account response
-      let blendBalanceLine = account.balances.find((balance) => {
+      let usdc_balance_string = usdcBalanceLine ? usdcBalanceLine.balance.replace('.', '') : '0';
+      user_balances.set(usdcContractId, BigInt(usdc_balance_string));
+
+      const blndAsset = new Asset(BLEND_TESTNET_ASSET.asset_code, BLEND_TESTNET_ASSET.asset_issuer);
+      const blndContractId = blndAsset.contractId(networkPassphrase);
+      let blndBalanceLine = account.balances.find((balance) => {
         return (
           // @ts-ignore
-          balance.asset_code === blendReserve.code &&
+          balance.asset_code === BLEND_TESTNET_ASSET.asset_code &&
           // @ts-ignore
-          balance.asset_issuer === blendReserve.issuer
+          balance.asset_issuer === BLEND_TESTNET_ASSET.asset_issuer
         );
       });
-      let blendBalanceString = blendBalanceLine ? blendBalanceLine.balance.replace('.', '') : '0';
-      user_balances.set(blendReserve.contractId(networkPassphrase), BigInt(blendBalanceString));
+      let blnd_balance_string = blndBalanceLine ? blndBalanceLine.balance.replace('.', '') : '0';
+      user_balances.set(blndContractId, BigInt(blnd_balance_string));
 
       for (let [pool, pool_data] of Array.from(pools.entries())) {
         let pool_user = await pool_data.loadUser(network, id);
@@ -137,15 +100,10 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
             // duplicate reserve from another pool, skip
             continue;
           }
-          if (!!horizonServer) {
-            let metadata = await getTokenMetadataFromTOML(horizonServer, reserve);
-            assetStellarMetadata.set(reserve.assetId, metadata);
-          }
           if (reserve.tokenMetadata.asset != undefined) {
             // stellar asset, fetch balance from account response
             let balance_line = account.balances.find((balance) => {
               if (balance.asset_type == 'native') {
-                hasTrustline.set(reserve.assetId, true);
                 // @ts-ignore
                 return reserve.tokenMetadata.asset.isNative();
               }
@@ -156,15 +114,8 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
                 balance.asset_issuer === reserve.tokenMetadata.asset.getIssuer()
               );
             });
-
-            if (!!balance_line?.balance) {
-              hasTrustline.set(reserve.assetId, true);
-            } else {
-              hasTrustline.set(reserve.assetId, false);
-            }
             let balance_string = balance_line ? balance_line.balance.replace('.', '') : '0';
             user_balances.set(reserve.assetId, BigInt(balance_string));
-            // load icon
           } else {
             let balance = await getTokenBalance(
               rpc,
@@ -172,7 +123,6 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
               reserve.assetId,
               new Address(id)
             );
-            hasTrustline.set(reserve.assetId, balance > BigInt(0));
             user_balances.set(reserve.assetId, balance);
           }
         }
@@ -184,8 +134,6 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
         balances: user_balances,
         backstopUserData: backstop_user,
         userPoolData: user_pool_data,
-        hasTrustline,
-        assetStellarMetadata,
       });
     } catch (e) {
       console.error('Unable to load user data');
