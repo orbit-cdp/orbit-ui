@@ -1,7 +1,7 @@
 import { PoolClaimArgs } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, useTheme } from '@mui/material';
-import { ViewType, useSettings } from '../../contexts';
+import { useSettings, ViewType } from '../../contexts';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
@@ -138,6 +138,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
               margin: '12px 0px',
               display: 'flex',
               flexDirection: 'row',
+              justifyContent: 'space-around',
               alignItems: 'center',
               width: '100%',
             }}
@@ -160,6 +161,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
                 src={'/icons/dashboard/net_apr.svg'}
                 alt={`backstop size icon`}
                 isCircle={false}
+                sx={{ marginLeft: '18px' }}
               />
             </Box>
             <Box
@@ -167,7 +169,6 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginLeft: 'auto',
               }}
             >
               <StackedText

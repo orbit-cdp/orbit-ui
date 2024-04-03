@@ -2,7 +2,7 @@ import { BackstopClaimArgs, parseResult } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import HelpOutline from '@mui/icons-material/HelpOutline';
 import { Box, Tooltip, Typography } from '@mui/material';
-import { Address, SorobanRpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
+import { Address, scValToBigInt, SorobanRpc, xdr } from '@stellar/stellar-sdk';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -219,7 +219,7 @@ const Backstop: NextPage = () => {
                   <TokenIcon symbol="blnd" sx={{ marginRight: '12px' }}></TokenIcon>
                   <Box sx={{ display: 'flex', flexDirection: 'row' }}>
                     <Typography variant="h4" sx={{ marginRight: '6px' }}>
-                      {toBalance(userEmissions)} BLND
+                      {toBalance(userEmissions)}
                     </Typography>
                     <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
                       BLND
