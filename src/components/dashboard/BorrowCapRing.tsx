@@ -1,6 +1,6 @@
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import { HelpOutline } from '@mui/icons-material';
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
-import { Box, BoxProps, CircularProgress, useTheme } from '@mui/material';
+import { Box, BoxProps, CircularProgress, Tooltip, useTheme } from '@mui/material';
 import React from 'react';
 import { useStore } from '../../store/store';
 export interface BorrowCapRingProps extends BoxProps {
@@ -137,9 +137,9 @@ export const BorrowCapRing: React.FC<BorrowCapRingProps> = ({ poolId, ...props }
           width: '45px',
         }}
       >
-        <Box>
-          <HelpOutlineIcon fontSize="small" color="disabled" />
-        </Box>
+        <Tooltip title="The percentage of your borrow capacity being used" placement="top">
+          <HelpOutline sx={{ width: '15px', marginLeft: '4px', marginTop: '-4px' }} />
+        </Tooltip>
         <Box
           sx={{
             color: getColorByCapacity(capacityPercentage),
