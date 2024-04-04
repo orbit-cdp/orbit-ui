@@ -88,6 +88,9 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
       }
     }
   };
+  console.log({
+    simResponse: parseResult((simResponse || {}) as any, BackstopContract.parsers.queueWithdrawal),
+  });
 
   return (
     <Row>
@@ -150,7 +153,14 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
           <Value title="Amount to queue" value={`${toQueue ?? '0'} BLND-USDC LP`} />
           <Value
             title="New queue expiration"
-            value={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+            value={
+              (parsedSimResult
+                ? new Date(Number(parsedSimResult.exp) * 1000)
+                : new Date(Date.now() + 21 * 24 * 60 * 60 * 1000)
+              )
+                .toISOString()
+                .split('T')[0]
+            }
           />
 
           <ValueChange
