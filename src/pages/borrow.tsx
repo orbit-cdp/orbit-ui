@@ -26,7 +26,10 @@ const Borrow: NextPage = () => {
   const poolData = useStore((state) => state.pools.get(safePoolId));
   const userBalance = useStore((state) => state.balances.get(safeAssetId));
   const reserve = poolData?.reserves.get(safeAssetId);
-
+  //totalEstLiabilities / totalEstSupply , you you can just do something like canBorrow = totalSupply * max_util - totalLiabilities
+  const availableToBorrow =
+    Number(reserve?.poolBalance) * (reserve?.config.max_util || 1) -
+    (reserve?.estimates.borrowed || 0);
   return (
     <>
       <Row>
@@ -57,17 +60,28 @@ const Borrow: NextPage = () => {
               </Typography>
             </Box>
             <Box>
-              <Link target="_blank"
+              <Link
+                target="_blank"
                 href={getTokenLinkFromReserve(reserve)}
                 variant="h5"
-                rel="noopener" sx={{
-                  color: theme.palette.text.secondary, cursor: "pointer", textDecoration: "none", display: "flex", alignItems: "center", gap: "4px", borderBottom: ".5px solid transparent", "&:hover": {
-                    borderBottom: `.5px solid ${theme.palette.text.secondary}`
-                  }
-                }}>
+                rel="noopener"
+                sx={{
+                  color: theme.palette.text.secondary,
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  borderBottom: '.5px solid transparent',
+                  '&:hover': {
+                    borderBottom: `.5px solid ${theme.palette.text.secondary}`,
+                  },
+                }}
+              >
                 <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
                   {reserve?.tokenMetadata?.symbol ?? ''}
-                </Typography><OpenInNewIcon fontSize='inherit' />
+                </Typography>
+                <OpenInNewIcon fontSize="inherit" />
               </Link>
             </Box>
           </Box>
