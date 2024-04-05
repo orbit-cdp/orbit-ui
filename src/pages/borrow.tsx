@@ -24,12 +24,13 @@ const Borrow: NextPage = () => {
   const safeAssetId = typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId) ? assetId : '';
 
   const poolData = useStore((state) => state.pools.get(safePoolId));
-  const userBalance = useStore((state) => state.balances.get(safeAssetId));
+
   const reserve = poolData?.reserves.get(safeAssetId);
   //totalEstLiabilities / totalEstSupply , you you can just do something like canBorrow = totalSupply * max_util - totalLiabilities
-  const availableToBorrow =
-    Number(reserve?.poolBalance) * (reserve?.config.max_util || 1) -
-    (reserve?.estimates.borrowed || 0);
+  const maxUtilFraction = (reserve?.config.max_util || 1) / 10 ** (reserve?.config.decimals || 7);
+  const totalSupplied = reserve?.estimates.supplied || 0;
+  const availableToBorrow = totalSupplied * maxUtilFraction - (reserve?.estimates.borrowed || 0);
+
   return (
     <>
       <Row>
@@ -56,7 +57,7 @@ const Borrow: NextPage = () => {
                 Available
               </Typography>
               <Typography variant="h4" sx={{ color: theme.palette.borrow.main }}>
-                {toBalance(reserve?.poolBalance, reserve?.config.decimals)}
+                {toBalance(availableToBorrow, reserve?.config.decimals)}
               </Typography>
             </Box>
             <Box>
