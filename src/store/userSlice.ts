@@ -14,7 +14,6 @@ export interface UserSlice {
   balances: Map<string, bigint>;
   backstopUserData: BackstopUser | undefined;
   userPoolData: Map<string, PoolUser>;
-
   loadUserData: (id: string) => Promise<void>;
   clearUserData: () => void;
 }
@@ -23,7 +22,6 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
   account: undefined,
   isFunded: undefined,
   balances: new Map<string, bigint>(),
-  hasTrustline: new Map<string, boolean>(),
   backstopUserData: undefined,
   userPoolData: new Map<string, PoolUser>(),
 
