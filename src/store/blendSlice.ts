@@ -1,5 +1,8 @@
-import { Backstop, Pool } from '@blend-capital/blend-sdk';
+import { Backstop, Pool, Reserve } from '@blend-capital/blend-sdk';
+import { Asset } from '@stellar/stellar-sdk';
 import { StateCreator } from 'zustand';
+import { StellarTokenMetadata, getTokenMetadataFromTOML } from '../external/stellar-toml';
+import { BLEND_TESTNET_ASSET, USDC_TESTNET_ASSET } from '../utils/token_display';
 import { DataStore } from './store';
 
 export const BACKSTOP_ID = 'CD66EGYOKJ4DPY4FADXZS5FNL3DEVANWRNPNVANF6RQIN44GDB3HKANF';
@@ -9,6 +12,7 @@ export const BACKSTOP_ID = 'CD66EGYOKJ4DPY4FADXZS5FNL3DEVANWRNPNVANF6RQIN44GDB3H
 export interface BlendSlice {
   backstop: Backstop | undefined;
   pools: Map<string, Pool>;
+  assetStellarMetadata: Map<string, StellarTokenMetadata>;
   latestLedger: number;
   latestLedgerTimestamp: number;
 
@@ -18,6 +22,7 @@ export interface BlendSlice {
 export const createBlendSlice: StateCreator<DataStore, [], [], BlendSlice> = (set, get) => ({
   backstop: undefined,
   pools: new Map<string, Pool>(),
+  assetStellarMetadata: new Map<string, StellarTokenMetadata>(),
   latestLedger: 0,
   latestLedgerTimestamp: 0,
 
@@ -49,10 +54,18 @@ export const createBlendSlice: StateCreator<DataStore, [], [], BlendSlice> = (se
       );
 
       // all pools in the reward zone + the request pools are loaded on the backstop
+      let horizonServer = get().horizonServer();
       let pools = new Map<string, Pool>();
+      let assetStellarMetadata = new Map<string, StellarTokenMetadata>();
       for (let pool of Array.from(backstop.pools.keys()).reverse()) {
         try {
           let pool_data = await Pool.load(network, pool, latest_ledger_close);
+          for (let reserve of Array.from(pool_data.reserves.values())) {
+            if (!assetStellarMetadata.has(reserve.assetId)) {
+              let metadata = await getTokenMetadataFromTOML(horizonServer, reserve);
+              assetStellarMetadata.set(reserve.assetId, metadata);
+            }
+          }
           pools.set(pool, pool_data);
         } catch (e) {
           console.error('Unable to load pool data for pool ' + pool);
@@ -60,9 +73,59 @@ export const createBlendSlice: StateCreator<DataStore, [], [], BlendSlice> = (se
         }
       }
 
+      // fetch XLM, USDC, and BLND metadata if needed
+      const USDC: Asset = new Asset(USDC_TESTNET_ASSET.asset_code, USDC_TESTNET_ASSET.asset_issuer);
+      const usdcAssetId = USDC.contractId(network.passphrase);
+      if (!assetStellarMetadata.has(usdcAssetId)) {
+        let metadata = await getTokenMetadataFromTOML(horizonServer, {
+          assetId: usdcAssetId,
+          tokenMetadata: {
+            asset: USDC,
+            name: USDC.code,
+            symbol: USDC.code,
+            decimals: 7,
+          },
+        } as Reserve);
+        assetStellarMetadata.set(usdcAssetId, metadata);
+      }
+
+      const BLND: Asset = new Asset(
+        BLEND_TESTNET_ASSET.asset_code,
+        BLEND_TESTNET_ASSET.asset_issuer
+      );
+      const blndAssetId = BLND.contractId(network.passphrase);
+      if (!assetStellarMetadata.has(blndAssetId)) {
+        let metadata = await getTokenMetadataFromTOML(horizonServer, {
+          assetId: blndAssetId,
+          tokenMetadata: {
+            asset: BLND,
+            name: BLND.code,
+            symbol: BLND.code,
+            decimals: 7,
+          },
+        } as Reserve);
+        assetStellarMetadata.set(blndAssetId, metadata);
+      }
+
+      const XLM: Asset = Asset.native();
+      const xlmAssetId = XLM.contractId(network.passphrase);
+      if (!assetStellarMetadata.has(xlmAssetId)) {
+        let metadata = await getTokenMetadataFromTOML(horizonServer, {
+          assetId: xlmAssetId,
+          tokenMetadata: {
+            asset: XLM,
+            name: XLM.code,
+            symbol: XLM.code,
+            decimals: 7,
+          },
+        } as Reserve);
+        assetStellarMetadata.set(xlmAssetId, metadata);
+      }
+
       set({
         backstop,
         pools,
+        assetStellarMetadata,
         latestLedger: latest_ledger,
         latestLedgerTimestamp: latest_ledger_close,
       });

@@ -10,6 +10,7 @@ export interface TxOverviewProps extends BoxProps {
   disabledType: AlertColor | undefined;
   reason: string | undefined;
   simResponse: SorobanRpc.Api.SimulateTransactionResponse | undefined;
+  extraContent?: React.ReactNode;
 }
 
 export interface SubmitError {
@@ -17,6 +18,7 @@ export interface SubmitError {
   isMaxDisabled: boolean;
   reason: string | undefined;
   disabledType: AlertColor | undefined;
+  extraContent?: React.ReactNode;
 }
 
 export const TxOverview: React.FC<TxOverviewProps> = ({
@@ -26,6 +28,7 @@ export const TxOverview: React.FC<TxOverviewProps> = ({
   simResponse,
   children,
   sx,
+  extraContent,
   ...props
 }) => {
   const { restore } = useWallet();
@@ -96,12 +99,24 @@ export const TxOverview: React.FC<TxOverviewProps> = ({
       );
     } else {
       return (
-        <Alert
-          severity={severity}
-          sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}
-        >
-          <Typography variant="body2">{message}</Typography>
-        </Alert>
+        <Box sx={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
+          <Alert
+            severity={severity}
+            sx={{
+              display: 'flex',
+              justifyContent: 'flex-start',
+              alignItems: !!extraContent ? 'start' : 'center',
+              width: '100%',
+            }}
+          >
+            <Typography variant="body2">{message}</Typography>
+            {!!extraContent && (
+              <Box sx={{ display: 'flex', gap: '1rem', width: '100%', flexDirection: 'column' }}>
+                {extraContent}
+              </Box>
+            )}
+          </Alert>
+        </Box>
       );
     }
   }
@@ -115,6 +130,9 @@ export const TxOverview: React.FC<TxOverviewProps> = ({
         backgroundColor: theme.palette.background.paper,
         zIndex: 12,
         borderRadius: '5px',
+        '& .MuiAlert-message': {
+          width: '100%',
+        },
       }}
     >
       {isDisabled ||

@@ -20,6 +20,7 @@ import {
 } from '@creit.tech/stellar-wallets-kit/build/main';
 import { getNetworkDetails as getFreighterNetwork } from '@stellar/freighter-api';
 import {
+  Asset,
   BASE_FEE,
   Operation,
   SorobanRpc,
@@ -91,6 +92,7 @@ export interface IWalletContext {
     lpTokenAddress: string
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse | undefined>;
   faucet(): Promise<undefined>;
+  createTrustline(asset: Asset): Promise<void>;
   getNetworkDetails(): Promise<Network & { horizonUrl: string }>;
 }
 
@@ -280,31 +282,31 @@ export const WalletProvider = ({ children = null as any }) => {
   async function simulateOperation(
     operation: xdr.Operation
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse> {
-    let account = await rpc.getAccount(walletAddress);
-    let tx_builder = new TransactionBuilder(account, {
+    const account = await rpc.getAccount(walletAddress);
+    const tx_builder = new TransactionBuilder(account, {
       networkPassphrase: network.passphrase,
       fee: BASE_FEE,
       timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
     }).addOperation(operation);
-    let transaction = tx_builder.build();
-    let simulation = await rpc.simulateTransaction(transaction);
+    const transaction = tx_builder.build();
+    const simulation = await rpc.simulateTransaction(transaction);
     return simulation;
   }
 
   async function invokeSorobanOperation<T>(operation: xdr.Operation, poolId?: string | undefined) {
     try {
-      let account = await rpc.getAccount(walletAddress);
-      let tx_builder = new TransactionBuilder(account, {
+      const account = await rpc.getAccount(walletAddress);
+      const tx_builder = new TransactionBuilder(account, {
         networkPassphrase: network.passphrase,
         fee: BASE_FEE,
         timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
       }).addOperation(operation);
-      let transaction = tx_builder.build();
-      let simResponse = await simulateOperation(operation);
-      let assembled_tx = SorobanRpc.assembleTransaction(transaction, simResponse).build();
-      let signedTx = await sign(assembled_tx.toXDR());
-      let tx = new Transaction(signedTx, network.passphrase);
-      let result = await sendTransaction(tx);
+      const transaction = tx_builder.build();
+      const simResponse = await simulateOperation(operation);
+      const assembled_tx = SorobanRpc.assembleTransaction(transaction, simResponse).build();
+      const signedTx = await sign(assembled_tx.toXDR());
+      const tx = new Transaction(signedTx, network.passphrase);
+      const result = await sendTransaction(tx);
       if (result) {
         try {
           await loadBlendData(true, poolId, walletAddress);
@@ -341,8 +343,8 @@ export const WalletProvider = ({ children = null as any }) => {
     sim: boolean
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse | undefined> {
     if (connected) {
-      let pool = new PoolContract(poolId);
-      let operation = xdr.Operation.fromXDR(pool.submit(submitArgs), 'base64');
+      const pool = new PoolContract(poolId);
+      const operation = xdr.Operation.fromXDR(pool.submit(submitArgs), 'base64');
       if (sim) {
         return await simulateOperation(operation);
       }
@@ -363,8 +365,8 @@ export const WalletProvider = ({ children = null as any }) => {
     sim: boolean
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse | undefined> {
     if (connected) {
-      let pool = new PoolContract(poolId);
-      let operation = xdr.Operation.fromXDR(pool.claim(claimArgs), 'base64');
+      const pool = new PoolContract(poolId);
+      const operation = xdr.Operation.fromXDR(pool.claim(claimArgs), 'base64');
       if (sim) {
         return await simulateOperation(operation);
       }
@@ -565,6 +567,35 @@ export const WalletProvider = ({ children = null as any }) => {
     }
   }
 
+  async function createTrustline(asset: Asset) {
+    try {
+      if (connected) {
+        const trustlineOperation = Operation.changeTrust({
+          asset: asset,
+        });
+        const account = await rpc.getAccount(walletAddress);
+        const tx_builder = new TransactionBuilder(account, {
+          networkPassphrase: network.passphrase,
+          fee: BASE_FEE,
+          timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
+        }).addOperation(trustlineOperation);
+        const transaction = tx_builder.build();
+        const signedTx = await sign(transaction.toXDR());
+        const tx = new Transaction(signedTx, network.passphrase);
+        const result = await sendTransaction(tx);
+        if (result) {
+          try {
+            await loadUserData(walletAddress);
+          } catch {
+            console.error('Failed reloading blend data for account: ', walletAddress);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to create trustline: ', e);
+    }
+  }
+
   async function getNetworkDetails() {
     try {
       const freighterDetails: any = await getFreighterNetwork();
@@ -604,6 +635,7 @@ export const WalletProvider = ({ children = null as any }) => {
         backstopMintByDepositTokenAmount,
         backstopMintByLPTokenAmount,
         faucet,
+        createTrustline,
         getNetworkDetails,
       }}
     >
