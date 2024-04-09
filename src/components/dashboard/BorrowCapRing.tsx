@@ -137,9 +137,15 @@ export const BorrowCapRing: React.FC<BorrowCapRingProps> = ({ poolId, ...props }
           width: '45px',
         }}
       >
-        <Tooltip title="The percentage of your borrow capacity being used" placement="top">
-          <HelpOutline sx={{ width: '15px', marginLeft: '4px', marginTop: '-4px' }} />
-        </Tooltip>
+        <Box>
+          <Tooltip
+            title="The percentage of your borrow capacity being used."
+            placement="top"
+            color="disabled"
+          >
+            <HelpOutline sx={{ width: '15px', marginTop: '-4px' }} />
+          </Tooltip>
+        </Box>
         <Box
           sx={{
             color: getColorByCapacity(capacityPercentage),

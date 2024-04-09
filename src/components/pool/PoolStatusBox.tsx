@@ -20,14 +20,14 @@ export const PoolStatusBox: React.FC<PoolStatusBoxProps> = ({
   const textVariant = textType == 'large' ? 'h2' : 'h4';
   const muiTitleColor = titleColor ? titleColor : 'text.secondary';
   const poolStatus = status ? status : 'Active';
-  const statusTextColor = poolStatus == 'Active' ? 'primary.main' : 'secondary.main';
-  const statusBackColor = poolStatus == 'Active' ? 'primary.opaque' : 'secondary.opaque';
+  const statusTextColor = poolStatus == 'Active' ? 'backstop.main' : 'secondary.main';
+  const statusBackColor = poolStatus == 'Active' ? 'backstop.opaque' : 'secondary.opaque';
   const statusIcon = poolStatus == 'Active' ? <CheckIcon /> : <AcUnitIcon />;
   return (
     <Box
       sx={{
         display: 'flex',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
         alignItems: 'center',
         gap: '6px',
         ...props.sx,
@@ -38,7 +38,6 @@ export const PoolStatusBox: React.FC<PoolStatusBoxProps> = ({
           backgroundColor: theme.palette.background.default,
           display: 'flex',
           flexDirection: 'column',
-          gap: '6px',
         }}
       >
         <Typography variant="body2" color={muiTitleColor}>
@@ -56,8 +55,8 @@ export const PoolStatusBox: React.FC<PoolStatusBoxProps> = ({
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            width: '36px',
-            height: '36px',
+            width: '30px',
+            height: '30px',
             borderRadius: '100px',
             padding: '4px',
           }}

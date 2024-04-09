@@ -1,7 +1,7 @@
 import { HelpOutline } from '@mui/icons-material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Skeleton, Tooltip, useTheme } from '@mui/material';
-import { ViewType, useSettings } from '../../contexts';
+import { useSettings, ViewType } from '../../contexts';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
 import { CustomButton } from '../common/CustomButton';
@@ -29,19 +29,15 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
   }
 
   return (
-    <Row>
+    <>
       {viewType === ViewType.REGULAR && (
-        <Section
-          type="alt"
-          width={SectionSize.FULL}
-          sx={{ display: 'flex', flexWrap: 'wrap', margin: 'none' }}
-        >
+        <Row sx={{ padding: '0px 12px' }}>
           <Box
             sx={{
-              width: '50%',
               display: 'flex',
               flexDirection: 'row',
               alignItems: 'center',
+              width: '50%',
             }}
           >
             <Box
@@ -53,12 +49,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                 borderRadius: '5px',
               }}
             >
-              <PoolStatusBox
-                titleColor="inherit"
-                type="large"
-                status="Active"
-                sx={{ width: '136px' }}
-              />
+              <PoolStatusBox titleColor="inherit" type="large" status="Active" />
             </Box>
             <Box
               sx={{
@@ -66,6 +57,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 marginLeft: 'auto',
+                marginRight: '23px',
               }}
             >
               <Box sx={{ display: 'flex', flexDirection: 'row' }}>
@@ -76,7 +68,11 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                   textColor="inherit"
                   type="large"
                 />
-                <Tooltip title="The amount of capital insuring this pool." placement="top">
+                <Tooltip
+                  title="The amount of capital insuring this pool."
+                  placement="top"
+                  color="disabled"
+                >
                   <HelpOutline sx={{ width: '15px', marginLeft: '4px', marginTop: '-4px' }} />
                 </Tooltip>
               </Box>
@@ -87,11 +83,13 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
               />
             </Box>
           </Box>
-          <LinkBox sx={{ width: '50%' }} to={{ pathname: '/backstop', query: { poolId: poolId } }}>
+          <LinkBox
+            sx={{ width: '45%', display: 'flex' }}
+            to={{ pathname: '/backstop', query: { poolId: poolId } }}
+          >
             <CustomButton
               sx={{
                 width: '100%',
-                margin: '6px',
                 padding: '12px',
                 color: theme.palette.text.primary,
                 backgroundColor: theme.palette.background.paper,
@@ -117,28 +115,22 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
               <ArrowForwardIcon fontSize="inherit" />
             </CustomButton>
           </LinkBox>
-        </Section>
+        </Row>
       )}
       {viewType !== ViewType.REGULAR && (
-        <Section
-          type="alt"
-          width={SectionSize.FULL}
+        <Row
           sx={{
             display: 'flex',
             flexDirection: 'column',
-            margin: 'none',
             padding: '0px 12px',
-            width: '100%',
+            gap: '12px',
           }}
         >
           <Box
             sx={{
-              width: '100%',
               display: 'flex',
               flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginTop: '12px',
+              justifyContent: 'space-around',
             }}
           >
             <Box
@@ -146,6 +138,18 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
+                backgroundColor: theme.palette.background.default,
+                borderRadius: '5px',
+              }}
+            >
+              <PoolStatusBox titleColor="inherit" type="large" status="Active" />
+            </Box>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginRight: '23px',
               }}
             >
               <Box sx={{ display: 'flex', flexDirection: 'row' }}>
@@ -156,7 +160,11 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                   textColor="inherit"
                   type="large"
                 />
-                <Tooltip title="The amount of capital insuring this pool." placement="top">
+                <Tooltip
+                  title="The amount of capital insuring this pool."
+                  placement="top"
+                  color="disabled"
+                >
                   <HelpOutline sx={{ width: '15px', marginLeft: '4px', marginTop: '-4px' }} />
                 </Tooltip>
               </Box>
@@ -164,23 +172,6 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
                 src={'/icons/dashboard/bkstp_size.svg'}
                 alt={`backstop size icon`}
                 sx={{ marginLeft: '12px' }}
-              />
-            </Box>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                backgroundColor: theme.palette.background.default,
-                padding: '12px',
-                borderRadius: '5px',
-              }}
-            >
-              <PoolStatusBox
-                titleColor="inherit"
-                type="large"
-                status="Active"
-                sx={{ width: '136px' }}
               />
             </Box>
           </Box>
@@ -200,7 +191,11 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
               }}
             >
               <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                <Icon src={'/icons/dashboard/emissions_icon.svg'} alt={`emissions icon`} />
+                <Icon
+                  src={'/icons/dashboard/emissions_icon.svg'}
+                  alt={`emissions icon`}
+                  sx={{ marginRight: '12px' }}
+                />
                 <StackedText
                   title="Your Backstop Balance"
                   titleColor="inherit"
@@ -212,8 +207,8 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
               <ArrowForwardIcon fontSize="inherit" />
             </CustomButton>
           </LinkBox>
-        </Section>
+        </Row>
       )}
-    </Row>
+    </>
   );
 };
