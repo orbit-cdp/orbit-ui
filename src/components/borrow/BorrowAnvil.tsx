@@ -26,7 +26,7 @@ import { ValueChange } from '../common/ValueChange';
 
 export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, poolSubmit, txStatus, txType } = useWallet();
+  const { connected, walletAddress, poolSubmit, txStatus, txType, createTrustline } = useWallet();
 
   const poolData = useStore((state) => state.pools.get(poolId));
   const userPoolData = useStore((state) => state.userPoolData.get(poolId));
@@ -81,13 +81,23 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     newPositionEstimate && Number.isFinite(newPositionEstimate?.borrowLimit)
       ? newPositionEstimate?.borrowLimit
       : 0;
+  const AddTrustlineButton = (
+    <OpaqueButton
+      onClick={handleAddAssetTrustline}
+      palette={theme.palette.warning}
+      sx={{ padding: '6px 24px', margin: '12px auto' }}
+    >
+      Add {reserve?.tokenMetadata.asset?.code} Trustline
+    </OpaqueButton>
+  );
   // verify that the user can act
-  const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent } = useMemo(() => {
     const errorProps: SubmitError = {
       isSubmitDisabled: false,
       isMaxDisabled: false,
       reason: undefined,
       disabledType: undefined,
+      extraContent: undefined,
     };
 
     const hasTokenTrustline = !requiresTrustline(userAccount, reserve?.tokenMetadata?.asset);
@@ -95,9 +105,9 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     if (!hasTokenTrustline) {
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = true;
-      errorProps.reason =
-        'You need a trustline for this asset in order to borrow it. Add the asset to your wallet to create one.';
+      errorProps.reason = 'You need a trustline for this asset in order to borrow it.';
       errorProps.disabledType = 'warning';
+      errorProps.extraContent = AddTrustlineButton;
     } else if (!toBorrow) {
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
@@ -145,6 +155,13 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
       return await poolSubmit(poolId, submitArgs, sim);
     }
   };
+
+  async function handleAddAssetTrustline() {
+    if (connected && reserve?.tokenMetadata?.asset) {
+      const reserveAsset = reserve?.tokenMetadata?.asset;
+      await createTrustline(reserveAsset);
+    }
+  }
 
   return (
     <Row>
@@ -203,6 +220,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           isDisabled={isSubmitDisabled}
           disabledType={disabledType}
           reason={reason}
+          extraContent={extraContent}
         >
           <Value title="Amount to borrow" value={`${toBorrow ?? '0'} ${symbol}`} />
           <ValueChange

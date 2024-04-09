@@ -13,6 +13,7 @@ import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
+import { requiresTrustline } from '../../utils/horizon';
 import { scaleInputToBigInt } from '../../utils/scval';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
@@ -25,11 +26,11 @@ import { ValueChange } from '../common/ValueChange';
 
 export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, poolSubmit, txStatus, txType } = useWallet();
+  const { connected, walletAddress, poolSubmit, txStatus, txType, createTrustline } = useWallet();
 
   const poolData = useStore((state) => state.pools.get(poolId));
   const userPoolData = useStore((state) => state.userPoolData.get(poolId));
-
+  const userAccount = useStore((state) => state.account);
   const [toWithdrawSubmit, setToWithdrawSubmit] = useState<string | undefined>(undefined);
   const [toWithdraw, setToWithdraw] = useState<string>('');
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
@@ -70,15 +71,33 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toWithdraw) != 0) {
     setToWithdraw('');
   }
+  const AddTrustlineButton = (
+    <OpaqueButton
+      onClick={handleAddAssetTrustline}
+      palette={theme.palette.warning}
+      sx={{ padding: '6px 24px', margin: '12px auto' }}
+    >
+      Add {reserve?.tokenMetadata.asset?.code} Trustline
+    </OpaqueButton>
+  );
   // verify that the user can act
-  const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent } = useMemo(() => {
     const errorProps: SubmitError = {
       isSubmitDisabled: false,
       isMaxDisabled: false,
       reason: undefined,
       disabledType: undefined,
+      extraContent: undefined,
     };
-    if (!toWithdraw) {
+    const hasTokenTrustline = !requiresTrustline(userAccount, reserve?.tokenMetadata?.asset);
+
+    if (!hasTokenTrustline) {
+      errorProps.isSubmitDisabled = true;
+      errorProps.isMaxDisabled = true;
+      errorProps.reason = 'You need a trustline for this asset in order to borrow it.';
+      errorProps.disabledType = 'warning';
+      errorProps.extraContent = AddTrustlineButton;
+    } else if (!toWithdraw) {
       errorProps.isSubmitDisabled = true;
       errorProps.isMaxDisabled = false;
       errorProps.reason = 'Please enter an amount to withdraw.';
@@ -146,6 +165,13 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
     }
   };
 
+  async function handleAddAssetTrustline() {
+    if (connected && reserve?.tokenMetadata?.asset) {
+      const reserveAsset = reserve?.tokenMetadata?.asset;
+      await createTrustline(reserveAsset);
+    }
+  }
+
   return (
     <Row>
       <Section
@@ -203,6 +229,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
           isDisabled={isSubmitDisabled}
           disabledType={disabledType}
           reason={reason}
+          extraContent={extraContent}
         >
           <Value title="Amount to withdraw" value={`${toWithdraw ?? '0'} ${symbol}`} />
           <ValueChange
