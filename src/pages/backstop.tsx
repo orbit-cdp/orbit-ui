@@ -2,7 +2,7 @@ import { BackstopClaimArgs, parseResult } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import HelpOutline from '@mui/icons-material/HelpOutline';
 import { Box, Tooltip, Typography } from '@mui/material';
-import { Address, SorobanRpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
+import { Address, Asset, SorobanRpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -23,10 +23,18 @@ import { getTokenBalance } from '../external/token';
 import { useStore } from '../store/store';
 import theme from '../theme';
 import { toBalance, toPercentage } from '../utils/formatter';
+import { requiresTrustline } from '../utils/horizon';
+import { BLEND_TESTNET_ASSET } from '../utils/token_display';
 
 const Backstop: NextPage = () => {
   const router = useRouter();
-  const { connected, walletAddress, backstopClaim, backstopMintByDepositTokenAmount } = useWallet();
+  const {
+    connected,
+    walletAddress,
+    backstopClaim,
+    backstopMintByDepositTokenAmount,
+    createTrustline,
+  } = useWallet();
   const loadBlendData = useStore((state) => state.loadBlendData);
   const network = useStore((state) => state.network);
   const rpcServer = useStore((state) => state.rpcServer());
@@ -42,7 +50,9 @@ const Backstop: NextPage = () => {
   const userBackstopData = useStore((state) => state.backstopUserData);
   const userEmissions = userBackstopData?.estimates.get(safePoolId)?.emissions;
   const balancesByAddress = useStore((state) => state.balances);
-
+  const userAccount = useStore((state) => state.account);
+  const BLNDAsset = new Asset(BLEND_TESTNET_ASSET.asset_code, BLEND_TESTNET_ASSET.asset_issuer);
+  const hasBLNDTrustline = !requiresTrustline(userAccount, BLNDAsset);
   const estBackstopApy =
     backstopPoolData && poolData
       ? ((poolData.config.backstopRate / 1e7) *
@@ -61,6 +71,12 @@ const Backstop: NextPage = () => {
       await loadBlendData(true, safePoolId, walletAddress);
     }
   };
+
+  async function handleCreateTrustlineClick() {
+    if (connected) {
+      await createTrustline(BLNDAsset);
+    }
+  }
 
   async function getLPEstimate(amount: bigint, depositTokenAddress: string) {
     let response = await backstopMintByDepositTokenAmount(
@@ -188,7 +204,7 @@ const Backstop: NextPage = () => {
         </Section>
       </Row>
 
-      {!!userEmissions && (
+      {!!userEmissions && hasBLNDTrustline && (
         <Row>
           <Section
             width={SectionSize.FULL}
@@ -223,6 +239,73 @@ const Backstop: NextPage = () => {
                     </Typography>
                     <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
                       BLND
+                    </Typography>
+                  </Box>
+                </Box>
+                <ArrowForwardIcon fontSize="inherit" />
+              </CustomButton>
+            </Row>
+          </Section>
+        </Row>
+      )}
+      {!hasBLNDTrustline && (
+        <Row>
+          <Section
+            width={SectionSize.FULL}
+            sx={{
+              flexDirection: 'column',
+              paddingTop: '12px',
+            }}
+          >
+            <Typography variant="body2" sx={{ margin: '6px', color: theme.palette.warning.main }}>
+              Claim Pool Emissions{' '}
+            </Typography>
+            <Row>
+              <CustomButton
+                sx={{
+                  width: '100%',
+                  margin: '6px',
+                  padding: '12px',
+                  color: theme.palette.text.primary,
+                  backgroundColor: theme.palette.background.default,
+                  '&:hover': {
+                    color: theme.palette.warning.main,
+                  },
+                }}
+                onClick={handleCreateTrustlineClick}
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    alignItems: 'center',
+                    gap: '1rem',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      borderRadius: '50%',
+                      backgroundColor: theme.palette.warning.opaque,
+                      width: '32px',
+                      height: '32px',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Icon
+                      alt="BLND Token Icon"
+                      src="/icons/tokens/blnd-yellow.svg"
+                      sx={{
+                        width: '24px',
+                        height: '24px',
+                      }}
+                      color="warning"
+                    />
+                  </Box>
+                  <Box sx={{ display: 'flex', flexDirection: 'row', gap: '6px' }}>
+                    <Typography variant="h4" sx={{ marginRight: '6px' }}>
+                      Add BLND Trustline
                     </Typography>
                   </Box>
                 </Box>
