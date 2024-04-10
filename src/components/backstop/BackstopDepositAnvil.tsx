@@ -1,4 +1,4 @@
-import { BackstopContract, PoolBackstopActionArgs, parseResult } from '@blend-capital/blend-sdk';
+import { BackstopContract, parseResult, PoolBackstopActionArgs } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
 import { useMemo, useState } from 'react';
@@ -7,12 +7,14 @@ import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
 import { scaleInputToBigInt } from '../../utils/scval';
+import { getErrorFromSim, SubmitError } from '../../utils/txSim';
+import { AnvilAlert } from '../common/AnvilAlert';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
-import { SubmitError, TxOverview } from '../common/TxOverview';
+import { TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
@@ -44,21 +46,22 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
   });
 
   // verify that the user can act
-  const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
-    const errorProps: SubmitError = {
-      isSubmitDisabled: false,
-      isMaxDisabled: false,
-      reason: undefined,
-      disabledType: undefined,
-    };
-    if (toDeposit.split('.')[1]?.length > decimals) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
-      errorProps.disabledType = 'warning';
-    }
-    return errorProps;
-  }, [toDeposit, userBalance]);
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError, requiresRestore } =
+    useMemo(
+      () =>
+        getErrorFromSim(simResponse, (): Partial<SubmitError> => {
+          const errorProps: Partial<SubmitError> = {};
+          if (toDeposit.split('.')[1]?.length > decimals) {
+            errorProps.isError = true;
+            errorProps.isSubmitDisabled = true;
+            errorProps.isMaxDisabled = false;
+            errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
+            errorProps.disabledType = 'warning';
+          }
+          return errorProps;
+        }),
+      [simResponse, toDeposit, userBalance]
+    );
 
   const handleDepositMax = () => {
     if (userBackstopData) {
@@ -136,23 +139,22 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
             </Typography>
           </Box>
         </Box>
-        <TxOverview
-          isDisabled={isSubmitDisabled}
-          disabledType={disabledType}
-          reason={reason}
-          simResponse={simResponse}
-        >
-          <Value title="Amount to deposit" value={`${toDeposit ?? '0'} BLND-USDC LP`} />
-          <ValueChange
-            title="Your total deposit"
-            curValue={`${toBalance(userBackstopEst?.tokens)} BLND-USDC LP`}
-            newValue={`${toBalance(
-              parsedSimResult && userBackstopEst
-                ? userBackstopEst.tokens + Number(parsedSimResult) * sharesToTokens
-                : 0
-            )} BLND-USDC LP`}
-          />
-        </TxOverview>
+        {!isError && (
+          <TxOverview simResponse={simResponse} requiresRestore={requiresRestore}>
+            <Value title="Amount to deposit" value={`${toDeposit ?? '0'} BLND-USDC LP`} />
+            <ValueChange
+              title="Your total deposit"
+              curValue={`${toBalance(userBackstopEst?.tokens)} BLND-USDC LP`}
+              newValue={`${toBalance(
+                parsedSimResult && userBackstopEst
+                  ? userBackstopEst.tokens + Number(parsedSimResult) * sharesToTokens
+                  : 0
+              )} BLND-USDC LP`}
+            />
+          </TxOverview>
+        )}
+
+        {isError && <AnvilAlert severity={disabledType} message={reason} />}
       </Section>
     </Row>
   );

@@ -15,12 +15,14 @@ import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { requiresTrustline } from '../../utils/horizon';
 import { scaleInputToBigInt } from '../../utils/scval';
+import { SubmitError } from '../../utils/txSim';
+import { AnvilAlert } from '../common/AnvilAlert';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
-import { SubmitError, TxOverview } from '../common/TxOverview';
+import { TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
@@ -81,37 +83,34 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
     </OpaqueButton>
   );
   // verify that the user can act
-  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent } = useMemo(() => {
-    const errorProps: SubmitError = {
-      isSubmitDisabled: false,
-      isMaxDisabled: false,
-      reason: undefined,
-      disabledType: undefined,
-      extraContent: undefined,
-    };
-    const hasTokenTrustline = !requiresTrustline(userAccount, reserve?.tokenMetadata?.asset);
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent, isError } =
+    useMemo(() => {
+      const errorProps: Partial<SubmitError> = {};
+      const hasTokenTrustline = !requiresTrustline(userAccount, reserve?.tokenMetadata?.asset);
 
-    if (!hasTokenTrustline) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = true;
-      errorProps.reason = 'You need a trustline for this asset in order to borrow it.';
-      errorProps.disabledType = 'warning';
-      errorProps.extraContent = AddTrustlineButton;
-    } else if (!toWithdraw) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = 'Please enter an amount to withdraw.';
-      errorProps.disabledType = 'info';
-    } else if (toWithdraw.split('.')[1]?.length > decimals) {
-      setValidDecimals(false);
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
-      errorProps.disabledType = 'warning';
-    }
-
-    return errorProps;
-  }, [toWithdraw, simResponse]);
+      if (!hasTokenTrustline) {
+        errorProps.isSubmitDisabled = true;
+        errorProps.isError = true;
+        errorProps.isMaxDisabled = true;
+        errorProps.reason = 'You need a trustline for this asset in order to borrow it.';
+        errorProps.disabledType = 'warning';
+        errorProps.extraContent = AddTrustlineButton;
+      } else if (!toWithdraw) {
+        errorProps.isSubmitDisabled = true;
+        errorProps.isError = true;
+        errorProps.isMaxDisabled = false;
+        errorProps.reason = 'Please enter an amount to withdraw.';
+        errorProps.disabledType = 'info';
+      } else if (toWithdraw.split('.')[1]?.length > decimals) {
+        setValidDecimals(false);
+        errorProps.isSubmitDisabled = true;
+        errorProps.isError = true;
+        errorProps.isMaxDisabled = false;
+        errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
+        errorProps.disabledType = 'warning';
+      }
+      return errorProps;
+    }, [toWithdraw, simResponse]);
   // verify that the user can act
 
   const handleWithdrawAmountChange = (withdrawInput: string) => {
@@ -224,36 +223,35 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
             </Typography>
           </Box>
         </Box>
-        <TxOverview
-          simResponse={simResponse}
-          isDisabled={isSubmitDisabled}
-          disabledType={disabledType}
-          reason={reason}
-          extraContent={extraContent}
-        >
-          <Value title="Amount to withdraw" value={`${toWithdraw ?? '0'} ${symbol}`} />
-          <ValueChange
-            title="Your total supplied"
-            curValue={`${toBalance(
-              userPoolData?.positionEstimates.collateral.get(assetId) ?? 0,
-              decimals
-            )} ${symbol}`}
-            newValue={`${toBalance(
-              newPositionEstimate?.collateral.get(assetId) ?? 0,
-              decimals
-            )} ${symbol}`}
-          />
-          <ValueChange
-            title="Borrow capacity"
-            curValue={`$${toBalance(curBorrowCap)}`}
-            newValue={`$${toBalance(nextBorrowCap)}`}
-          />
-          <ValueChange
-            title="Borrow limit"
-            curValue={toPercentage(curBorrowLimit)}
-            newValue={toPercentage(nextBorrowLimit)}
-          />
-        </TxOverview>
+        {!isError && (
+          <TxOverview simResponse={simResponse}>
+            <Value title="Amount to withdraw" value={`${toWithdraw ?? '0'} ${symbol}`} />
+            <ValueChange
+              title="Your total supplied"
+              curValue={`${toBalance(
+                userPoolData?.positionEstimates.collateral.get(assetId) ?? 0,
+                decimals
+              )} ${symbol}`}
+              newValue={`${toBalance(
+                newPositionEstimate?.collateral.get(assetId) ?? 0,
+                decimals
+              )} ${symbol}`}
+            />
+            <ValueChange
+              title="Borrow capacity"
+              curValue={`$${toBalance(curBorrowCap)}`}
+              newValue={`$${toBalance(nextBorrowCap)}`}
+            />
+            <ValueChange
+              title="Borrow limit"
+              curValue={toPercentage(curBorrowLimit)}
+              newValue={toPercentage(nextBorrowLimit)}
+            />
+          </TxOverview>
+        )}
+        {isError && (
+          <AnvilAlert severity={disabledType} message={reason} extraContent={extraContent} />
+        )}
       </Section>
     </Row>
   );

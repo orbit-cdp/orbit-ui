@@ -1,10 +1,10 @@
 import {
+  parseResult,
   PoolContract,
   PositionEstimates,
   RequestType,
   SubmitArgs,
   UserPositions,
-  parseResult,
 } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
@@ -15,12 +15,14 @@ import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { requiresTrustline } from '../../utils/horizon';
 import { scaleInputToBigInt } from '../../utils/scval';
+import { getErrorFromSim, SubmitError } from '../../utils/txSim';
+import { AnvilAlert } from '../common/AnvilAlert';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
-import { SubmitError, TxOverview } from '../common/TxOverview';
+import { TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
@@ -91,37 +93,44 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     </OpaqueButton>
   );
   // verify that the user can act
-  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent } = useMemo(() => {
-    const errorProps: SubmitError = {
-      isSubmitDisabled: false,
-      isMaxDisabled: false,
-      reason: undefined,
-      disabledType: undefined,
-      extraContent: undefined,
-    };
-
-    const hasTokenTrustline = !requiresTrustline(userAccount, reserve?.tokenMetadata?.asset);
-
-    if (!hasTokenTrustline) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = true;
-      errorProps.reason = 'You need a trustline for this asset in order to borrow it.';
-      errorProps.disabledType = 'warning';
-      errorProps.extraContent = AddTrustlineButton;
-    } else if (!toBorrow) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = 'Please enter an amount to borrow.';
-      errorProps.disabledType = 'info';
-    } else if (toBorrow.split('.')[1]?.length > decimals) {
-      setValidDecimals(false);
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
-      errorProps.disabledType = 'warning';
-    }
-    return errorProps;
-  }, [toBorrow, simResponse, userPoolData?.positionEstimates]);
+  const {
+    isSubmitDisabled,
+    isMaxDisabled,
+    reason,
+    disabledType,
+    extraContent,
+    requiresRestore,
+    isError,
+  } = useMemo(
+    () =>
+      getErrorFromSim(simResponse, () => {
+        const errorProps: Partial<SubmitError> = {};
+        const hasTokenTrustline = !requiresTrustline(userAccount, reserve?.tokenMetadata?.asset);
+        if (!hasTokenTrustline) {
+          errorProps.isSubmitDisabled = true;
+          errorProps.isError = true;
+          errorProps.isMaxDisabled = true;
+          errorProps.reason = 'You need a trustline for this asset in order to borrow it.';
+          errorProps.disabledType = 'warning';
+          errorProps.extraContent = AddTrustlineButton;
+        } else if (!toBorrow) {
+          errorProps.isSubmitDisabled = true;
+          errorProps.isError = true;
+          errorProps.isMaxDisabled = false;
+          errorProps.reason = 'Please enter an amount to borrow.';
+          errorProps.disabledType = 'info';
+        } else if (toBorrow.split('.')[1]?.length > decimals) {
+          setValidDecimals(false);
+          errorProps.isSubmitDisabled = true;
+          errorProps.isError = true;
+          errorProps.isMaxDisabled = false;
+          errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
+          errorProps.disabledType = 'warning';
+        }
+        return errorProps;
+      }),
+    [toBorrow, simResponse, userPoolData?.positionEstimates]
+  );
 
   const handleBorrowMax = () => {
     if (reserve && userPoolData) {
@@ -215,36 +224,35 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
             </Typography>
           </Box>
         </Box>
-        <TxOverview
-          simResponse={simResponse}
-          isDisabled={isSubmitDisabled}
-          disabledType={disabledType}
-          reason={reason}
-          extraContent={extraContent}
-        >
-          <Value title="Amount to borrow" value={`${toBorrow ?? '0'} ${symbol}`} />
-          <ValueChange
-            title="Your total borrowed"
-            curValue={`${toBalance(
-              userPoolData?.positionEstimates?.liabilities?.get(assetId) ?? 0,
-              decimals
-            )} ${symbol}`}
-            newValue={`${toBalance(
-              newPositionEstimate?.liabilities.get(assetId) ?? 0,
-              decimals
-            )} ${symbol}`}
-          />
-          <ValueChange
-            title="Borrow capacity"
-            curValue={`${toBalance(curBorrowCap)} ${symbol}`}
-            newValue={`${toBalance(nextBorrowCap)} ${symbol}`}
-          />
-          <ValueChange
-            title="Borrow limit"
-            curValue={toPercentage(curBorrowLimit)}
-            newValue={toPercentage(nextBorrowLimit)}
-          />
-        </TxOverview>
+        {!isError && (
+          <TxOverview simResponse={simResponse} requiresRestore={requiresRestore}>
+            <Value title="Amount to borrow" value={`${toBorrow ?? '0'} ${symbol}`} />
+            <ValueChange
+              title="Your total borrowed"
+              curValue={`${toBalance(
+                userPoolData?.positionEstimates?.liabilities?.get(assetId) ?? 0,
+                decimals
+              )} ${symbol}`}
+              newValue={`${toBalance(
+                newPositionEstimate?.liabilities.get(assetId) ?? 0,
+                decimals
+              )} ${symbol}`}
+            />
+            <ValueChange
+              title="Borrow capacity"
+              curValue={`${toBalance(curBorrowCap)} ${symbol}`}
+              newValue={`${toBalance(nextBorrowCap)} ${symbol}`}
+            />
+            <ValueChange
+              title="Borrow limit"
+              curValue={toPercentage(curBorrowLimit)}
+              newValue={toPercentage(nextBorrowLimit)}
+            />
+          </TxOverview>
+        )}
+        {isError && (
+          <AnvilAlert severity={disabledType} message={reason} extraContent={extraContent} />
+        )}
       </Section>
     </Row>
   );

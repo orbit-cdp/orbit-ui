@@ -15,12 +15,14 @@ import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { getAssetReserve } from '../../utils/horizon';
 import { scaleInputToBigInt } from '../../utils/scval';
+import { SubmitError } from '../../utils/txSim';
+import { AnvilAlert } from '../common/AnvilAlert';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
-import { SubmitError, TxOverview } from '../common/TxOverview';
+import { TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
@@ -79,21 +81,18 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   }
 
   // verify that the user can act
-  const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
-    const errorProps: SubmitError = {
-      isSubmitDisabled: false,
-      isMaxDisabled: false,
-      reason: undefined,
-      disabledType: undefined,
-    };
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError } = useMemo(() => {
+    const errorProps: Partial<SubmitError> = {};
     if (!toLend) {
       errorProps.isSubmitDisabled = true;
+      errorProps.isError = true;
       errorProps.isMaxDisabled = false;
       errorProps.reason = 'Please enter an amount to lend.';
       errorProps.disabledType = 'info';
     } else if (toLend.split('.')[1]?.length > decimals) {
       setValidDecimals(false);
       errorProps.isSubmitDisabled = true;
+      errorProps.isError = true;
       errorProps.isMaxDisabled = false;
       errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
       errorProps.disabledType = 'warning';
@@ -178,35 +177,33 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
             </Typography>
           </Box>
         </Box>
-        <TxOverview
-          simResponse={simResponse}
-          isDisabled={isSubmitDisabled}
-          disabledType={disabledType}
-          reason={reason}
-        >
-          <Value title="Amount to supply" value={`${toLend ?? '0'} ${symbol}`} />
-          <ValueChange
-            title="Your total supplied"
-            curValue={`${toBalance(
-              userPoolData?.positionEstimates?.collateral?.get(assetId) ?? 0,
-              decimals
-            )} ${symbol}`}
-            newValue={`${toBalance(
-              newPositionEstimate?.collateral.get(assetId) ?? 0,
-              decimals
-            )} ${symbol}`}
-          />
-          <ValueChange
-            title="Borrow capacity"
-            curValue={`$${toBalance(curBorrowCap)}`}
-            newValue={`$${toBalance(nextBorrowCap)}`}
-          />
-          <ValueChange
-            title="Borrow limit"
-            curValue={toPercentage(curBorrowLimit)}
-            newValue={toPercentage(nextBorrowLimit)}
-          />
-        </TxOverview>
+        {!isError && (
+          <TxOverview simResponse={simResponse}>
+            <Value title="Amount to supply" value={`${toLend ?? '0'} ${symbol}`} />
+            <ValueChange
+              title="Your total supplied"
+              curValue={`${toBalance(
+                userPoolData?.positionEstimates?.collateral?.get(assetId) ?? 0,
+                decimals
+              )} ${symbol}`}
+              newValue={`${toBalance(
+                newPositionEstimate?.collateral.get(assetId) ?? 0,
+                decimals
+              )} ${symbol}`}
+            />
+            <ValueChange
+              title="Borrow capacity"
+              curValue={`$${toBalance(curBorrowCap)}`}
+              newValue={`$${toBalance(nextBorrowCap)}`}
+            />
+            <ValueChange
+              title="Borrow limit"
+              curValue={toPercentage(curBorrowLimit)}
+              newValue={toPercentage(nextBorrowLimit)}
+            />
+          </TxOverview>
+        )}
+        {isError && <AnvilAlert severity={disabledType} message={reason} />}
       </Section>
     </Row>
   );

@@ -1,39 +1,20 @@
-import { ContractErrorType, parseError } from '@blend-capital/blend-sdk';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import { Alert, AlertColor, Box, BoxProps, Typography } from '@mui/material';
+import { Box, BoxProps, Typography } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
 import { useWallet } from '../../contexts/wallet';
 import theme from '../../theme';
 import { OpaqueButton } from './OpaqueButton';
 export interface TxOverviewProps extends BoxProps {
-  isDisabled: boolean;
-  disabledType: AlertColor | undefined;
-  reason: string | undefined;
   simResponse: SorobanRpc.Api.SimulateTransactionResponse | undefined;
-  extraContent?: React.ReactNode;
-}
-
-export interface SubmitError {
-  isSubmitDisabled: boolean;
-  isMaxDisabled: boolean;
-  reason: string | undefined;
-  disabledType: AlertColor | undefined;
-  extraContent?: React.ReactNode;
+  requiresRestore?: boolean;
 }
 
 export const TxOverview: React.FC<TxOverviewProps> = ({
-  isDisabled,
-  disabledType,
-  reason,
   simResponse,
   children,
-  sx,
-  extraContent,
-  ...props
+  requiresRestore,
 }) => {
   const { restore } = useWallet();
-  const severity = disabledType ?? 'warning';
-  const message = reason ?? 'Unable to process your transaction.';
 
   function handleRestore() {
     if (simResponse && SorobanRpc.Api.isSimulationRestore(simResponse)) {
@@ -41,9 +22,21 @@ export const TxOverview: React.FC<TxOverviewProps> = ({
     }
   }
 
-  function displayError() {
-    if (simResponse && SorobanRpc.Api.isSimulationRestore(simResponse)) {
-      return (
+  return (
+    <Box
+      sx={{
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: theme.palette.background.paper,
+        zIndex: 12,
+        borderRadius: '5px',
+        '& .MuiAlert-message': {
+          width: '100%',
+        },
+      }}
+    >
+      {requiresRestore ? (
         <Box
           sx={{
             width: '100%',
@@ -86,60 +79,6 @@ export const TxOverview: React.FC<TxOverviewProps> = ({
             Restore
           </OpaqueButton>
         </Box>
-      );
-    } else if (simResponse && SorobanRpc.Api.isSimulationError(simResponse)) {
-      const error = parseError(simResponse);
-      return (
-        <Alert
-          severity={'warning'}
-          sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}
-        >
-          <Typography variant="body2">{ContractErrorType[error.type]}</Typography>
-        </Alert>
-      );
-    } else {
-      return (
-        <Box sx={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
-          <Alert
-            severity={severity}
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              alignItems: !!extraContent ? 'start' : 'center',
-              width: '100%',
-            }}
-          >
-            <Typography variant="body2">{message}</Typography>
-            {!!extraContent && (
-              <Box sx={{ display: 'flex', gap: '1rem', width: '100%', flexDirection: 'column' }}>
-                {extraContent}
-              </Box>
-            )}
-          </Alert>
-        </Box>
-      );
-    }
-  }
-
-  return (
-    <Box
-      sx={{
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: theme.palette.background.paper,
-        zIndex: 12,
-        borderRadius: '5px',
-        '& .MuiAlert-message': {
-          width: '100%',
-        },
-      }}
-    >
-      {isDisabled ||
-      (simResponse &&
-        (SorobanRpc.Api.isSimulationError(simResponse) ||
-          SorobanRpc.Api.isSimulationRestore(simResponse))) ? (
-        displayError()
       ) : (
         <>
           <Typography
