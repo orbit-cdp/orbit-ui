@@ -1,12 +1,12 @@
 import {
+  parseResult,
   PoolContract,
   PositionEstimates,
   RequestType,
   SubmitArgs,
   UserPositions,
-  parseResult,
 } from '@blend-capital/blend-sdk';
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
 import { useMemo, useState } from 'react';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
@@ -15,18 +15,20 @@ import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { getAssetReserve } from '../../utils/horizon';
 import { scaleInputToBigInt } from '../../utils/scval';
+import { getErrorFromSim, SubmitError } from '../../utils/txSim';
+import { AnvilAlert } from '../common/AnvilAlert';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
-import { SubmitError, TxOverview } from '../common/TxOverview';
+import { TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
 export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, poolSubmit, txStatus, txType } = useWallet();
+  const { connected, walletAddress, poolSubmit, txStatus, txType, isLoading } = useWallet();
 
   const account = useStore((state) => state.account);
   const poolData = useStore((state) => state.pools.get(poolId));
@@ -83,28 +85,29 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
     setToRepay('');
   }
   // verify that the user can act
-  const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
-    const errorProps: SubmitError = {
-      isSubmitDisabled: false,
-      isMaxDisabled: false,
-      reason: undefined,
-      disabledType: undefined,
-    };
-    if (!toRepay) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = 'Please enter an amount to repay.';
-      errorProps.disabledType = 'info';
-    } else if (toRepay.split('.')[1]?.length > decimals) {
-      setValidDecimals(false);
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
-      errorProps.disabledType = 'warning';
-    }
-
-    return errorProps;
-  }, [freeUserBalanceScaled, toRepay, simResponse]);
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError, requiresRestore } =
+    useMemo(
+      () =>
+        getErrorFromSim(simResponse, () => {
+          const errorProps: Partial<SubmitError> = {};
+          if (!toRepay) {
+            errorProps.isSubmitDisabled = true;
+            errorProps.isError = true;
+            errorProps.isMaxDisabled = false;
+            errorProps.reason = 'Please enter an amount to repay.';
+            errorProps.disabledType = 'info';
+          } else if (toRepay.split('.')[1]?.length > decimals) {
+            setValidDecimals(false);
+            errorProps.isSubmitDisabled = true;
+            errorProps.isError = true;
+            errorProps.isMaxDisabled = false;
+            errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
+            errorProps.disabledType = 'warning';
+          }
+          return errorProps;
+        }),
+      [freeUserBalanceScaled, toRepay, simResponse]
+    );
 
   const handleRepayMax = () => {
     if (userPoolData) {
@@ -185,38 +188,55 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
             </Typography>
           </Box>
         </Box>
-        <TxOverview
-          simResponse={simResponse}
-          isDisabled={isSubmitDisabled}
-          disabledType={disabledType}
-          reason={reason}
-        >
-          <Value title="Amount to repay" value={`${toRepay ?? '0'} ${symbol}`} />
-          {returnedTokens != 0 && (
-            <Value title="Amount to return" value={`${toBalance(returnedTokens)} ${symbol}`} />
-          )}
-          <ValueChange
-            title="Your total borrowed"
-            curValue={`${toBalance(
-              userPoolData?.positionEstimates?.liabilities?.get(assetId) ?? 0,
-              decimals
-            )} ${symbol}`}
-            newValue={`${toBalance(
-              Math.max(newPositionEstimate?.liabilities.get(assetId) ?? 0, 0),
-              decimals
-            )} ${symbol}`}
-          />
-          <ValueChange
-            title="Borrow capacity"
-            curValue={`$${toBalance(curBorrowCap)}`}
-            newValue={`$${toBalance(nextBorrowCap)}`}
-          />
-          <ValueChange
-            title="Borrow limit"
-            curValue={toPercentage(curBorrowLimit)}
-            newValue={toPercentage(nextBorrowLimit)}
-          />
-        </TxOverview>
+        {!isError && (
+          <TxOverview simResponse={simResponse} requiresRestore={requiresRestore}>
+            {!isLoading && (
+              <>
+                <Value title="Amount to repay" value={`${toRepay ?? '0'} ${symbol}`} />
+                {returnedTokens != 0 && (
+                  <Value
+                    title="Amount to return"
+                    value={`${toBalance(returnedTokens)} ${symbol}`}
+                  />
+                )}
+                <ValueChange
+                  title="Your total borrowed"
+                  curValue={`${toBalance(
+                    userPoolData?.positionEstimates?.liabilities?.get(assetId) ?? 0,
+                    decimals
+                  )} ${symbol}`}
+                  newValue={`${toBalance(
+                    Math.max(newPositionEstimate?.liabilities.get(assetId) ?? 0, 0),
+                    decimals
+                  )} ${symbol}`}
+                />
+                <ValueChange
+                  title="Borrow capacity"
+                  curValue={`$${toBalance(curBorrowCap)}`}
+                  newValue={`$${toBalance(nextBorrowCap)}`}
+                />
+                <ValueChange
+                  title="Borrow limit"
+                  curValue={toPercentage(curBorrowLimit)}
+                  newValue={toPercentage(nextBorrowLimit)}
+                />
+              </>
+            )}
+            {isLoading && (
+              <Box
+                sx={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <CircularProgress color={'borrow' as any} />
+              </Box>
+            )}
+          </TxOverview>
+        )}
+        {isError && <AnvilAlert severity={disabledType} message={reason} />}
       </Section>
     </Row>
   );

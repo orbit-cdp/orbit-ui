@@ -1,5 +1,5 @@
 import { BackstopContract, parseResult, PoolBackstopActionArgs } from '@blend-capital/blend-sdk';
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
 import { useMemo, useState } from 'react';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
@@ -20,7 +20,7 @@ import { ValueChange } from '../common/ValueChange';
 
 export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, backstopDeposit, txStatus, txType } = useWallet();
+  const { connected, walletAddress, backstopDeposit, txStatus, txType, isLoading } = useWallet();
 
   const backstopData = useStore((state) => state.backstop);
   const backstopPoolData = useStore((state) => state.backstop?.pools?.get(poolId));
@@ -141,16 +141,32 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
         </Box>
         {!isError && (
           <TxOverview simResponse={simResponse} requiresRestore={requiresRestore}>
-            <Value title="Amount to deposit" value={`${toDeposit ?? '0'} BLND-USDC LP`} />
-            <ValueChange
-              title="Your total deposit"
-              curValue={`${toBalance(userBackstopEst?.tokens)} BLND-USDC LP`}
-              newValue={`${toBalance(
-                parsedSimResult && userBackstopEst
-                  ? userBackstopEst.tokens + Number(parsedSimResult) * sharesToTokens
-                  : 0
-              )} BLND-USDC LP`}
-            />
+            {!isLoading && (
+              <>
+                <Value title="Amount to deposit" value={`${toDeposit ?? '0'} BLND-USDC LP`} />
+                <ValueChange
+                  title="Your total deposit"
+                  curValue={`${toBalance(userBackstopEst?.tokens)} BLND-USDC LP`}
+                  newValue={`${toBalance(
+                    parsedSimResult && userBackstopEst
+                      ? userBackstopEst.tokens + Number(parsedSimResult) * sharesToTokens
+                      : 0
+                  )} BLND-USDC LP`}
+                />
+              </>
+            )}
+            {isLoading && (
+              <Box
+                sx={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <CircularProgress color={'backstop' as any} />
+              </Box>
+            )}
           </TxOverview>
         )}
 

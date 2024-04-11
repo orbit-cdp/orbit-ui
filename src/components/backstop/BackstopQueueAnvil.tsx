@@ -4,7 +4,7 @@ import {
   PoolBackstopActionArgs,
   Q4W,
 } from '@blend-capital/blend-sdk';
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
 import { useMemo, useState } from 'react';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
@@ -25,7 +25,8 @@ import { ValueChange } from '../common/ValueChange';
 
 export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, backstopQueueWithdrawal, txType, txStatus } = useWallet();
+  const { connected, walletAddress, backstopQueueWithdrawal, txType, txStatus, isLoading } =
+    useWallet();
 
   const backstop = useStore((state) => state.backstop);
   const backstopPoolData = useStore((state) => state.backstop?.pools?.get(poolId));
@@ -149,28 +150,45 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
         </Box>
         {!isError && (
           <TxOverview requiresRestore={requiresRestore} simResponse={simResponse}>
-            <Value title="Amount to queue" value={`${toQueue ?? '0'} BLND-USDC LP`} />
-            <Value
-              title="New queue expiration"
-              value={
-                (parsedSimResult
-                  ? new Date(Number(parsedSimResult.exp) * 1000)
-                  : new Date(Date.now() + 21 * 24 * 60 * 60 * 1000)
-                )
-                  .toISOString()
-                  .split('T')[0]
-              }
-            />
+            {!isLoading && (
+              <>
+                <Value title="Amount to queue" value={`${toQueue ?? '0'} BLND-USDC LP`} />
+                <Value
+                  title="New queue expiration"
+                  value={
+                    (parsedSimResult
+                      ? new Date(Number(parsedSimResult.exp) * 1000)
+                      : new Date(Date.now() + 21 * 24 * 60 * 60 * 1000)
+                    )
+                      .toISOString()
+                      .split('T')[0]
+                  }
+                />
 
-            <ValueChange
-              title="Your total amount queued"
-              curValue={`${toBalance(userPoolBackstopEst?.totalQ4W)} BLND-USDC LP`}
-              newValue={`${toBalance(
-                userPoolBackstopEst && parsedSimResult
-                  ? userPoolBackstopEst.totalQ4W + Number(parsedSimResult.amount) * sharesToTokens
-                  : 0
-              )} BLND-USDC LP`}
-            />
+                <ValueChange
+                  title="Your total amount queued"
+                  curValue={`${toBalance(userPoolBackstopEst?.totalQ4W)} BLND-USDC LP`}
+                  newValue={`${toBalance(
+                    userPoolBackstopEst && parsedSimResult
+                      ? userPoolBackstopEst.totalQ4W +
+                          Number(parsedSimResult.amount) * sharesToTokens
+                      : 0
+                  )} BLND-USDC LP`}
+                />
+              </>
+            )}
+            {isLoading && (
+              <Box
+                sx={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <CircularProgress color={'backstop' as any} />
+              </Box>
+            )}
           </TxOverview>
         )}
 

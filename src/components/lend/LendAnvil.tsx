@@ -1,12 +1,12 @@
 import {
+  parseResult,
   PoolContract,
   PositionEstimates,
   RequestType,
   SubmitArgs,
   UserPositions,
-  parseResult,
 } from '@blend-capital/blend-sdk';
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
 import { useMemo, useState } from 'react';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
@@ -15,7 +15,7 @@ import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { getAssetReserve } from '../../utils/horizon';
 import { scaleInputToBigInt } from '../../utils/scval';
-import { SubmitError } from '../../utils/txSim';
+import { getErrorFromSim, SubmitError } from '../../utils/txSim';
 import { AnvilAlert } from '../common/AnvilAlert';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
@@ -28,7 +28,7 @@ import { ValueChange } from '../common/ValueChange';
 
 export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, poolSubmit, txStatus, txType } = useWallet();
+  const { connected, walletAddress, poolSubmit, txStatus, txType, isLoading } = useWallet();
 
   const account = useStore((state) => state.account);
   const poolData = useStore((state) => state.pools.get(poolId));
@@ -81,24 +81,29 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   }
 
   // verify that the user can act
-  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError } = useMemo(() => {
-    const errorProps: Partial<SubmitError> = {};
-    if (!toLend) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isError = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = 'Please enter an amount to lend.';
-      errorProps.disabledType = 'info';
-    } else if (toLend.split('.')[1]?.length > decimals) {
-      setValidDecimals(false);
-      errorProps.isSubmitDisabled = true;
-      errorProps.isError = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
-      errorProps.disabledType = 'warning';
-    }
-    return errorProps;
-  }, [freeUserBalanceScaled, toLend, simResponse]);
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError, requiresRestore } =
+    useMemo(
+      () =>
+        getErrorFromSim(simResponse, () => {
+          const errorProps: Partial<SubmitError> = {};
+          if (!toLend) {
+            errorProps.isSubmitDisabled = true;
+            errorProps.isError = true;
+            errorProps.isMaxDisabled = false;
+            errorProps.reason = 'Please enter an amount to lend.';
+            errorProps.disabledType = 'info';
+          } else if (toLend.split('.')[1]?.length > decimals) {
+            setValidDecimals(false);
+            errorProps.isSubmitDisabled = true;
+            errorProps.isError = true;
+            errorProps.isMaxDisabled = false;
+            errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
+            errorProps.disabledType = 'warning';
+          }
+          return errorProps;
+        }),
+      [freeUserBalanceScaled, toLend, simResponse]
+    );
   const handleLendMax = () => {
     if (userPoolData) {
       if (freeUserBalanceScaled > 0) {
@@ -178,29 +183,45 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
           </Box>
         </Box>
         {!isError && (
-          <TxOverview simResponse={simResponse}>
-            <Value title="Amount to supply" value={`${toLend ?? '0'} ${symbol}`} />
-            <ValueChange
-              title="Your total supplied"
-              curValue={`${toBalance(
-                userPoolData?.positionEstimates?.collateral?.get(assetId) ?? 0,
-                decimals
-              )} ${symbol}`}
-              newValue={`${toBalance(
-                newPositionEstimate?.collateral.get(assetId) ?? 0,
-                decimals
-              )} ${symbol}`}
-            />
-            <ValueChange
-              title="Borrow capacity"
-              curValue={`$${toBalance(curBorrowCap)}`}
-              newValue={`$${toBalance(nextBorrowCap)}`}
-            />
-            <ValueChange
-              title="Borrow limit"
-              curValue={toPercentage(curBorrowLimit)}
-              newValue={toPercentage(nextBorrowLimit)}
-            />
+          <TxOverview simResponse={simResponse} requiresRestore={requiresRestore}>
+            {!isLoading && (
+              <>
+                <Value title="Amount to supply" value={`${toLend ?? '0'} ${symbol}`} />
+                <ValueChange
+                  title="Your total supplied"
+                  curValue={`${toBalance(
+                    userPoolData?.positionEstimates?.collateral?.get(assetId) ?? 0,
+                    decimals
+                  )} ${symbol}`}
+                  newValue={`${toBalance(
+                    newPositionEstimate?.collateral.get(assetId) ?? 0,
+                    decimals
+                  )} ${symbol}`}
+                />
+                <ValueChange
+                  title="Borrow capacity"
+                  curValue={`$${toBalance(curBorrowCap)}`}
+                  newValue={`$${toBalance(nextBorrowCap)}`}
+                />
+                <ValueChange
+                  title="Borrow limit"
+                  curValue={toPercentage(curBorrowLimit)}
+                  newValue={toPercentage(nextBorrowLimit)}
+                />
+              </>
+            )}
+            {isLoading && (
+              <Box
+                sx={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <CircularProgress color={'lend' as any} />
+              </Box>
+            )}
           </TxOverview>
         )}
         {isError && <AnvilAlert severity={disabledType} message={reason} />}

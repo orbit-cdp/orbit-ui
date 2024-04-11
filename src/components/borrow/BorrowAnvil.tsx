@@ -6,7 +6,7 @@ import {
   SubmitArgs,
   UserPositions,
 } from '@blend-capital/blend-sdk';
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
 import { useMemo, useState } from 'react';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
@@ -28,7 +28,8 @@ import { ValueChange } from '../common/ValueChange';
 
 export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
-  const { connected, walletAddress, poolSubmit, txStatus, txType, createTrustline } = useWallet();
+  const { connected, walletAddress, poolSubmit, txStatus, txType, createTrustline, isLoading } =
+    useWallet();
 
   const poolData = useStore((state) => state.pools.get(poolId));
   const userPoolData = useStore((state) => state.userPoolData.get(poolId));
@@ -226,28 +227,44 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
         </Box>
         {!isError && (
           <TxOverview simResponse={simResponse} requiresRestore={requiresRestore}>
-            <Value title="Amount to borrow" value={`${toBorrow ?? '0'} ${symbol}`} />
-            <ValueChange
-              title="Your total borrowed"
-              curValue={`${toBalance(
-                userPoolData?.positionEstimates?.liabilities?.get(assetId) ?? 0,
-                decimals
-              )} ${symbol}`}
-              newValue={`${toBalance(
-                newPositionEstimate?.liabilities.get(assetId) ?? 0,
-                decimals
-              )} ${symbol}`}
-            />
-            <ValueChange
-              title="Borrow capacity"
-              curValue={`${toBalance(curBorrowCap)} ${symbol}`}
-              newValue={`${toBalance(nextBorrowCap)} ${symbol}`}
-            />
-            <ValueChange
-              title="Borrow limit"
-              curValue={toPercentage(curBorrowLimit)}
-              newValue={toPercentage(nextBorrowLimit)}
-            />
+            {!isLoading && (
+              <>
+                <Value title="Amount to borrow" value={`${toBorrow ?? '0'} ${symbol}`} />
+                <ValueChange
+                  title="Your total borrowed"
+                  curValue={`${toBalance(
+                    userPoolData?.positionEstimates?.liabilities?.get(assetId) ?? 0,
+                    decimals
+                  )} ${symbol}`}
+                  newValue={`${toBalance(
+                    newPositionEstimate?.liabilities.get(assetId) ?? 0,
+                    decimals
+                  )} ${symbol}`}
+                />
+                <ValueChange
+                  title="Borrow capacity"
+                  curValue={`${toBalance(curBorrowCap)} ${symbol}`}
+                  newValue={`${toBalance(nextBorrowCap)} ${symbol}`}
+                />
+                <ValueChange
+                  title="Borrow limit"
+                  curValue={toPercentage(curBorrowLimit)}
+                  newValue={toPercentage(nextBorrowLimit)}
+                />
+              </>
+            )}
+            {isLoading && (
+              <Box
+                sx={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <CircularProgress color={'borrow' as any} />
+              </Box>
+            )}
           </TxOverview>
         )}
         {isError && (
