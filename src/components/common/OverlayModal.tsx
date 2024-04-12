@@ -21,7 +21,7 @@ export const OverlayModal: React.FC = () => {
     const returnToHomePage = txStatus != TxStatus.FAIL;
     clearLastTx();
 
-    if (returnToHomePage && txType != TxType.RESTORE) {
+    if (returnToHomePage && txType != TxType.PREREQ) {
       if (router.route == '/') {
         router.push({ pathname: '/' });
       } else if (router.route.includes('backstop')) {

@@ -40,7 +40,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const [parsedSimResult, setParsedSimResult] = useState<UserPositions>();
   const [validDecimals, setValidDecimals] = useState<boolean>(true);
 
-  if (txStatus === TxStatus.SUCCESS && txType != TxType.RESTORE && Number(toBorrow) != 0) {
+  if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toBorrow) != 0) {
     setToBorrow('');
   }
 

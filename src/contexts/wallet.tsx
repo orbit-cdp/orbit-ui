@@ -104,13 +104,14 @@ export enum TxStatus {
   SIGNING,
   SUBMITTING,
   SUCCESS,
-  RESTORED,
   FAIL,
 }
 
 export enum TxType {
+  // Submit a contract invocation
   CONTRACT,
-  RESTORE,
+  // A transaction that is a pre-requisite for another transaction
+  PREREQ,
 }
 
 const WalletContext = React.createContext<IWalletContext | undefined>(undefined);
@@ -241,7 +242,7 @@ export const WalletProvider = ({ children = null as any }) => {
       .addOperation(Operation.restoreFootprint({}))
       .build();
     let signed_restore_tx = new Transaction(await sign(restore_tx.toXDR()), network.passphrase);
-    setTxType(TxType.RESTORE);
+    setTxType(TxType.PREREQ);
     await sendTransaction(signed_restore_tx);
   }
 
@@ -591,6 +592,7 @@ export const WalletProvider = ({ children = null as any }) => {
         const transaction = tx_builder.build();
         const signedTx = await sign(transaction.toXDR());
         const tx = new Transaction(signedTx, network.passphrase);
+        setTxType(TxType.PREREQ);
         const result = await sendTransaction(tx);
         if (result) {
           try {
