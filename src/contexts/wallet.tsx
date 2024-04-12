@@ -630,11 +630,7 @@ export const WalletProvider = ({ children = null as any }) => {
         lastTxFailure: txFailure,
         txType,
         walletId: autoConnect,
-        isLoading:
-          loadingSim ||
-          txStatus === TxStatus.BUILDING ||
-          txStatus === TxStatus.SIGNING ||
-          txStatus === TxStatus.SUBMITTING,
+        isLoading: loadingSim,
         connect,
         disconnect,
         clearLastTx,
