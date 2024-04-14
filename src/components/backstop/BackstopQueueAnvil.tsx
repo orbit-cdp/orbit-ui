@@ -53,23 +53,22 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   }
 
   // verify that the user can act
-  const { isError, isSubmitDisabled, isMaxDisabled, reason, disabledType, requiresRestore } =
-    useMemo(
-      () =>
-        getErrorFromSim(simResponse, (): Partial<SubmitError> => {
-          const errorProps: Partial<SubmitError> = {};
-          if (toQueue.split('.')[1]?.length > decimals) {
-            setValidDecimals(false);
-            errorProps.isError = true;
-            errorProps.isSubmitDisabled = true;
-            errorProps.isMaxDisabled = false;
-            errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
-            errorProps.disabledType = 'warning';
-          }
-          return errorProps;
-        }),
-      [simResponse, toQueue, userBackstopData]
-    );
+  const { isError, isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(
+    () =>
+      getErrorFromSim(simResponse, (): Partial<SubmitError> => {
+        const errorProps: Partial<SubmitError> = {};
+        if (toQueue.split('.')[1]?.length > decimals) {
+          setValidDecimals(false);
+          errorProps.isError = true;
+          errorProps.isSubmitDisabled = true;
+          errorProps.isMaxDisabled = false;
+          errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
+          errorProps.disabledType = 'warning';
+        }
+        return errorProps;
+      }),
+    [simResponse, toQueue, userBackstopData]
+  );
 
   const handleQueueMax = () => {
     if (userPoolBackstopEst && userPoolBackstopEst.tokens > 0) {
@@ -149,7 +148,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
           </Box>
         </Box>
         {!isError && (
-          <TxOverview requiresRestore={requiresRestore} simResponse={simResponse}>
+          <TxOverview>
             {!isLoading && (
               <>
                 <Value title="Amount to queue" value={`${toQueue ?? '0'} BLND-USDC LP`} />
@@ -192,7 +191,9 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
           </TxOverview>
         )}
 
-        {isError && <AnvilAlert severity={disabledType} message={reason} />}
+        {isError && (
+          <AnvilAlert severity={disabledType} message={reason} simResponse={simResponse} />
+        )}
       </Section>
     </Row>
   );

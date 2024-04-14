@@ -85,29 +85,28 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
     setToRepay('');
   }
   // verify that the user can act
-  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError, requiresRestore } =
-    useMemo(
-      () =>
-        getErrorFromSim(simResponse, () => {
-          const errorProps: Partial<SubmitError> = {};
-          if (!toRepay) {
-            errorProps.isSubmitDisabled = true;
-            errorProps.isError = true;
-            errorProps.isMaxDisabled = false;
-            errorProps.reason = 'Please enter an amount to repay.';
-            errorProps.disabledType = 'info';
-          } else if (toRepay.split('.')[1]?.length > decimals) {
-            setValidDecimals(false);
-            errorProps.isSubmitDisabled = true;
-            errorProps.isError = true;
-            errorProps.isMaxDisabled = false;
-            errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
-            errorProps.disabledType = 'warning';
-          }
-          return errorProps;
-        }),
-      [freeUserBalanceScaled, toRepay, simResponse]
-    );
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError } = useMemo(
+    () =>
+      getErrorFromSim(simResponse, () => {
+        const errorProps: Partial<SubmitError> = {};
+        if (!toRepay) {
+          errorProps.isSubmitDisabled = true;
+          errorProps.isError = true;
+          errorProps.isMaxDisabled = false;
+          errorProps.reason = 'Please enter an amount to repay.';
+          errorProps.disabledType = 'info';
+        } else if (toRepay.split('.')[1]?.length > decimals) {
+          setValidDecimals(false);
+          errorProps.isSubmitDisabled = true;
+          errorProps.isError = true;
+          errorProps.isMaxDisabled = false;
+          errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
+          errorProps.disabledType = 'warning';
+        }
+        return errorProps;
+      }),
+    [freeUserBalanceScaled, toRepay, simResponse]
+  );
 
   const handleRepayMax = () => {
     if (userPoolData) {
@@ -189,7 +188,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
           </Box>
         </Box>
         {!isError && (
-          <TxOverview simResponse={simResponse} requiresRestore={requiresRestore}>
+          <TxOverview>
             {!isLoading && (
               <>
                 <Value title="Amount to repay" value={`${toRepay ?? '0'} ${symbol}`} />
@@ -236,7 +235,9 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
             )}
           </TxOverview>
         )}
-        {isError && <AnvilAlert severity={disabledType} message={reason} />}
+        {isError && (
+          <AnvilAlert severity={disabledType} message={reason} simResponse={simResponse} />
+        )}
       </Section>
     </Row>
   );

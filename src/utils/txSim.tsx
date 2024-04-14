@@ -12,11 +12,9 @@ export function getErrorFromSim(
     isMaxDisabled: false,
     reason: undefined,
     disabledType: undefined,
-    requiresRestore: false,
   };
   if (simulationResult && SorobanRpc.Api.isSimulationRestore(simulationResult)) {
-    errorProps.requiresRestore = true;
-    errorProps.isError = false;
+    errorProps.isError = true;
     errorProps.isSubmitDisabled = true;
     errorProps.isMaxDisabled = false;
     errorProps.disabledType = 'warning';
@@ -41,5 +39,4 @@ export interface SubmitError {
   reason: string | undefined;
   disabledType: AlertColor | undefined;
   extraContent?: React.ReactNode;
-  requiresRestore?: boolean;
 }

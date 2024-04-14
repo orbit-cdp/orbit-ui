@@ -94,15 +94,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
     </OpaqueButton>
   );
   // verify that the user can act
-  const {
-    isSubmitDisabled,
-    isMaxDisabled,
-    reason,
-    disabledType,
-    extraContent,
-    requiresRestore,
-    isError,
-  } = useMemo(
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent, isError } = useMemo(
     () =>
       getErrorFromSim(simResponse, () => {
         const errorProps: Partial<SubmitError> = {};
@@ -226,7 +218,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           </Box>
         </Box>
         {!isError && (
-          <TxOverview simResponse={simResponse} requiresRestore={requiresRestore}>
+          <TxOverview>
             {!isLoading && (
               <>
                 <Value title="Amount to borrow" value={`${toBorrow ?? '0'} ${symbol}`} />
@@ -268,7 +260,12 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           </TxOverview>
         )}
         {isError && (
-          <AnvilAlert severity={disabledType} message={reason} extraContent={extraContent} />
+          <AnvilAlert
+            severity={disabledType}
+            message={reason}
+            extraContent={extraContent}
+            simResponse={simResponse}
+          />
         )}
       </Section>
     </Row>

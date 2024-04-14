@@ -46,22 +46,21 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
   });
 
   // verify that the user can act
-  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError, requiresRestore } =
-    useMemo(
-      () =>
-        getErrorFromSim(simResponse, (): Partial<SubmitError> => {
-          const errorProps: Partial<SubmitError> = {};
-          if (toDeposit.split('.')[1]?.length > decimals) {
-            errorProps.isError = true;
-            errorProps.isSubmitDisabled = true;
-            errorProps.isMaxDisabled = false;
-            errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
-            errorProps.disabledType = 'warning';
-          }
-          return errorProps;
-        }),
-      [simResponse, toDeposit, userBalance]
-    );
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError } = useMemo(
+    () =>
+      getErrorFromSim(simResponse, (): Partial<SubmitError> => {
+        const errorProps: Partial<SubmitError> = {};
+        if (toDeposit.split('.')[1]?.length > decimals) {
+          errorProps.isError = true;
+          errorProps.isSubmitDisabled = true;
+          errorProps.isMaxDisabled = false;
+          errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
+          errorProps.disabledType = 'warning';
+        }
+        return errorProps;
+      }),
+    [simResponse, toDeposit, userBalance]
+  );
 
   const handleDepositMax = () => {
     if (userBackstopData) {
@@ -140,7 +139,7 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
           </Box>
         </Box>
         {!isError && (
-          <TxOverview simResponse={simResponse} requiresRestore={requiresRestore}>
+          <TxOverview>
             {!isLoading && (
               <>
                 <Value title="Amount to deposit" value={`${toDeposit ?? '0'} BLND-USDC LP`} />
@@ -170,7 +169,9 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
           </TxOverview>
         )}
 
-        {isError && <AnvilAlert severity={disabledType} message={reason} />}
+        {isError && (
+          <AnvilAlert severity={disabledType} message={reason} simResponse={simResponse} />
+        )}
       </Section>
     </Row>
   );
