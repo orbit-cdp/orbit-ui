@@ -55,13 +55,13 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
         }}
       >
         <Typography variant="body1">{formatter.toPercentage(reserve.estimates.apy)}</Typography>
-        {!!reserve.supplyEmissions && (
+        {!!reserve.borrowEmissions && (
           <FlameIcon
             width={22}
             height={22}
             title={formatter.getEmissionTextFromValue(
               getEmissionsPerDayPerUnit(
-                reserve.supplyEmissions?.config.eps || BigInt(0),
+                reserve.borrowEmissions?.config.eps || BigInt(0),
                 reserve.estimates.supplied,
                 reserve.config.decimals
               ),
