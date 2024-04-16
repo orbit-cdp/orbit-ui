@@ -18,7 +18,7 @@ export function RestoreButton({
   return (
     <OpaqueButton
       onClick={handleRestore}
-      palette={theme.palette.info}
+      palette={theme.palette.warning}
       sx={{ padding: '6px 24px', margin: '12px auto' }}
     >
       Restore
@@ -41,7 +41,7 @@ export function getErrorFromSim(
     errorProps.extraContent = <RestoreButton simResponse={simulationResult} />;
     errorProps.isSubmitDisabled = true;
     errorProps.isMaxDisabled = false;
-    errorProps.disabledType = 'info';
+    errorProps.disabledType = 'warning';
     errorProps.reason =
       'This transaction ran into expired entries that need to be restored before proceeding.';
   } else if (simulationResult && SorobanRpc.Api.isSimulationError(simulationResult)) {

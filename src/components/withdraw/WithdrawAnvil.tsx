@@ -101,6 +101,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
           errorProps.isSubmitDisabled = true;
           errorProps.isError = true;
           errorProps.isMaxDisabled = false;
+          errorProps.extraContent = undefined;
           errorProps.reason = 'Please enter an amount to withdraw.';
           errorProps.disabledType = 'info';
         } else if (toWithdraw.split('.')[1]?.length > decimals) {

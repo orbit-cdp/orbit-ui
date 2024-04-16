@@ -52,7 +52,7 @@ export const BackstopMintAnvil: React.FC<{
   }
 
   // verify that the user can act
-  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError } = useMemo(
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError, extraContent } = useMemo(
     () =>
       getErrorFromSim(simResponse, () => {
         const errorProps: Partial<SubmitError> = {};
@@ -68,6 +68,7 @@ export const BackstopMintAnvil: React.FC<{
           errorProps.isSubmitDisabled = true;
           errorProps.isError = true;
           errorProps.isMaxDisabled = false;
+          errorProps.extraContent = undefined;
           errorProps.reason = 'Please enter an amount to mint.';
           errorProps.disabledType = 'info';
         } else if (toSwap.split('.')[1]?.length > decimals) {
@@ -380,7 +381,9 @@ export const BackstopMintAnvil: React.FC<{
             )}
           </TxOverview>
         )}
-        {isError && <AnvilAlert severity={disabledType} message={reason} />}
+        {isError && (
+          <AnvilAlert severity={disabledType} message={reason} extraContent={extraContent} />
+        )}
       </Section>
     </Row>
   );

@@ -110,6 +110,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           errorProps.isSubmitDisabled = true;
           errorProps.isError = true;
           errorProps.isMaxDisabled = false;
+          errorProps.extraContent = undefined;
           errorProps.reason = 'Please enter an amount to borrow.';
           errorProps.disabledType = 'info';
         } else if (toBorrow.split('.')[1]?.length > decimals) {

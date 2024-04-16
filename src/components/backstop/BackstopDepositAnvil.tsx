@@ -46,7 +46,7 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
   });
 
   // verify that the user can act
-  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError } = useMemo(
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError, extraContent } = useMemo(
     () =>
       getErrorFromSim(simResponse, (): Partial<SubmitError> => {
         const errorProps: Partial<SubmitError> = {};
@@ -169,7 +169,9 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
           </TxOverview>
         )}
 
-        {isError && <AnvilAlert severity={disabledType} message={reason} />}
+        {isError && (
+          <AnvilAlert severity={disabledType} message={reason} extraContent={extraContent} />
+        )}
       </Section>
     </Row>
   );
