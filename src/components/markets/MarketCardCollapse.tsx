@@ -49,7 +49,7 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({
           }}
           onClick={() =>
             window.open(
-              `https://stellar.expert/explorer/testnet/contract/${poolData.config.oracle}`,
+              `${process.env.NEXT_PUBLIC_STELLAR_EXPERT_URL}/contract/${poolData.config.oracle}`,
               '_blank'
             )
           }
