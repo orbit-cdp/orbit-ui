@@ -380,9 +380,7 @@ export const BackstopMintAnvil: React.FC<{
             )}
           </TxOverview>
         )}
-        {isError && (
-          <AnvilAlert severity={disabledType} message={reason} simResponse={simResponse} />
-        )}
+        {isError && <AnvilAlert severity={disabledType} message={reason} />}
       </Section>
     </Row>
   );

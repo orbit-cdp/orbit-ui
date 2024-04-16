@@ -1,7 +1,30 @@
 import { ContractErrorType, parseError } from '@blend-capital/blend-sdk';
 import { AlertColor } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
-
+import { OpaqueButton } from '../components/common/OpaqueButton';
+import { useWallet } from '../contexts/wallet';
+import theme from '../theme';
+export function RestoreButton({
+  simResponse,
+}: {
+  simResponse: SorobanRpc.Api.SimulateTransactionResponse;
+}) {
+  const { restore } = useWallet();
+  function handleRestore() {
+    if (simResponse && SorobanRpc.Api.isSimulationRestore(simResponse)) {
+      restore(simResponse);
+    }
+  }
+  return (
+    <OpaqueButton
+      onClick={handleRestore}
+      palette={theme.palette.info}
+      sx={{ padding: '6px 24px', margin: '12px auto' }}
+    >
+      Restore
+    </OpaqueButton>
+  );
+}
 export function getErrorFromSim(
   simulationResult: SorobanRpc.Api.SimulateTransactionResponse | undefined,
   extraValidations?: () => Partial<SubmitError>
@@ -15,9 +38,12 @@ export function getErrorFromSim(
   };
   if (simulationResult && SorobanRpc.Api.isSimulationRestore(simulationResult)) {
     errorProps.isError = true;
+    errorProps.extraContent = <RestoreButton simResponse={simulationResult} />;
     errorProps.isSubmitDisabled = true;
     errorProps.isMaxDisabled = false;
-    errorProps.disabledType = 'warning';
+    errorProps.disabledType = 'info';
+    errorProps.reason =
+      'This transaction ran into expired entries that need to be restored before proceeding.';
   } else if (simulationResult && SorobanRpc.Api.isSimulationError(simulationResult)) {
     const error = parseError(simulationResult);
     errorProps.isError = true;

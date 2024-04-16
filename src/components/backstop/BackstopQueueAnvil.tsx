@@ -91,9 +91,6 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
       }
     }
   };
-  console.log({
-    simResponse: parseResult((simResponse || {}) as any, BackstopContract.parsers.queueWithdrawal),
-  });
 
   return (
     <Row>
@@ -191,9 +188,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
           </TxOverview>
         )}
 
-        {isError && (
-          <AnvilAlert severity={disabledType} message={reason} simResponse={simResponse} />
-        )}
+        {isError && <AnvilAlert severity={disabledType} message={reason} />}
       </Section>
     </Row>
   );

@@ -260,12 +260,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           </TxOverview>
         )}
         {isError && (
-          <AnvilAlert
-            severity={disabledType}
-            message={reason}
-            extraContent={extraContent}
-            simResponse={simResponse}
-          />
+          <AnvilAlert severity={disabledType} message={reason} extraContent={extraContent} />
         )}
       </Section>
     </Row>
