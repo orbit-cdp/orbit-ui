@@ -35,6 +35,7 @@ export function getErrorFromSim(
     isMaxDisabled: false,
     reason: undefined,
     disabledType: undefined,
+    extraContent: undefined,
   };
   if (simulationResult && SorobanRpc.Api.isSimulationRestore(simulationResult)) {
     errorProps.isError = true;

@@ -68,7 +68,6 @@ export const BackstopMintAnvil: React.FC<{
           errorProps.isSubmitDisabled = true;
           errorProps.isError = true;
           errorProps.isMaxDisabled = false;
-          errorProps.extraContent = undefined;
           errorProps.reason = 'Please enter an amount to mint.';
           errorProps.disabledType = 'info';
         } else if (toSwap.split('.')[1]?.length > decimals) {
