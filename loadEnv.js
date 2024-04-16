@@ -1,10 +1,10 @@
 /**
- * Generate a `.env.production` file depending on the value from TARGET_ENV environment variable
+ * Generate a `.env.local` file depending on the value from TARGET_ENV environment variable
  */
 import fs from 'fs';
 
 /**
- * @description copies the given `.env.base.${TARGET_ENV}` file to a `.env.production` file.
+ * @description copies the given `.env.base.${TARGET_ENV}` file to a `.env.local` file.
  */
 
 const env = {
