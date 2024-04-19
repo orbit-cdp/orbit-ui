@@ -47,6 +47,8 @@ export interface IWalletContext {
   lastTxFailure: string | undefined;
   txType: TxType;
   walletId: string | undefined;
+
+  isLoading: boolean;
   connect: () => Promise<void>;
   disconnect: () => void;
   clearLastTx: () => void;
@@ -102,13 +104,14 @@ export enum TxStatus {
   SIGNING,
   SUBMITTING,
   SUCCESS,
-  RESTORED,
   FAIL,
 }
 
 export enum TxType {
+  // Submit a contract invocation
   CONTRACT,
-  RESTORE,
+  // A transaction that is a pre-requisite for another transaction
+  PREREQ,
 }
 
 const WalletContext = React.createContext<IWalletContext | undefined>(undefined);
@@ -124,7 +127,7 @@ export const WalletProvider = ({ children = null as any }) => {
 
   const [connected, setConnected] = useState<boolean>(false);
   const [autoConnect, setAutoConnect] = useLocalStorageState('autoConnectWallet', 'false');
-
+  const [loadingSim, setLoadingSim] = useState<boolean>(false);
   const [txStatus, setTxStatus] = useState<TxStatus>(TxStatus.NONE);
   const [txHash, setTxHash] = useState<string | undefined>(undefined);
   const [txFailure, setTxFailure] = useState<string | undefined>(undefined);
@@ -239,7 +242,7 @@ export const WalletProvider = ({ children = null as any }) => {
       .addOperation(Operation.restoreFootprint({}))
       .build();
     let signed_restore_tx = new Transaction(await sign(restore_tx.toXDR()), network.passphrase);
-    setTxType(TxType.RESTORE);
+    setTxType(TxType.PREREQ);
     await sendTransaction(signed_restore_tx);
   }
 
@@ -282,15 +285,22 @@ export const WalletProvider = ({ children = null as any }) => {
   async function simulateOperation(
     operation: xdr.Operation
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse> {
-    const account = await rpc.getAccount(walletAddress);
-    const tx_builder = new TransactionBuilder(account, {
-      networkPassphrase: network.passphrase,
-      fee: BASE_FEE,
-      timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
-    }).addOperation(operation);
-    const transaction = tx_builder.build();
-    const simulation = await rpc.simulateTransaction(transaction);
-    return simulation;
+    try {
+      setLoadingSim(true);
+      const account = await rpc.getAccount(walletAddress);
+      const tx_builder = new TransactionBuilder(account, {
+        networkPassphrase: network.passphrase,
+        fee: BASE_FEE,
+        timebounds: { minTime: 0, maxTime: Math.floor(Date.now() / 1000) + 5 * 60 * 1000 },
+      }).addOperation(operation);
+      const transaction = tx_builder.build();
+      const simulation = await rpc.simulateTransaction(transaction);
+      setLoadingSim(false);
+      return simulation;
+    } catch (e) {
+      setLoadingSim(false);
+      throw e;
+    }
   }
 
   async function invokeSorobanOperation<T>(operation: xdr.Operation, poolId?: string | undefined) {
@@ -582,6 +592,7 @@ export const WalletProvider = ({ children = null as any }) => {
         const transaction = tx_builder.build();
         const signedTx = await sign(transaction.toXDR());
         const tx = new Transaction(signedTx, network.passphrase);
+        setTxType(TxType.PREREQ);
         const result = await sendTransaction(tx);
         if (result) {
           try {
@@ -621,6 +632,7 @@ export const WalletProvider = ({ children = null as any }) => {
         lastTxFailure: txFailure,
         txType,
         walletId: autoConnect,
+        isLoading: loadingSim,
         connect,
         disconnect,
         clearLastTx,
