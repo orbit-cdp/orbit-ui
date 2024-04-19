@@ -47,14 +47,16 @@ export const BorrowMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
         >
           Available
         </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ width: headerWidth }}
-        >
-          APY
-        </Typography>
+        {viewType !== ViewType.MOBILE && (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: headerWidth }}
+          >
+            APY
+          </Typography>
+        )}
         {headerNum >= 5 && (
           <Box sx={{ display: 'flex', flexDirection: 'row' }}>
             <Typography variant="body2" color="text.secondary" align="center">

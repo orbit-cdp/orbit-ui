@@ -66,30 +66,34 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
               {formatter.toBalance(reserve.poolBalance, reserve.config.decimals)}
             </Typography>
           </Box>
-          <Box
-            sx={{
-              width: tableWidth,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <Typography variant="body1">{formatter.toPercentage(reserve.estimates.apy)}</Typography>
-            {reserve.borrowEmissions && (
-              <FlameIcon
-                width={22}
-                height={22}
-                title={formatter.getEmissionTextFromValue(
-                  getEmissionsPerDayPerUnit(
-                    reserve.borrowEmissions?.config.eps || BigInt(0),
-                    reserve.estimates.borrowed,
-                    reserve.config.decimals
-                  ),
-                  reserve.tokenMetadata?.symbol
-                )}
-              />
-            )}
-          </Box>
+          {viewType !== ViewType.MOBILE && (
+            <Box
+              sx={{
+                width: tableWidth,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <Typography variant="body1">
+                {formatter.toPercentage(reserve.estimates.apy)}
+              </Typography>
+              {reserve.borrowEmissions && (
+                <FlameIcon
+                  width={22}
+                  height={22}
+                  title={formatter.getEmissionTextFromValue(
+                    getEmissionsPerDayPerUnit(
+                      reserve.borrowEmissions?.config.eps || BigInt(0),
+                      reserve.estimates.borrowed,
+                      reserve.config.decimals
+                    ),
+                    reserve.tokenMetadata?.symbol
+                  )}
+                />
+              )}
+            </Box>
+          )}
           {tableNum == 5 && (
             <Box
               sx={{

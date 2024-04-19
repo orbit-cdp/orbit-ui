@@ -48,14 +48,16 @@ export const LendMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
           Wallet Balance
         </Typography>
 
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ width: headerWidth }}
-        >
-          APY
-        </Typography>
+        {viewType !== ViewType.MOBILE && (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: headerWidth }}
+          >
+            APY
+          </Typography>
+        )}
 
         {headerNum >= 5 && (
           <Box sx={{ display: 'flex', flexDirection: 'row' }}>
