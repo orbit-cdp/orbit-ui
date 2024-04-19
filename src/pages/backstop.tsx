@@ -2,7 +2,7 @@ import { BackstopClaimArgs, parseResult } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import HelpOutline from '@mui/icons-material/HelpOutline';
 import { Box, Tooltip, Typography } from '@mui/material';
-import { Address, Asset, SorobanRpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
+import { Address, Asset, scValToBigInt, SorobanRpc, xdr } from '@stellar/stellar-sdk';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -18,6 +18,7 @@ import { SectionBase } from '../components/common/SectionBase';
 import { StackedText } from '../components/common/StackedText';
 import { TokenIcon } from '../components/common/TokenIcon';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
+import { useSettings, ViewType } from '../contexts';
 import { useWallet } from '../contexts/wallet';
 import { getTokenBalance } from '../external/token';
 import { useStore } from '../store/store';
@@ -28,6 +29,7 @@ import { BLEND_TESTNET_ASSET } from '../utils/token_display';
 
 const Backstop: NextPage = () => {
   const router = useRouter();
+  const { viewType } = useSettings();
   const {
     connected,
     walletAddress,
@@ -372,7 +374,7 @@ const Backstop: NextPage = () => {
         </Section>
       </Row>
 
-      <Row>
+      <Row sx={{ display: 'flex', flexDirection: viewType === ViewType.MOBILE ? 'column' : 'row' }}>
         <BackstopBalanceCard type="deposit" poolId={safePoolId} />
         <BackstopBalanceCard type="wallet" poolId={safePoolId} />
       </Row>
