@@ -47,6 +47,7 @@ export const LendMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
         >
           Wallet Balance
         </Typography>
+
         <Typography
           variant="body2"
           color="text.secondary"
@@ -55,6 +56,7 @@ export const LendMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
         >
           APY
         </Typography>
+
         {headerNum >= 5 && (
           <Box sx={{ display: 'flex', flexDirection: 'row' }}>
             <Typography variant="body2" color="text.secondary" align="center">

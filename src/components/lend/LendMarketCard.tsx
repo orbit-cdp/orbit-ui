@@ -67,6 +67,7 @@ export const LendMarketCard: React.FC<LendMarketCardProps> = ({
               {formatter.toBalance(useBalanceAsNum, reserve.config.decimals)}
             </Typography>
           </Box>
+
           <Box
             sx={{
               width: tableWidth,
