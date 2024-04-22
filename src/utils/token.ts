@@ -1,4 +1,4 @@
-import { Reserve } from "@blend-capital/blend-sdk";
+import { Reserve } from '@blend-capital/blend-sdk';
 
 export const STELLAR_DECIMALS = 7;
 export const SECONDS_PER_DAY = 86400;
@@ -15,11 +15,12 @@ export function getEmissionsPerDayPerUnit(eps: bigint, totalAmount: number, deci
   return toReturn;
 }
 
-
-export function getTokenLinkFromReserve(reserve:Reserve|undefined){
-  if(!reserve){
-    return ""
+export function getTokenLinkFromReserve(reserve: Reserve | undefined) {
+  if (!reserve) {
+    return '';
   }
   const isNativeAsset = reserve.tokenMetadata?.asset?.isNative();
- return  `https://stellar.expert/explorer/testnet/asset/${reserve?.tokenMetadata?.asset?.code}${isNativeAsset ? "" :`-${reserve?.assetId}`}`
+  return `${process.env.NEXT_PUBLIC_STELLAR_EXPERT_URL}/asset/${
+    reserve?.tokenMetadata?.asset?.code
+  }${isNativeAsset ? '' : `-${reserve?.assetId}`}`;
 }

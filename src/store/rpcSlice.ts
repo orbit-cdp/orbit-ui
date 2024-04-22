@@ -18,10 +18,10 @@ export interface RPCSlice {
 
 export const createRPCSlice: StateCreator<DataStore, [], [], RPCSlice> = (set, get) => ({
   network: {
-    rpc: 'https://soroban-testnet.stellar.org',
+    rpc: process.env.NEXT_PUBLIC_RPC_URL || 'https://soroban-testnet.stellar.org',
     passphrase: 'Test SDF Network ; September 2015',
     opts: undefined,
-    horizonUrl: 'https://horizon-testnet.stellar.org',
+    horizonUrl: process.env.NEXT_PUBLIC_HORIZON_URL || 'https://horizon-testnet.stellar.org',
   },
   rpcServer: () => {
     let network = get().network;
