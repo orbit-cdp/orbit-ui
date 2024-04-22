@@ -98,8 +98,8 @@ const Repay: NextPage = () => {
         </Section>
         <Section width={SectionSize.THIRD}>
           <StackedText
-            title="Total borrowed"
-            text={toBalance(reserve?.estimates.borrowed)}
+            title="Wallet balance"
+            text={toBalance(userBalance, reserve?.config.decimals)}
             sx={{ width: '100%', padding: '6px' }}
           ></StackedText>
         </Section>
