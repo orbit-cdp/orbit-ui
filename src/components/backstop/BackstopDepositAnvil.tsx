@@ -1,6 +1,7 @@
 import { BackstopContract, parseResult, PoolBackstopActionArgs } from '@blend-capital/blend-sdk';
 import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
+import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
@@ -143,6 +144,15 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
             {!isLoading && (
               <>
                 <Value title="Amount to deposit" value={`${toDeposit ?? '0'} BLND-USDC LP`} />
+                <Value
+                  title={
+                    <>
+                      <Image src="/icons/dashboard/gascan.svg" alt="blend" width={20} height={20} />{' '}
+                      Gas
+                    </>
+                  }
+                  value={`${toBalance(BigInt((simResponse as any)?.minResourceFee), decimals)} XLM`}
+                />
                 <ValueChange
                   title="Your total deposit"
                   curValue={`${toBalance(userBackstopEst?.tokens)} BLND-USDC LP`}

@@ -1,8 +1,9 @@
-import { Box, BoxProps, Typography, useTheme } from '@mui/material';
+import { Box, SxProps, Typography, useTheme } from '@mui/material';
 
-export interface ValueProps extends BoxProps {
-  title: string;
+export interface ValueProps {
+  title: any; //  ReactNode | string;
   value: string;
+  sx?: SxProps;
 }
 
 export const Value: React.FC<ValueProps> = ({ title, value, sx, ...props }) => {
@@ -15,15 +16,16 @@ export const Value: React.FC<ValueProps> = ({ title, value, sx, ...props }) => {
         marginBottom: '12px',
         display: 'flex',
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'end',
+        gap: '6px',
         ...sx,
       }}
       {...props}
     >
-      <Typography variant="h5" sx={{ color: theme.palette.text.secondary, marginRight: '6px' }}>
+      <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
         {title}
       </Typography>
-      <Typography variant="h5" sx={{ color: theme.palette.text.primary, marginRight: '6px' }}>
+      <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>
         {value}
       </Typography>
     </Box>
