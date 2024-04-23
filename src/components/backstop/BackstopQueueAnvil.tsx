@@ -4,7 +4,7 @@ import {
   PoolBackstopActionArgs,
   Q4W,
 } from '@blend-capital/blend-sdk';
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
 import { useMemo, useState } from 'react';
 import { useSettings, ViewType } from '../../contexts';
@@ -13,19 +13,23 @@ import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
 import { scaleInputToBigInt } from '../../utils/scval';
+import { getErrorFromSim, SubmitError } from '../../utils/txSim';
+import { AnvilAlert } from '../common/AnvilAlert';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
-import { SubmitError, TxOverview } from '../common/TxOverview';
+import { TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
 export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
   const { viewType } = useSettings();
-  const { connected, walletAddress, backstopQueueWithdrawal, txType, txStatus } = useWallet();
+
+  const { connected, walletAddress, backstopQueueWithdrawal, txType, txStatus, isLoading } =
+    useWallet();
 
   const backstop = useStore((state) => state.backstop);
   const backstopPoolData = useStore((state) => state.backstop?.pools?.get(poolId));
@@ -52,22 +56,22 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   }
 
   // verify that the user can act
-  const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
-    const errorProps: SubmitError = {
-      isSubmitDisabled: false,
-      isMaxDisabled: false,
-      reason: undefined,
-      disabledType: undefined,
-    };
-    if (toQueue.split('.')[1]?.length > decimals) {
-      setValidDecimals(false);
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
-      errorProps.disabledType = 'warning';
-    }
-    return errorProps;
-  }, [toQueue, userBackstopData]);
+  const { isError, isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent } = useMemo(
+    () =>
+      getErrorFromSim(simResponse, (): Partial<SubmitError> => {
+        const errorProps: Partial<SubmitError> = {};
+        if (toQueue.split('.')[1]?.length > decimals) {
+          setValidDecimals(false);
+          errorProps.isError = true;
+          errorProps.isSubmitDisabled = true;
+          errorProps.isMaxDisabled = false;
+          errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
+          errorProps.disabledType = 'warning';
+        }
+        return errorProps;
+      }),
+    [simResponse, toQueue, userBackstopData]
+  );
 
   const handleQueueMax = () => {
     if (userPoolBackstopEst && userPoolBackstopEst.tokens > 0) {
@@ -90,9 +94,6 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
       }
     }
   };
-  console.log({
-    simResponse: parseResult((simResponse || {}) as any, BackstopContract.parsers.queueWithdrawal),
-  });
 
   return (
     <Row>
@@ -158,35 +159,53 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
             )}
           </Box>
         </Box>
-        <TxOverview
-          isDisabled={isSubmitDisabled}
-          disabledType={disabledType}
-          reason={reason}
-          simResponse={simResponse}
-        >
-          <Value title="Amount to queue" value={`${toQueue ?? '0'} BLND-USDC LP`} />
-          <Value
-            title="New queue expiration"
-            value={
-              (parsedSimResult
-                ? new Date(Number(parsedSimResult.exp) * 1000)
-                : new Date(Date.now() + 21 * 24 * 60 * 60 * 1000)
-              )
-                .toISOString()
-                .split('T')[0]
-            }
-          />
+        {!isError && (
+          <TxOverview>
+            {!isLoading && (
+              <>
+                <Value title="Amount to queue" value={`${toQueue ?? '0'} BLND-USDC LP`} />
+                <Value
+                  title="New queue expiration"
+                  value={
+                    (parsedSimResult
+                      ? new Date(Number(parsedSimResult.exp) * 1000)
+                      : new Date(Date.now() + 21 * 24 * 60 * 60 * 1000)
+                    )
+                      .toISOString()
+                      .split('T')[0]
+                  }
+                />
 
-          <ValueChange
-            title="Your total amount queued"
-            curValue={`${toBalance(userPoolBackstopEst?.totalQ4W)} BLND-USDC LP`}
-            newValue={`${toBalance(
-              userPoolBackstopEst && parsedSimResult
-                ? userPoolBackstopEst.totalQ4W + Number(parsedSimResult.amount) * sharesToTokens
-                : 0
-            )} BLND-USDC LP`}
-          />
-        </TxOverview>
+                <ValueChange
+                  title="Your total amount queued"
+                  curValue={`${toBalance(userPoolBackstopEst?.totalQ4W)} BLND-USDC LP`}
+                  newValue={`${toBalance(
+                    userPoolBackstopEst && parsedSimResult
+                      ? userPoolBackstopEst.totalQ4W +
+                          Number(parsedSimResult.amount) * sharesToTokens
+                      : 0
+                  )} BLND-USDC LP`}
+                />
+              </>
+            )}
+            {isLoading && (
+              <Box
+                sx={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <CircularProgress color={'backstop' as any} />
+              </Box>
+            )}
+          </TxOverview>
+        )}
+
+        {isError && (
+          <AnvilAlert severity={disabledType} message={reason} extraContent={extraContent} />
+        )}
       </Section>
     </Row>
   );

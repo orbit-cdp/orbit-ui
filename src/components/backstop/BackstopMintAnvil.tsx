@@ -1,5 +1,5 @@
 import { parseResult } from '@blend-capital/blend-sdk';
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
 import { Address, scValToBigInt, SorobanRpc, xdr } from '@stellar/stellar-sdk';
 import { useEffect, useMemo, useState } from 'react';
 import { useSettings, ViewType } from '../../contexts';
@@ -9,11 +9,13 @@ import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
 import { scaleInputToBigInt } from '../../utils/scval';
+import { getErrorFromSim, SubmitError } from '../../utils/txSim';
+import { AnvilAlert } from '../common/AnvilAlert';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { Row } from '../common/Row';
 import { Section, SectionSize } from '../common/Section';
-import { SubmitError, TxOverview } from '../common/TxOverview';
+import { TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
@@ -23,7 +25,9 @@ export const BackstopMintAnvil: React.FC<{
 }> = ({ currentDepositToken, setCurrentDepositToken }) => {
   const theme = useTheme();
   const { viewType } = useSettings();
-  const { walletAddress, txStatus, backstopMintByDepositTokenAmount, txType } = useWallet();
+
+  const { walletAddress, txStatus, backstopMintByDepositTokenAmount, txType, isLoading } =
+    useWallet();
 
   const [currentPoolUSDCBalance, setCurrentPoolUSDCBalance] = useState<bigint>();
   const [currentPoolBLNDBalance, setCurrentPoolBLNDBalance] = useState<bigint>();
@@ -51,77 +55,85 @@ export const BackstopMintAnvil: React.FC<{
   }
 
   // verify that the user can act
-  const { isSubmitDisabled, isMaxDisabled, reason, disabledType } = useMemo(() => {
-    const errorProps: SubmitError = {
-      isSubmitDisabled: false,
-      isMaxDisabled: false,
-      reason: undefined,
-      disabledType: undefined,
-    };
-    const currentDepositTokenBalance =
-      balancesByAddress.get(currentDepositToken.address ?? '') || 0;
-    if (currentDepositTokenBalance <= BigInt(0)) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = true;
-      errorProps.reason = 'You do not have any available balance to mint.';
-      errorProps.disabledType = 'warning';
-    } else if (!toSwap) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = 'Please enter an amount to mint.';
-      errorProps.disabledType = 'info';
-    } else if (toSwap.split('.')[1]?.length > decimals) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
-      errorProps.disabledType = 'warning';
-    } else if (scaleInputToBigInt(toSwap, decimals) > currentDepositTokenBalance) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = 'You do not have enough available balance to mint.';
-      errorProps.disabledType = 'warning';
-    } else if (
-      currentDepositToken.address === blndAddress &&
-      !!currentPoolBLNDBalance &&
-      scaleInputToBigInt(toSwap, decimals) > currentPoolBLNDBalance / BigInt(2) - BigInt(1)
-    ) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = true;
-      errorProps.reason = `Cannot deposit more than half of the pools token balance, estimated max deposit amount: ${toBalance(
-        currentPoolBLNDBalance / BigInt(2) - BigInt(1),
-        decimals
-      )}`;
-      errorProps.disabledType = 'warning';
-    } else if (
-      currentDepositToken.address === usdcAddress &&
-      !!currentPoolUSDCBalance &&
-      scaleInputToBigInt(toSwap, decimals) > currentPoolUSDCBalance / BigInt(2) - BigInt(1)
-    ) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = true;
-      errorProps.reason = `Cannot deposit more than half of the pools token balance, estimated max deposit amount: ${toBalance(
-        currentPoolUSDCBalance / BigInt(2) - BigInt(1),
-        decimals
-      )}`;
-      errorProps.disabledType = 'warning';
-    } else if (!toMint || !!loadingEstimate) {
-      errorProps.isSubmitDisabled = true;
-      errorProps.isMaxDisabled = false;
-      errorProps.reason = 'Loading estimate...';
-      errorProps.disabledType = 'info';
-    } else {
-      errorProps.isSubmitDisabled = false;
-      errorProps.isMaxDisabled = false;
-    }
-    return errorProps;
-  }, [
-    toSwap,
-    currentDepositToken.address,
-    balancesByAddress,
-    loadingEstimate,
-    currentPoolBLNDBalance,
-    currentPoolUSDCBalance,
-  ]);
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError, extraContent } = useMemo(
+    () =>
+      getErrorFromSim(simResponse, () => {
+        const errorProps: Partial<SubmitError> = {};
+        const currentDepositTokenBalance =
+          balancesByAddress.get(currentDepositToken.address ?? '') || 0;
+        if (currentDepositTokenBalance <= BigInt(0)) {
+          errorProps.isSubmitDisabled = true;
+          errorProps.isError = true;
+          errorProps.isMaxDisabled = true;
+          errorProps.reason = 'You do not have any available balance to mint.';
+          errorProps.disabledType = 'warning';
+        } else if (!toSwap) {
+          errorProps.isSubmitDisabled = true;
+          errorProps.isError = true;
+          errorProps.isMaxDisabled = false;
+          errorProps.reason = 'Please enter an amount to mint.';
+          errorProps.disabledType = 'info';
+        } else if (toSwap.split('.')[1]?.length > decimals) {
+          errorProps.isSubmitDisabled = true;
+          errorProps.isError = true;
+          errorProps.isMaxDisabled = false;
+          errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
+          errorProps.disabledType = 'warning';
+        } else if (scaleInputToBigInt(toSwap, decimals) > currentDepositTokenBalance) {
+          errorProps.isSubmitDisabled = true;
+          errorProps.isError = true;
+          errorProps.isMaxDisabled = false;
+          errorProps.reason = 'You do not have enough available balance to mint.';
+          errorProps.disabledType = 'warning';
+        } else if (
+          currentDepositToken.address === blndAddress &&
+          !!currentPoolBLNDBalance &&
+          scaleInputToBigInt(toSwap, decimals) > currentPoolBLNDBalance / BigInt(2) - BigInt(1)
+        ) {
+          errorProps.isSubmitDisabled = true;
+          errorProps.isError = true;
+          errorProps.isMaxDisabled = true;
+          errorProps.reason = `Cannot deposit more than half of the pools token balance, estimated max deposit amount: ${toBalance(
+            currentPoolBLNDBalance / BigInt(2) - BigInt(1),
+            decimals
+          )}`;
+          errorProps.disabledType = 'warning';
+        } else if (
+          currentDepositToken.address === usdcAddress &&
+          !!currentPoolUSDCBalance &&
+          scaleInputToBigInt(toSwap, decimals) > currentPoolUSDCBalance / BigInt(2) - BigInt(1)
+        ) {
+          errorProps.isSubmitDisabled = true;
+          errorProps.isError = true;
+          errorProps.isMaxDisabled = true;
+          errorProps.reason = `Cannot deposit more than half of the pools token balance, estimated max deposit amount: ${toBalance(
+            currentPoolUSDCBalance / BigInt(2) - BigInt(1),
+            decimals
+          )}`;
+          errorProps.disabledType = 'warning';
+        } else if (!toMint || !!loadingEstimate) {
+          errorProps.isSubmitDisabled = true;
+          errorProps.isError = true;
+          errorProps.isMaxDisabled = false;
+          errorProps.reason = 'Loading estimate...';
+          errorProps.disabledType = 'info';
+        } else {
+          errorProps.isSubmitDisabled = false;
+          errorProps.isError = false;
+          errorProps.isMaxDisabled = false;
+        }
+        return errorProps;
+      }),
+    [
+      toSwap,
+      currentDepositToken.address,
+      balancesByAddress,
+      loadingEstimate,
+      currentPoolBLNDBalance,
+      currentPoolUSDCBalance,
+      simResponse,
+    ]
+  );
 
   const handleMaxClick = () => {
     if (currentDepositToken.address) {
@@ -176,6 +188,7 @@ export const BackstopMintAnvil: React.FC<{
           }
         });
       }
+      setLoadingEstimate(false);
     }
   }
 
@@ -366,19 +379,36 @@ export const BackstopMintAnvil: React.FC<{
             )}
           </Box>
         </Box>
-        <TxOverview
-          isDisabled={isSubmitDisabled}
-          disabledType={disabledType}
-          reason={reason}
-          simResponse={simResponse}
-        >
-          <Value title="Amount to mint" value={`${toMint ?? '0'} BLND-USDC LP`} />
-          <ValueChange
-            title="Your total mint"
-            curValue={`${toBalance(userLPBalance)} BLND-USDC LP`}
-            newValue={`${toBalance(userLPBalance + toMint)} BLND-USDC LP`}
-          />
-        </TxOverview>
+        {!isError && (
+          <TxOverview>
+            {!isLoading && !loadingEstimate && (
+              <>
+                {' '}
+                <Value title="Amount to mint" value={`${toMint ?? '0'} BLND-USDC LP`} />
+                <ValueChange
+                  title="Your total mint"
+                  curValue={`${toBalance(userLPBalance)} BLND-USDC LP`}
+                  newValue={`${toBalance(userLPBalance + toMint)} BLND-USDC LP`}
+                />
+              </>
+            )}
+            {(isLoading || loadingEstimate) && (
+              <Box
+                sx={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <CircularProgress color={'backstop' as any} />
+              </Box>
+            )}
+          </TxOverview>
+        )}
+        {isError && (
+          <AnvilAlert severity={disabledType} message={reason} extraContent={extraContent} />
+        )}
       </Section>
     </Row>
   );
