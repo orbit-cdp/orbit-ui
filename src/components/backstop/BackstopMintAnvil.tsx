@@ -1,14 +1,15 @@
 import { parseResult } from '@blend-capital/blend-sdk';
 import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
-import { Address, SorobanRpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
+import { Address, scValToBigInt, SorobanRpc, xdr } from '@stellar/stellar-sdk';
 import { useEffect, useMemo, useState } from 'react';
+import { useSettings, ViewType } from '../../contexts';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { getTokenBalance } from '../../external/token';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
 import { scaleInputToBigInt } from '../../utils/scval';
-import { SubmitError, getErrorFromSim } from '../../utils/txSim';
+import { getErrorFromSim, SubmitError } from '../../utils/txSim';
 import { AnvilAlert } from '../common/AnvilAlert';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
@@ -23,6 +24,8 @@ export const BackstopMintAnvil: React.FC<{
   setCurrentDepositToken: (token: { address: string | undefined; symbol: string }) => void;
 }> = ({ currentDepositToken, setCurrentDepositToken }) => {
   const theme = useTheme();
+  const { viewType } = useSettings();
+
   const { walletAddress, txStatus, backstopMintByDepositTokenAmount, txType, isLoading } =
     useWallet();
 
@@ -278,7 +281,8 @@ export const BackstopMintAnvil: React.FC<{
               width: '100%',
               height: 'max-content',
               display: 'flex',
-              flexDirection: 'row',
+              gap: '12px',
+              flexDirection: viewType === ViewType.MOBILE ? 'column' : 'row',
               marginBottom: '12px',
               alignItems: 'end',
             }}
@@ -289,7 +293,6 @@ export const BackstopMintAnvil: React.FC<{
                 height: 'max-content',
                 display: 'flex',
                 flexDirection: 'column',
-
                 gap: '12px',
               }}
             >
@@ -310,6 +313,7 @@ export const BackstopMintAnvil: React.FC<{
               <Box
                 sx={{
                   display: 'flex',
+                  gap: '12px',
                   flexDirection: 'row',
                   justifyContent: 'space-between',
                   alignItems: 'center',
@@ -328,7 +332,7 @@ export const BackstopMintAnvil: React.FC<{
                 <Typography
                   variant="h5"
                   sx={{
-                    width: '113px',
+                    minWidth: '113px',
                     color: theme.palette.text.secondary,
                     textAlign: 'right',
                     marginRight: '12px',
@@ -338,19 +342,41 @@ export const BackstopMintAnvil: React.FC<{
                 </Typography>
               </Box>
             </Box>
-            <OpaqueButton
-              onClick={handleSubmitTransaction}
-              palette={theme.palette.backstop}
-              sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px', height: 'max-content' }}
-              disabled={isSubmitDisabled}
-            >
-              Mint
-            </OpaqueButton>
+            {viewType !== ViewType.MOBILE && (
+              <OpaqueButton
+                onClick={handleSubmitTransaction}
+                palette={theme.palette.backstop}
+                sx={{
+                  minWidth: '108px',
+
+                  padding: '6px',
+                  height: 'max-content',
+                }}
+                disabled={isSubmitDisabled}
+              >
+                Mint
+              </OpaqueButton>
+            )}
           </Box>
-          <Box sx={{ marginLeft: '12px' }}>
+          <Box sx={{ marginLeft: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
               {`$${toBalance(toMint * (backstopData?.lpTokenPrice ?? 1))}`}
             </Typography>
+            {viewType === ViewType.MOBILE && (
+              <OpaqueButton
+                onClick={handleSubmitTransaction}
+                palette={theme.palette.backstop}
+                sx={{
+                  minWidth: '108px',
+
+                  padding: '6px',
+                  height: 'max-content',
+                }}
+                disabled={isSubmitDisabled}
+              >
+                Mint
+              </OpaqueButton>
+            )}
           </Box>
         </Box>
         {!isError && (

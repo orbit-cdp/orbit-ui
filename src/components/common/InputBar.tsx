@@ -87,7 +87,7 @@ export const InputBar: React.FC<InputBarProps> = ({
       >
         <Typography
           variant="h5"
-          sx={{ width: '113px', color: theme.palette.text.secondary, textAlign: 'right' }}
+          sx={{ minWidth: '113px', color: theme.palette.text.secondary, textAlign: 'right' }}
         >
           {symbol}
         </Typography>

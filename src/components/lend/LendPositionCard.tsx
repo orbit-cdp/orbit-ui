@@ -45,32 +45,34 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
       >
         <Typography variant="body1">{formatter.toBalance(totalSupplyEst)}</Typography>
       </Box>
-      <Box
-        sx={{
-          width: tableWidth,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <Typography variant="body1">
-          {formatter.toPercentage(reserve.estimates.supplyApy)}
-        </Typography>
-        {!!reserve.supplyEmissions && (
-          <FlameIcon
-            width={22}
-            height={22}
-            title={formatter.getEmissionTextFromValue(
-              getEmissionsPerDayPerUnit(
-                reserve.supplyEmissions?.config.eps || BigInt(0),
-                reserve.estimates.supplied,
-                reserve.config.decimals
-              ),
-              reserve.tokenMetadata.symbol
-            )}
-          />
-        )}
-      </Box>
+      {viewType === ViewType.REGULAR && (
+        <Box
+          sx={{
+            width: tableWidth,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <Typography variant="body1">
+            {formatter.toPercentage(reserve.estimates.supplyApy)}
+          </Typography>
+          {!!reserve.supplyEmissions && (
+            <FlameIcon
+              width={22}
+              height={22}
+              title={formatter.getEmissionTextFromValue(
+                getEmissionsPerDayPerUnit(
+                  reserve.supplyEmissions?.config.eps || BigInt(0),
+                  reserve.estimates.supplied,
+                  reserve.config.decimals
+                ),
+                reserve.tokenMetadata.symbol
+              )}
+            />
+          )}
+        </Box>
+      )}
       {/* {tableNum >= 5 && <Box sx={{ width: tableWidth }} />} */}
       <LinkBox
         to={{ pathname: '/withdraw', query: { poolId: poolId, assetId: reserve.assetId } }}

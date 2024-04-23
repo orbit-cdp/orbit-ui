@@ -7,6 +7,7 @@ import {
 import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
 import { useMemo, useState } from 'react';
+import { useSettings, ViewType } from '../../contexts';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
@@ -25,6 +26,8 @@ import { ValueChange } from '../common/ValueChange';
 
 export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
+  const { viewType } = useSettings();
+
   const { connected, walletAddress, backstopQueueWithdrawal, txType, txStatus, isLoading } =
     useWallet();
 
@@ -114,9 +117,9 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
           <Box
             sx={{
               width: '100%',
-              height: '35px',
               display: 'flex',
-              flexDirection: 'row',
+              gap: '12px',
+              flexDirection: viewType !== ViewType.MOBILE ? 'row' : 'column',
               marginBottom: '12px',
             }}
           >
@@ -126,22 +129,34 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
               onValueChange={setToQueue}
               onSetMax={handleQueueMax}
               palette={theme.palette.backstop}
-              sx={{ width: '100%' }}
+              sx={{ width: '100%', display: 'flex' }}
               isMaxDisabled={isMaxDisabled}
             />
-            <OpaqueButton
-              onClick={() => handleSubmitTransaction(false)}
-              palette={theme.palette.backstop}
-              sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
-              disabled={isSubmitDisabled}
-            >
-              Queue
-            </OpaqueButton>
+            {viewType !== ViewType.MOBILE && (
+              <OpaqueButton
+                onClick={() => handleSubmitTransaction(false)}
+                palette={theme.palette.backstop}
+                sx={{ minWidth: '108px', padding: '6px', display: 'flex' }}
+                disabled={isSubmitDisabled}
+              >
+                Queue
+              </OpaqueButton>
+            )}
           </Box>
-          <Box sx={{ marginLeft: '12px' }}>
+          <Box sx={{ marginLeft: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
               {`$${toBalance(Number(toQueue ?? 0) * backstopTokenPrice)}`}
             </Typography>
+            {viewType === ViewType.MOBILE && (
+              <OpaqueButton
+                onClick={() => handleSubmitTransaction(false)}
+                palette={theme.palette.backstop}
+                sx={{ minWidth: '108px', padding: '6px', display: 'flex', width: '100%' }}
+                disabled={isSubmitDisabled}
+              >
+                Queue
+              </OpaqueButton>
+            )}
           </Box>
         </Box>
         {!isError && (
