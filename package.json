@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:mainnet": "TARGET_ENV=production node loadEnv.js && next build",
+    "build:testnet": "TARGET_ENV=testnet node loadEnv.js && next build",
     "build-static": "next build && next export",
+    "build-static:mainnet": "TARGET_ENV=production node loadEnv.js && next build && next export",
+    "build-static:testnet": "TARGET_ENV=testnet node loadEnv.js && next build && next export",
     "start": "next start",
     "lint": "next lint"
   },

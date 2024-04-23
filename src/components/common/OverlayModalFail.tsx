@@ -48,7 +48,7 @@ export const OverlayModalFail: React.FC<CloseableOverlayProps> = ({ handleCloseO
         {lastTxHash && (
           <Link
             target="_blank"
-            href={`https://stellar.expert/explorer/testnet/tx/${lastTxHash}`}
+            href={`${process.env.NEXT_PUBLIC_STELLAR_EXPERT_URL}/tx/${lastTxHash}`}
             underline="hover"
             variant="h5"
             rel="noopener"

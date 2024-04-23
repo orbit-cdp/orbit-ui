@@ -14,7 +14,7 @@ export const BorrowPositionList: React.FC<PoolComponentProps> = ({ poolId }) => 
     return <Skeleton variant="rectangular" />;
   }
 
-  const headerNum = viewType === ViewType.REGULAR ? 5 : 4;
+  const headerNum = viewType === ViewType.REGULAR ? 5 : 6;
   const headerWidth = `${(100 / headerNum).toFixed(2)}%`;
   return (
     <Box
@@ -47,14 +47,16 @@ export const BorrowPositionList: React.FC<PoolComponentProps> = ({ poolId }) => 
         >
           Balance
         </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ width: headerWidth }}
-        >
-          APY
-        </Typography>
+        {viewType === ViewType.REGULAR && (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ width: headerWidth }}
+          >
+            APY
+          </Typography>
+        )}
         <Box sx={{ width: headerWidth }} />
         {headerNum >= 5 && <Box sx={{ width: headerWidth }} />}
       </Box>

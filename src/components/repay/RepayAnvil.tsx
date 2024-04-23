@@ -10,6 +10,7 @@ import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
+import { useSettings, ViewType } from '../../contexts';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
@@ -29,6 +30,8 @@ import { ValueChange } from '../common/ValueChange';
 
 export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
+  const { viewType } = useSettings();
+
   const { connected, walletAddress, poolSubmit, txStatus, txType, isLoading } = useWallet();
 
   const account = useStore((state) => state.account);
@@ -112,7 +115,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
 
   const handleRepayMax = () => {
     if (userPoolData) {
-      let dustProofRepay = userPoolData?.positionEstimates?.liabilities?.get(assetId) ?? 0 * 1.001;
+      let dustProofRepay = userPoolData?.positionEstimates?.liabilities?.get(assetId) ?? 0 * 1.002;
       let maxRepay =
         freeUserBalanceScaled < dustProofRepay ? freeUserBalanceScaled : dustProofRepay;
       setToRepay(maxRepay.toFixed(decimals));
@@ -174,19 +177,31 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
               sx={{ width: '100%' }}
               isMaxDisabled={isMaxDisabled}
             />
-            <OpaqueButton
-              onClick={() => handleSubmitTransaction(false)}
-              palette={theme.palette.borrow}
-              sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
-              disabled={isSubmitDisabled}
-            >
-              Repay
-            </OpaqueButton>
+            {viewType !== ViewType.MOBILE && (
+              <OpaqueButton
+                onClick={() => handleSubmitTransaction(false)}
+                palette={theme.palette.borrow}
+                sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
+                disabled={isSubmitDisabled}
+              >
+                Repay
+              </OpaqueButton>
+            )}
           </Box>
-          <Box sx={{ marginLeft: '12px' }}>
+          <Box sx={{ marginLeft: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
               {`$${toBalance(Number(toRepay ?? 0) * assetToBase, decimals)}`}
             </Typography>
+            {viewType === ViewType.MOBILE && (
+              <OpaqueButton
+                onClick={() => handleSubmitTransaction(false)}
+                palette={theme.palette.borrow}
+                sx={{ minWidth: '108px', width: '100%', padding: '6px' }}
+                disabled={isSubmitDisabled}
+              >
+                Repay
+              </OpaqueButton>
+            )}
           </Box>
         </Box>
         {!isError && (

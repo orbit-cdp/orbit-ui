@@ -3,6 +3,7 @@ import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
+import { useSettings, ViewType } from '../../contexts';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
@@ -21,6 +22,7 @@ import { ValueChange } from '../common/ValueChange';
 
 export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
+  const { viewType } = useSettings();
   const { connected, walletAddress, backstopDeposit, txStatus, txType, isLoading } = useWallet();
 
   const backstopData = useStore((state) => state.backstop);
@@ -111,7 +113,8 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
               width: '100%',
               height: '35px',
               display: 'flex',
-              flexDirection: 'row',
+              gap: '12px',
+              flexDirection: viewType !== ViewType.MOBILE ? 'row' : 'column',
               marginBottom: '12px',
             }}
           >
@@ -124,19 +127,31 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
               sx={{ width: '100%' }}
               isMaxDisabled={isMaxDisabled}
             />
-            <OpaqueButton
-              onClick={() => handleSubmitTransaction(false)}
-              palette={theme.palette.backstop}
-              sx={{ minWidth: '108px', marginLeft: '12px', padding: '6px' }}
-              disabled={isSubmitDisabled}
-            >
-              Deposit
-            </OpaqueButton>
+            {viewType !== ViewType.MOBILE && (
+              <OpaqueButton
+                onClick={() => handleSubmitTransaction(false)}
+                palette={theme.palette.backstop}
+                sx={{ minWidth: '108px', padding: '6px' }}
+                disabled={isSubmitDisabled}
+              >
+                Deposit
+              </OpaqueButton>
+            )}
           </Box>
-          <Box sx={{ marginLeft: '12px' }}>
+          <Box sx={{ marginLeft: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
               {`$${toBalance(Number(toDeposit ?? 0) * (backstopData?.lpTokenPrice ?? 1))}`}
             </Typography>
+            {viewType === ViewType.MOBILE && (
+              <OpaqueButton
+                onClick={() => handleSubmitTransaction(false)}
+                palette={theme.palette.backstop}
+                sx={{ minWidth: '108px', padding: '6px', width: '100%' }}
+                disabled={isSubmitDisabled}
+              >
+                Deposit
+              </OpaqueButton>
+            )}
           </Box>
         </Box>
         {!isError && (
