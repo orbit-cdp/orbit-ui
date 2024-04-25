@@ -2,7 +2,7 @@ import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded';
 import { Alert, IconButton, Menu, MenuItem, Snackbar, useTheme } from '@mui/material';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
-import { ViewType, useSettings } from '../../contexts';
+import { useSettings, ViewType } from '../../contexts';
 import { useStore } from '../../store/store';
 import { NavItem } from './NavItem';
 
@@ -68,7 +68,7 @@ export const NavMenu = () => {
             backgroundColor: theme.palette.menu.main,
           }}
         >
-          <Link href="/network" >
+          <Link href="/network">
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
               Network Config
             </MenuItem>
@@ -78,6 +78,11 @@ export const NavMenu = () => {
               Docs
             </MenuItem>
           </a>
+          <Link href="/termsofservice">
+            <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
+              Terms of Service
+            </MenuItem>
+          </Link>
         </Menu>
       )}
       {viewType !== ViewType.REGULAR && (
@@ -112,7 +117,7 @@ export const NavMenu = () => {
             title="Backstop"
             sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
           />
-          <Link href="/network" >
+          <Link href="/network">
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
               Network Config
             </MenuItem>
@@ -122,6 +127,11 @@ export const NavMenu = () => {
               Docs
             </MenuItem>
           </a>
+          <Link href="/termsofservice">
+            <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
+              Terms of Service
+            </MenuItem>
+          </Link>
         </Menu>
       )}
 
