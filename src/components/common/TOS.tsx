@@ -857,10 +857,6 @@ export const TOS = () => {
         parties. You are not permitted to use these Marks without our prior written consent or the
         consent of such third party which may own the Marks.
       </Typography>
-      <Typography variant="body2" sx={{ marginBottom: '12px' }}>
-        16.13. For any questions, comments, or feedback, you may contact us at any of the following
-        channels: • Email: support@script3.io
-      </Typography>
     </Box>
   );
 };
