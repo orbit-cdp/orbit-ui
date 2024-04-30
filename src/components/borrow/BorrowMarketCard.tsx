@@ -25,7 +25,7 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
   const theme = useTheme();
   const { viewType } = useSettings();
 
-  const tableNum = viewType === ViewType.REGULAR ? 5 : 4;
+  const tableNum = viewType === ViewType.REGULAR ? 5 : 3;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
   const liabilityFactor = reserve.getLiabilityFactor();
 
@@ -66,35 +66,32 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
               {formatter.toBalance(reserve.poolBalance, reserve.config.decimals)}
             </Typography>
           </Box>
+
+          <Box
+            sx={{
+              width: tableWidth,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Typography variant="body1">{formatter.toPercentage(reserve.estimates.apy)}</Typography>
+            {reserve.borrowEmissions && (
+              <FlameIcon
+                width={22}
+                height={22}
+                title={formatter.getEmissionTextFromValue(
+                  getEmissionsPerDayPerUnit(
+                    reserve.borrowEmissions?.config.eps || BigInt(0),
+                    reserve.estimates.borrowed,
+                    reserve.config.decimals
+                  ),
+                  reserve.tokenMetadata?.symbol
+                )}
+              />
+            )}
+          </Box>
           {viewType !== ViewType.MOBILE && (
-            <Box
-              sx={{
-                width: tableWidth,
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-            >
-              <Typography variant="body1">
-                {formatter.toPercentage(reserve.estimates.apy)}
-              </Typography>
-              {reserve.borrowEmissions && (
-                <FlameIcon
-                  width={22}
-                  height={22}
-                  title={formatter.getEmissionTextFromValue(
-                    getEmissionsPerDayPerUnit(
-                      reserve.borrowEmissions?.config.eps || BigInt(0),
-                      reserve.estimates.borrowed,
-                      reserve.config.decimals
-                    ),
-                    reserve.tokenMetadata?.symbol
-                  )}
-                />
-              )}
-            </Box>
-          )}
-          {tableNum == 5 && (
             <Box
               sx={{
                 width: tableWidth,
@@ -108,7 +105,7 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
           )}
           <Box
             sx={{
-              width: tableWidth,
+              width: viewType === ViewType.MOBILE ? 'auto' : tableWidth,
               display: 'flex',
               justifyContent: 'flex-end',
               alignItems: 'center',
