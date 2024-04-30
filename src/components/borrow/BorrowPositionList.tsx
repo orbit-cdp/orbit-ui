@@ -14,7 +14,7 @@ export const BorrowPositionList: React.FC<PoolComponentProps> = ({ poolId }) => 
     return <Skeleton variant="rectangular" />;
   }
 
-  const headerNum = viewType === ViewType.REGULAR ? 5 : 6;
+  const headerNum = viewType === ViewType.REGULAR ? 5 : 3;
   const headerWidth = `${(100 / headerNum).toFixed(2)}%`;
   return (
     <Box
@@ -23,7 +23,6 @@ export const BorrowPositionList: React.FC<PoolComponentProps> = ({ poolId }) => 
         flexDirection: 'column',
         overflow: 'auto',
         scrollbarColor: 'black grey',
-        padding: '6px',
       }}
     >
       <Box
@@ -47,18 +46,17 @@ export const BorrowPositionList: React.FC<PoolComponentProps> = ({ poolId }) => 
         >
           Balance
         </Typography>
-        {viewType === ViewType.REGULAR && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            sx={{ width: headerWidth }}
-          >
-            APY
-          </Typography>
-        )}
-        <Box sx={{ width: headerWidth }} />
-        {headerNum >= 5 && <Box sx={{ width: headerWidth }} />}
+
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          align="center"
+          sx={{ width: headerWidth }}
+        >
+          APY
+        </Typography>
+
+        <Box sx={{ flexGrow: '2', width: viewType === ViewType.MOBILE ? '24px' : headerWidth }} />
       </Box>
       <Box sx={{ width: '100%', gap: '.5rem', display: 'flex', flexDirection: 'column' }}>
         {Array.from(poolData.reserves.values())

@@ -14,7 +14,7 @@ export const BorrowMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
     return <Skeleton variant="rectangular" />;
   }
 
-  const headerNum = viewType === ViewType.REGULAR ? 5 : 4;
+  const headerNum = viewType === ViewType.REGULAR ? 5 : 3;
   const headerWidth = `${(100 / headerNum).toFixed(2)}%`;
   return (
     <Box
@@ -34,11 +34,13 @@ export const BorrowMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
           alignItems: 'center',
           padding: '6px',
           type: 'alt',
+          gap: '12px',
         }}
       >
         <Typography variant="body2" color="text.secondary" sx={{ width: headerWidth }}>
           Asset
         </Typography>
+
         <Typography
           variant="body2"
           color="text.secondary"
@@ -47,18 +49,16 @@ export const BorrowMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
         >
           Available
         </Typography>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          align="center"
+          sx={{ width: headerWidth }}
+        >
+          APY
+        </Typography>
         {viewType !== ViewType.MOBILE && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            sx={{ width: headerWidth }}
-          >
-            APY
-          </Typography>
-        )}
-        {headerNum >= 5 && (
-          <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'row', width: headerWidth }}>
             <Typography variant="body2" color="text.secondary" align="center">
               Liability Factor
             </Typography>
@@ -78,7 +78,7 @@ export const BorrowMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
           </Box>
         )}
 
-        <Box sx={{ width: headerWidth }} />
+        <Box sx={{ width: viewType === ViewType.MOBILE ? 'auto' : headerWidth }} />
       </Box>
       {Array.from(poolData.reserves.values())
         .filter((reserve) => reserve.config.l_factor > 0)

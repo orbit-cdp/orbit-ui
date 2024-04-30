@@ -14,7 +14,7 @@ export const LendMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
     return <Skeleton variant="rectangular" />;
   }
 
-  const headerNum = viewType === ViewType.REGULAR ? 5 : 4;
+  const headerNum = viewType === ViewType.REGULAR ? 5 : 3;
   const headerWidth = `${(100 / headerNum).toFixed(2)}%`;
   return (
     <Box
@@ -48,18 +48,16 @@ export const LendMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
           Wallet Balance
         </Typography>
 
-        {viewType !== ViewType.MOBILE && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            sx={{ width: headerWidth }}
-          >
-            APY
-          </Typography>
-        )}
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          align="center"
+          sx={{ width: headerWidth }}
+        >
+          APY
+        </Typography>
 
-        {headerNum >= 5 && (
+        {viewType !== ViewType.MOBILE && (
           <Box sx={{ display: 'flex', flexDirection: 'row' }}>
             <Typography variant="body2" color="text.secondary" align="center">
               Collateral Factor
@@ -79,8 +77,7 @@ export const LendMarketList: React.FC<PoolComponentProps> = ({ poolId }) => {
             </Tooltip>
           </Box>
         )}
-
-        <Box sx={{ width: headerWidth }} />
+        <Box sx={{ width: viewType === ViewType.MOBILE ? 'auto' : headerWidth }} />
       </Box>
       {Array.from(poolData.reserves.values()).map((reserve) => (
         <LendMarketCard key={reserve.assetId} poolId={poolId} reserve={reserve} />
