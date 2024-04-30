@@ -29,7 +29,7 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
   const userCollatEst = userPoolData.positionEstimates.collateral.get(reserve.assetId);
   const totalSupplyEst = userSupplyEst ?? 0 + (userCollatEst ?? 0);
 
-  const tableNum = viewType === ViewType.REGULAR ? 5 : 4;
+  const tableNum = viewType === ViewType.REGULAR ? 5 : 3;
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
   const buttonWidth = `${((100 / tableNum) * 1.5).toFixed(2)}%`;
   return (
@@ -45,61 +45,90 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
       >
         <Typography variant="body1">{formatter.toBalance(totalSupplyEst)}</Typography>
       </Box>
-      {viewType === ViewType.REGULAR && (
-        <Box
-          sx={{
-            width: tableWidth,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <Typography variant="body1">
-            {formatter.toPercentage(reserve.estimates.supplyApy)}
-          </Typography>
-          {!!reserve.supplyEmissions && (
-            <FlameIcon
-              width={22}
-              height={22}
-              title={formatter.getEmissionTextFromValue(
-                getEmissionsPerDayPerUnit(
-                  reserve.supplyEmissions?.config.eps || BigInt(0),
-                  reserve.estimates.supplied,
-                  reserve.config.decimals
-                ),
-                reserve.tokenMetadata.symbol
-              )}
-            />
-          )}
-        </Box>
-      )}
-      {/* {tableNum >= 5 && <Box sx={{ width: tableWidth }} />} */}
-      <LinkBox
-        to={{ pathname: '/withdraw', query: { poolId: poolId, assetId: reserve.assetId } }}
+
+      <Box
         sx={{
+          width: tableWidth,
           display: 'flex',
-          justifyContent: 'end',
-          marginLeft: 'auto',
-          // flexGrow: 1,
+          justifyContent: 'center',
           alignItems: 'center',
-          width: buttonWidth,
         }}
       >
-        <OpaqueButton
-          palette={theme.palette.lend}
+        <Typography variant="body1">
+          {formatter.toPercentage(reserve.estimates.supplyApy)}
+        </Typography>
+        {!!reserve.supplyEmissions && (
+          <FlameIcon
+            width={22}
+            height={22}
+            title={formatter.getEmissionTextFromValue(
+              getEmissionsPerDayPerUnit(
+                reserve.supplyEmissions?.config.eps || BigInt(0),
+                reserve.estimates.supplied,
+                reserve.config.decimals
+              ),
+              reserve.tokenMetadata.symbol
+            )}
+          />
+        )}
+      </Box>
+
+      {/* {tableNum >= 5 && <Box sx={{ width: tableWidth }} />} */}
+      {viewType !== ViewType.MOBILE && (
+        <LinkBox
+          to={{ pathname: '/withdraw', query: { poolId: poolId, assetId: reserve.assetId } }}
           sx={{
-            width: '100%',
-            margin: '6px',
-            padding: '6px',
             display: 'flex',
-            justifyContent: 'space-between',
+            justifyContent: 'end',
+            marginLeft: 'auto',
+            // flexGrow: 1,
             alignItems: 'center',
+            width: buttonWidth,
           }}
         >
-          Withdraw
-          <ArrowForwardIcon fontSize="inherit" />
-        </OpaqueButton>
-      </LinkBox>
+          <OpaqueButton
+            palette={theme.palette.lend}
+            sx={{
+              width: '100%',
+              margin: '6px',
+              padding: '6px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            Withdraw
+            <ArrowForwardIcon fontSize="inherit" />
+          </OpaqueButton>
+        </LinkBox>
+      )}
+      {viewType === ViewType.MOBILE && (
+        <LinkBox
+          to={{ pathname: '/withdraw', query: { poolId: poolId, assetId: reserve.assetId } }}
+          sx={{
+            display: 'flex',
+            justifyContent: 'end',
+            alignItems: 'center',
+            width: 'auto',
+          }}
+        >
+          <OpaqueButton
+            palette={theme.palette.lend}
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderRadius: '100%',
+              padding: '2px',
+              width: '24px',
+              minWidth: '24px',
+              height: '24px',
+            }}
+          >
+            <ArrowForwardIcon fontSize="inherit" />
+          </OpaqueButton>
+        </LinkBox>
+      )}
     </Box>
   );
 };
