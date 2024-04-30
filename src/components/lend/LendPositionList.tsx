@@ -23,7 +23,6 @@ export const LendPositionList: React.FC<PoolComponentProps> = ({ poolId }) => {
         flexDirection: 'column',
         overflow: 'auto',
         scrollbarColor: 'black grey',
-        padding: '6px',
       }}
     >
       <Box

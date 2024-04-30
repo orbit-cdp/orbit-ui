@@ -1,6 +1,7 @@
 import { PoolUser, Reserve } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, Typography, useTheme } from '@mui/material';
+import { useRouter } from 'next/router';
 import { ViewType, useSettings } from '../../contexts';
 import * as formatter from '../../utils/formatter';
 import { getEmissionsPerDayPerUnit } from '../../utils/token';
@@ -24,6 +25,7 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
 }) => {
   const theme = useTheme();
   const { viewType } = useSettings();
+  const router = useRouter();
 
   const userSupplyEst = userPoolData.positionEstimates.supply.get(reserve.assetId);
   const userCollatEst = userPoolData.positionEstimates.collateral.get(reserve.assetId);
@@ -33,7 +35,28 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
   const tableWidth = `${(100 / tableNum).toFixed(2)}%`;
   const buttonWidth = `${((100 / tableNum) * 1.5).toFixed(2)}%`;
   return (
-    <Box sx={{ width: '100%', display: 'flex' }}>
+    <Box
+      sx={{
+        width: '100%',
+        display: 'flex',
+        '&:hover': {
+          // color: viewType == ViewType.MOBILE ? theme.palette.lend.main : 'inherit',
+          cursor: viewType == ViewType.MOBILE ? 'pointer' : 'inherit',
+        },
+        backgroundColor: viewType == ViewType.MOBILE ? theme.palette.background.paper : 'inherit',
+        padding: viewType == ViewType.MOBILE ? '1rem' : '0px',
+        borderRadius: viewType == ViewType.MOBILE ? '6px' : '0px',
+        boxShadow: viewType === ViewType.MOBILE ? '0px 4px 4px rgba(0, 0, 0, 0.25)' : 'none',
+      }}
+      onClick={() => {
+        if (viewType === ViewType.MOBILE) {
+          router.push({
+            pathname: '/withdraw',
+            query: { poolId: poolId, assetId: reserve.assetId },
+          });
+        }
+      }}
+    >
       <TokenHeader iconSize="24px" hideDomain id={reserve.assetId} sx={{ width: tableWidth }} />
       <Box
         sx={{
