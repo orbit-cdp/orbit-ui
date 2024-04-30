@@ -1,11 +1,8 @@
 import { Box, BoxProps, Typography } from '@mui/material';
-import { useWallet } from '../../contexts/wallet';
 import theme from '../../theme';
 export interface TxOverviewProps extends BoxProps {}
 
 export const TxOverview: React.FC<TxOverviewProps> = ({ children }) => {
-  const { restore } = useWallet();
-
   return (
     <Box
       sx={{
