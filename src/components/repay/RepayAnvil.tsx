@@ -222,7 +222,7 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
                       Gas
                     </>
                   }
-                  value={`${toBalance(BigInt((simResponse as any)?.minResourceFee), decimals)} XLM`}
+                  value={`${simResponse && (simResponse as any).minResourceFee !== undefined ? toBalance(BigInt((simResponse as any).minResourceFee), decimals) : '0'} XLM`}
                 />
                 <ValueChange
                   title="Your total borrowed"
