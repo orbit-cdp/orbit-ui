@@ -128,7 +128,7 @@ export const WalletProvider = ({ children = null as any }) => {
 
   const [connected, setConnected] = useState<boolean>(false);
   const [autoConnect, setAutoConnect] = useLocalStorageState('autoConnectWallet', 'false');
-  const [loadingSim, setLoadingSim] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [txStatus, setTxStatus] = useState<TxStatus>(TxStatus.NONE);
   const [txHash, setTxHash] = useState<string | undefined>(undefined);
   const [txFailure, setTxFailure] = useState<string | undefined>(undefined);
@@ -171,7 +171,9 @@ export const WalletProvider = ({ children = null as any }) => {
       setWalletAddress(publicKey);
       setConnected(true);
       await loadUserData(publicKey);
+      setLoading(false);
     } catch (e: any) {
+      setLoading(false);
       console.error('Unable to load wallet information: ', e);
     }
   }
@@ -181,14 +183,19 @@ export const WalletProvider = ({ children = null as any }) => {
    */
   async function connect() {
     try {
+      setLoading(true);
       await walletKit.openModal({
         onWalletSelected: async (option: ISupportedWallet) => {
           walletKit.setWallet(option.id);
           setAutoConnect(option.id);
           await handleSetWalletAddress();
         },
+        onClosed: () => {
+          setLoading(false);
+        },
       });
     } catch (e: any) {
+      setLoading(false);
       console.error('Unable to connect wallet: ', e);
     }
   }
@@ -287,7 +294,7 @@ export const WalletProvider = ({ children = null as any }) => {
     operation: xdr.Operation
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse> {
     try {
-      setLoadingSim(true);
+      setLoading(true);
       const account = await rpc.getAccount(walletAddress);
       const tx_builder = new TransactionBuilder(account, {
         networkPassphrase: network.passphrase,
@@ -296,10 +303,10 @@ export const WalletProvider = ({ children = null as any }) => {
       }).addOperation(operation);
       const transaction = tx_builder.build();
       const simulation = await rpc.simulateTransaction(transaction);
-      setLoadingSim(false);
+      setLoading(false);
       return simulation;
     } catch (e) {
-      setLoadingSim(false);
+      setLoading(false);
       throw e;
     }
   }
@@ -633,7 +640,7 @@ export const WalletProvider = ({ children = null as any }) => {
         lastTxFailure: txFailure,
         txType,
         walletId: autoConnect,
-        isLoading: loadingSim,
+        isLoading: loading,
         connect,
         disconnect,
         clearLastTx,
