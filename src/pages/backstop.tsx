@@ -2,7 +2,7 @@ import { BackstopClaimArgs, parseResult } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import HelpOutline from '@mui/icons-material/HelpOutline';
 import { Box, Tooltip, Typography } from '@mui/material';
-import { Address, Asset, scValToBigInt, SorobanRpc, xdr } from '@stellar/stellar-sdk';
+import { Address, SorobanRpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -18,14 +18,14 @@ import { SectionBase } from '../components/common/SectionBase';
 import { StackedText } from '../components/common/StackedText';
 import { TokenIcon } from '../components/common/TokenIcon';
 import { PoolExploreBar } from '../components/pool/PoolExploreBar';
-import { useSettings, ViewType } from '../contexts';
+import { ViewType, useSettings } from '../contexts';
 import { useWallet } from '../contexts/wallet';
 import { getTokenBalance } from '../external/token';
 import { useStore } from '../store/store';
 import theme from '../theme';
 import { toBalance, toPercentage } from '../utils/formatter';
 import { requiresTrustline } from '../utils/horizon';
-import { BLEND_TESTNET_ASSET } from '../utils/token_display';
+import { BLND_ASSET } from '../utils/token_display';
 
 const Backstop: NextPage = () => {
   const router = useRouter();
@@ -53,8 +53,7 @@ const Backstop: NextPage = () => {
   const userEmissions = userBackstopData?.estimates.get(safePoolId)?.emissions;
   const balancesByAddress = useStore((state) => state.balances);
   const userAccount = useStore((state) => state.account);
-  const BLNDAsset = new Asset(BLEND_TESTNET_ASSET.asset_code, BLEND_TESTNET_ASSET.asset_issuer);
-  const hasBLNDTrustline = !requiresTrustline(userAccount, BLNDAsset);
+  const hasBLNDTrustline = !requiresTrustline(userAccount, BLND_ASSET);
   const estBackstopApy =
     backstopPoolData && poolData
       ? ((poolData.config.backstopRate / 1e7) *
@@ -76,7 +75,7 @@ const Backstop: NextPage = () => {
 
   async function handleCreateTrustlineClick() {
     if (connected) {
-      await createTrustline(BLNDAsset);
+      await createTrustline(BLND_ASSET);
     }
   }
 

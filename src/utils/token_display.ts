@@ -1,11 +1,5 @@
-export const USDC_TESTNET_ASSET = {
-  asset_type: 'credit_alphanum4',
-  asset_code: 'USDC',
-  asset_issuer: 'GATALTGTWIOT6BUDBCZM3Q4OQ4BO2COLOAZ7IYSKPLC2PMSOPPGF5V56',
-};
+import { Asset } from '@stellar/stellar-sdk';
 
-export const BLEND_TESTNET_ASSET = {
-  asset_type: 'credit_alphanum4',
-  asset_code: 'BLND',
-  asset_issuer: 'GAUXXKV67C4NWHBA7LGDEAN6XYCBRRCVG5VQUC7VWECRBCKLOWLADGZ7',
-};
+export const USDC_ASSET = new Asset('USDC', process.env.NEXT_PUBLIC_USDC_ISSUER || '');
+
+export const BLND_ASSET = new Asset('BLND', process.env.NEXT_PUBLIC_BLND_ISSUER || '');

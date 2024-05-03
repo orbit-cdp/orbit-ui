@@ -1,8 +1,8 @@
 import { BackstopUser, PoolUser } from '@blend-capital/blend-sdk';
-import { Address, Asset, Horizon } from '@stellar/stellar-sdk';
+import { Address, Horizon } from '@stellar/stellar-sdk';
 import { StateCreator } from 'zustand';
 import { getTokenBalance } from '../external/token';
-import { BLEND_TESTNET_ASSET, USDC_TESTNET_ASSET } from '../utils/token_display';
+import { BLND_ASSET, USDC_ASSET } from '../utils/token_display';
 import { DataStore } from './store';
 
 /**
@@ -63,27 +63,25 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
       let user_balances = new Map<string, bigint>();
 
       /** load USDC and BLND balances manually **/
-      const usdcAsset = new Asset(USDC_TESTNET_ASSET.asset_code, USDC_TESTNET_ASSET.asset_issuer);
-      const usdcContractId = usdcAsset.contractId(networkPassphrase);
+      const usdcContractId = USDC_ASSET.contractId(networkPassphrase);
       let usdcBalanceLine = account.balances.find((balance) => {
         return (
           // @ts-ignore
-          balance.asset_code === USDC_TESTNET_ASSET.asset_code &&
+          balance.asset_code === USDC_ASSET.code &&
           // @ts-ignore
-          balance.asset_issuer === USDC_TESTNET_ASSET.asset_issuer
+          balance.asset_issuer === USDC_ASSET.issuer
         );
       });
       let usdc_balance_string = usdcBalanceLine ? usdcBalanceLine.balance.replace('.', '') : '0';
       user_balances.set(usdcContractId, BigInt(usdc_balance_string));
 
-      const blndAsset = new Asset(BLEND_TESTNET_ASSET.asset_code, BLEND_TESTNET_ASSET.asset_issuer);
-      const blndContractId = blndAsset.contractId(networkPassphrase);
+      const blndContractId = BLND_ASSET.contractId(networkPassphrase);
       let blndBalanceLine = account.balances.find((balance) => {
         return (
           // @ts-ignore
-          balance.asset_code === BLEND_TESTNET_ASSET.asset_code &&
+          balance.asset_code === BLND_ASSET.code &&
           // @ts-ignore
-          balance.asset_issuer === BLEND_TESTNET_ASSET.asset_issuer
+          balance.asset_issuer === BLND_ASSET.issuer
         );
       });
       let blnd_balance_string = blndBalanceLine ? blndBalanceLine.balance.replace('.', '') : '0';
@@ -125,7 +123,6 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
           }
         }
       }
-
       set({
         account,
         isFunded: true,

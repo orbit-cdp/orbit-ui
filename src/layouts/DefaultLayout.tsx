@@ -1,4 +1,5 @@
 import { Box } from '@mui/material';
+import { Networks } from '@stellar/stellar-sdk';
 import { useRouter } from 'next/router';
 import { ReactNode, useEffect } from 'react';
 import { FaucetBanner } from '../components/common/FaucetBanner';
@@ -20,6 +21,8 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
 
   const loadBlendData = useStore((state) => state.loadBlendData);
   const rewardZone = useStore((state) => state.backstop?.config?.rewardZone ?? []);
+
+  const isTestnet = process.env.NEXT_PUBLIC_PASSPHRASE === Networks.TESTNET;
 
   useEffect(() => {
     const update = async () => {
@@ -52,7 +55,7 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
             <Row>
               <WalletWarning />
             </Row>
-            {faucet_pool && (
+            {faucet_pool && isTestnet && (
               <Row>
                 <FaucetBanner poolId={faucet_pool} />
               </Row>
