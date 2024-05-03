@@ -1,13 +1,12 @@
 import { PoolClaimArgs } from '@blend-capital/blend-sdk';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Box, useTheme } from '@mui/material';
-import { Asset } from '@stellar/stellar-sdk';
 import { ViewType, useSettings } from '../../contexts';
 import { useWallet } from '../../contexts/wallet';
 import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { requiresTrustline } from '../../utils/horizon';
-import { BLEND_TESTNET_ASSET } from '../../utils/token_display';
+import { BLND_ASSET } from '../../utils/token_display';
 import { CustomButton } from '../common/CustomButton';
 import { FlameIcon } from '../common/FlameIcon';
 import { Icon } from '../common/Icon';
@@ -24,8 +23,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
   const userPoolData = useStore((state) => state.userPoolData.get(poolId));
   const loadBlendData = useStore((state) => state.loadBlendData);
   const userAccount = useStore((state) => state.account);
-  const BLNDAsset = new Asset(BLEND_TESTNET_ASSET.asset_code, BLEND_TESTNET_ASSET.asset_issuer);
-  const hasBLNDTrustline = !requiresTrustline(userAccount, BLNDAsset);
+  const hasBLNDTrustline = !requiresTrustline(userAccount, BLND_ASSET);
   const borrow_capacity = userPoolData?.positionEstimates?.borrowCap;
   const net_apy = Number.isFinite(userPoolData?.positionEstimates?.netApy)
     ? userPoolData?.positionEstimates?.netApy
@@ -50,7 +48,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
 
   async function handleCreateTrustlineClick() {
     if (connected) {
-      await createTrustline(BLNDAsset);
+      await createTrustline(BLND_ASSET);
     }
   }
 

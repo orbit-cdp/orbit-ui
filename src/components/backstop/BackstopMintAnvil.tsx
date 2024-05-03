@@ -1,16 +1,16 @@
 import { parseResult } from '@blend-capital/blend-sdk';
 import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
-import { Address, scValToBigInt, SorobanRpc, xdr } from '@stellar/stellar-sdk';
+import { Address, SorobanRpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
-import { useSettings, ViewType } from '../../contexts';
+import { ViewType, useSettings } from '../../contexts';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { getTokenBalance } from '../../external/token';
 import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
 import { scaleInputToBigInt } from '../../utils/scval';
-import { getErrorFromSim, SubmitError } from '../../utils/txSim';
+import { SubmitError, getErrorFromSim } from '../../utils/txSim';
 import { AnvilAlert } from '../common/AnvilAlert';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
@@ -393,7 +393,10 @@ export const BackstopMintAnvil: React.FC<{
                       Gas
                     </>
                   }
-                  value={`${toBalance(BigInt((simResponse as any)?.minResourceFee), decimals)} XLM`}
+                  value={`${toBalance(
+                    BigInt((simResponse as any)?.minResourceFee ?? 0),
+                    decimals
+                  )} XLM`}
                 />
                 <ValueChange
                   title="Your total mint"

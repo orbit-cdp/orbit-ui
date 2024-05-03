@@ -13,15 +13,17 @@ import {
 import {
   FreighterModule,
   ISupportedWallet,
+  LobstrModule,
   StellarWalletsKit,
   WalletNetwork,
-  xBullModule,
   XBULL_ID,
-} from '@creit.tech/stellar-wallets-kit/build/main';
+  xBullModule,
+} from '@creit.tech/stellar-wallets-kit/build/index';
 import { getNetworkDetails as getFreighterNetwork } from '@stellar/freighter-api';
 import {
   Asset,
   BASE_FEE,
+  Networks,
   Operation,
   SorobanRpc,
   Transaction,
@@ -30,7 +32,6 @@ import {
 } from '@stellar/stellar-sdk';
 import React, { useContext, useEffect, useState } from 'react';
 import { useLocalStorageState } from '../hooks';
-import { BACKSTOP_ID } from '../store/blendSlice';
 import { useStore } from '../store/store';
 import {
   CometClient,
@@ -127,7 +128,7 @@ export const WalletProvider = ({ children = null as any }) => {
 
   const [connected, setConnected] = useState<boolean>(false);
   const [autoConnect, setAutoConnect] = useLocalStorageState('autoConnectWallet', 'false');
-  const [loadingSim, setLoadingSim] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [txStatus, setTxStatus] = useState<TxStatus>(TxStatus.NONE);
   const [txHash, setTxHash] = useState<string | undefined>(undefined);
   const [txFailure, setTxFailure] = useState<string | undefined>(undefined);
@@ -138,7 +139,7 @@ export const WalletProvider = ({ children = null as any }) => {
   const walletKit: StellarWalletsKit = new StellarWalletsKit({
     network: network.passphrase as WalletNetwork,
     selectedWalletId: autoConnect !== undefined && autoConnect !== 'false' ? autoConnect : XBULL_ID,
-    modules: [new xBullModule(), new FreighterModule()],
+    modules: [new xBullModule(), new FreighterModule(), new LobstrModule()],
   });
 
   useEffect(() => {
@@ -170,7 +171,9 @@ export const WalletProvider = ({ children = null as any }) => {
       setWalletAddress(publicKey);
       setConnected(true);
       await loadUserData(publicKey);
+      setLoading(false);
     } catch (e: any) {
+      setLoading(false);
       console.error('Unable to load wallet information: ', e);
     }
   }
@@ -180,14 +183,19 @@ export const WalletProvider = ({ children = null as any }) => {
    */
   async function connect() {
     try {
+      setLoading(true);
       await walletKit.openModal({
         onWalletSelected: async (option: ISupportedWallet) => {
           walletKit.setWallet(option.id);
           setAutoConnect(option.id);
           await handleSetWalletAddress();
         },
+        onClosed: () => {
+          setLoading(false);
+        },
       });
     } catch (e: any) {
+      setLoading(false);
       console.error('Unable to connect wallet: ', e);
     }
   }
@@ -286,7 +294,7 @@ export const WalletProvider = ({ children = null as any }) => {
     operation: xdr.Operation
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse> {
     try {
-      setLoadingSim(true);
+      setLoading(true);
       const account = await rpc.getAccount(walletAddress);
       const tx_builder = new TransactionBuilder(account, {
         networkPassphrase: network.passphrase,
@@ -295,10 +303,10 @@ export const WalletProvider = ({ children = null as any }) => {
       }).addOperation(operation);
       const transaction = tx_builder.build();
       const simulation = await rpc.simulateTransaction(transaction);
-      setLoadingSim(false);
+      setLoading(false);
       return simulation;
     } catch (e) {
-      setLoadingSim(false);
+      setLoading(false);
       throw e;
     }
   }
@@ -396,8 +404,8 @@ export const WalletProvider = ({ children = null as any }) => {
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected) {
-      let backstop = new BackstopContract(BACKSTOP_ID);
+    if (connected && process.env.NEXT_PUBLIC_BACKSTOP) {
+      let backstop = new BackstopContract(process.env.NEXT_PUBLIC_BACKSTOP);
       let operation = xdr.Operation.fromXDR(backstop.deposit(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -416,8 +424,8 @@ export const WalletProvider = ({ children = null as any }) => {
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected) {
-      let backstop = new BackstopContract(BACKSTOP_ID);
+    if (connected && process.env.NEXT_PUBLIC_BACKSTOP) {
+      let backstop = new BackstopContract(process.env.NEXT_PUBLIC_BACKSTOP);
       let operation = xdr.Operation.fromXDR(backstop.withdraw(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -436,8 +444,8 @@ export const WalletProvider = ({ children = null as any }) => {
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected) {
-      let backstop = new BackstopContract(BACKSTOP_ID);
+    if (connected && process.env.NEXT_PUBLIC_BACKSTOP) {
+      let backstop = new BackstopContract(process.env.NEXT_PUBLIC_BACKSTOP);
       let operation = xdr.Operation.fromXDR(backstop.queueWithdrawal(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -456,8 +464,8 @@ export const WalletProvider = ({ children = null as any }) => {
     args: PoolBackstopActionArgs,
     sim: boolean
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected) {
-      let backstop = new BackstopContract(BACKSTOP_ID);
+    if (connected && process.env.NEXT_PUBLIC_BACKSTOP) {
+      let backstop = new BackstopContract(process.env.NEXT_PUBLIC_BACKSTOP);
       let operation = xdr.Operation.fromXDR(backstop.dequeueWithdrawal(args), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -476,8 +484,8 @@ export const WalletProvider = ({ children = null as any }) => {
     claimArgs: BackstopClaimArgs,
     sim: boolean
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected) {
-      let backstop = new BackstopContract(BACKSTOP_ID);
+    if (connected && process.env.NEXT_PUBLIC_BACKSTOP) {
+      let backstop = new BackstopContract(process.env.NEXT_PUBLIC_BACKSTOP);
       let operation = xdr.Operation.fromXDR(backstop.claim(claimArgs), 'base64');
       if (sim) {
         return await simulateOperation(operation);
@@ -545,7 +553,7 @@ export const WalletProvider = ({ children = null as any }) => {
   }
 
   async function faucet(): Promise<undefined> {
-    if (connected) {
+    if (connected && process.env.NEXT_PUBLIC_PASSPHRASE === Networks.TESTNET) {
       const url = `https://ewqw4hx7oa.execute-api.us-east-1.amazonaws.com/getAssets?userId=${walletAddress}`;
       try {
         setTxStatus(TxStatus.BUILDING);
@@ -632,7 +640,7 @@ export const WalletProvider = ({ children = null as any }) => {
         lastTxFailure: txFailure,
         txType,
         walletId: autoConnect,
-        isLoading: loadingSim,
+        isLoading: loading,
         connect,
         disconnect,
         clearLastTx,

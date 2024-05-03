@@ -2,7 +2,7 @@ import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded';
 import { Alert, IconButton, Menu, MenuItem, Snackbar, useTheme } from '@mui/material';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
-import { useSettings, ViewType } from '../../contexts';
+import { ViewType, useSettings } from '../../contexts';
 import { useStore } from '../../store/store';
 import { NavItem } from './NavItem';
 
@@ -78,6 +78,11 @@ export const NavMenu = () => {
               Docs
             </MenuItem>
           </a>
+          <a href="https://github.com/blend-capital" target="_blank" rel="noreferrer">
+            <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
+              GitHub
+            </MenuItem>
+          </a>
           <Link href="/termsofservice">
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
               Terms of Service
@@ -125,6 +130,11 @@ export const NavMenu = () => {
           <a href="https://docs.blend.capital/" target="_blank" rel="noreferrer">
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
               Docs
+            </MenuItem>
+          </a>
+          <a href="https://github.com/blend-capital" target="_blank" rel="noreferrer">
+            <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
+              GitHub
             </MenuItem>
           </a>
           <Link href="/termsofservice">

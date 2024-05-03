@@ -2,10 +2,9 @@ import { Backstop, Pool, Reserve } from '@blend-capital/blend-sdk';
 import { Asset } from '@stellar/stellar-sdk';
 import { StateCreator } from 'zustand';
 import { StellarTokenMetadata, getTokenMetadataFromTOML } from '../external/stellar-toml';
-import { BLEND_TESTNET_ASSET, USDC_TESTNET_ASSET } from '../utils/token_display';
+import { BLND_ASSET, USDC_ASSET } from '../utils/token_display';
 import { DataStore } from './store';
 
-export const BACKSTOP_ID = 'CD66EGYOKJ4DPY4FADXZS5FNL3DEVANWRNPNVANF6RQIN44GDB3HKANF';
 /**
  * Ledger state for the Blend protocol
  */
@@ -47,7 +46,7 @@ export const createBlendSlice: StateCreator<DataStore, [], [], BlendSlice> = (se
 
       let backstop = await Backstop.load(
         network,
-        BACKSTOP_ID,
+        process.env.NEXT_PUBLIC_BACKSTOP || '',
         pool_id ? [pool_id] : [],
         true,
         latest_ledger_close
@@ -74,33 +73,28 @@ export const createBlendSlice: StateCreator<DataStore, [], [], BlendSlice> = (se
       }
 
       // fetch XLM, USDC, and BLND metadata if needed
-      const USDC: Asset = new Asset(USDC_TESTNET_ASSET.asset_code, USDC_TESTNET_ASSET.asset_issuer);
-      const usdcAssetId = USDC.contractId(network.passphrase);
+      const usdcAssetId = USDC_ASSET.contractId(network.passphrase);
       if (!assetStellarMetadata.has(usdcAssetId)) {
         let metadata = await getTokenMetadataFromTOML(horizonServer, {
           assetId: usdcAssetId,
           tokenMetadata: {
-            asset: USDC,
-            name: USDC.code,
-            symbol: USDC.code,
+            asset: USDC_ASSET,
+            name: USDC_ASSET.code,
+            symbol: USDC_ASSET.code,
             decimals: 7,
           },
         } as Reserve);
         assetStellarMetadata.set(usdcAssetId, metadata);
       }
 
-      const BLND: Asset = new Asset(
-        BLEND_TESTNET_ASSET.asset_code,
-        BLEND_TESTNET_ASSET.asset_issuer
-      );
-      const blndAssetId = BLND.contractId(network.passphrase);
+      const blndAssetId = BLND_ASSET.contractId(network.passphrase);
       if (!assetStellarMetadata.has(blndAssetId)) {
         let metadata = await getTokenMetadataFromTOML(horizonServer, {
           assetId: blndAssetId,
           tokenMetadata: {
-            asset: BLND,
-            name: BLND.code,
-            symbol: BLND.code,
+            asset: BLND_ASSET,
+            name: BLND_ASSET.code,
+            symbol: BLND_ASSET.code,
             decimals: 7,
           },
         } as Reserve);

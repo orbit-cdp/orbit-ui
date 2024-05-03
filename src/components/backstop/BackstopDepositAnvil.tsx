@@ -166,7 +166,10 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
                       Gas
                     </>
                   }
-                  value={`${toBalance(BigInt((simResponse as any)?.minResourceFee), decimals)} XLM`}
+                  value={`${toBalance(
+                    BigInt((simResponse as any)?.minResourceFee ?? 0),
+                    decimals
+                  )} XLM`}
                 />
                 <ValueChange
                   title="Your total deposit"

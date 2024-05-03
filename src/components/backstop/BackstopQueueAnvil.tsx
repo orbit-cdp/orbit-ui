@@ -172,7 +172,10 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
                       Gas
                     </>
                   }
-                  value={`${toBalance(BigInt((simResponse as any)?.minResourceFee), decimals)} XLM`}
+                  value={`${toBalance(
+                    BigInt((simResponse as any)?.minResourceFee ?? 0),
+                    decimals
+                  )} XLM`}
                 />
                 <Value
                   title="New queue expiration"
