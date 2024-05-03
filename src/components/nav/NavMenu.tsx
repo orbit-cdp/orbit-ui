@@ -68,7 +68,7 @@ export const NavMenu = () => {
             backgroundColor: theme.palette.menu.main,
           }}
         >
-          <Link href="/network" >
+          <Link href="/network">
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
               Network Config
             </MenuItem>
@@ -76,6 +76,11 @@ export const NavMenu = () => {
           <a href="https://docs.blend.capital/" target="_blank" rel="noreferrer">
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
               Docs
+            </MenuItem>
+          </a>
+          <a href="https://github.com/blend-capital" target="_blank" rel="noreferrer">
+            <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
+              GitHub
             </MenuItem>
           </a>
         </Menu>
@@ -112,7 +117,7 @@ export const NavMenu = () => {
             title="Backstop"
             sx={{ width: '90%', justifyContent: 'left', marginBottom: '6px' }}
           />
-          <Link href="/network" >
+          <Link href="/network">
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
               Network Config
             </MenuItem>
@@ -120,6 +125,11 @@ export const NavMenu = () => {
           <a href="https://docs.blend.capital/" target="_blank" rel="noreferrer">
             <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
               Docs
+            </MenuItem>
+          </a>
+          <a href="https://github.com/blend-capital" target="_blank" rel="noreferrer">
+            <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
+              GitHub
             </MenuItem>
           </a>
         </Menu>
