@@ -246,7 +246,10 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
                       Gas
                     </>
                   }
-                  value={`${toBalance(BigInt((simResponse as any)?.minResourceFee), decimals)} XLM`}
+                  value={`${toBalance(
+                    BigInt((simResponse as any)?.minResourceFee ?? 0),
+                    decimals
+                  )} XLM`}
                 />
                 <ValueChange
                   title="Your total borrowed"
