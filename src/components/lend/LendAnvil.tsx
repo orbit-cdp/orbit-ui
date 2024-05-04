@@ -6,7 +6,7 @@ import {
   SubmitArgs,
   UserPositions,
 } from '@blend-capital/blend-sdk';
-import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
@@ -17,7 +17,7 @@ import { useStore } from '../../store/store';
 import { toBalance, toPercentage } from '../../utils/formatter';
 import { getAssetReserve } from '../../utils/horizon';
 import { scaleInputToBigInt } from '../../utils/scval';
-import { getErrorFromSim, SubmitError } from '../../utils/txSim';
+import { getErrorFromSim } from '../../utils/txSim';
 import { AnvilAlert } from '../common/AnvilAlert';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
@@ -42,18 +42,20 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
   const [toLend, setToLend] = useState<string>('');
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
   const [parsedSimResult, setParsedSimResult] = useState<UserPositions>();
-  const [validDecimals, setValidDecimals] = useState<boolean>(true);
+  const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
+  const loading = isLoading || loadingEstimate;
 
   useDebouncedState(toLend, RPC_DEBOUNCE_DELAY, txType, async () => {
-    if (validDecimals) {
-      let response = await handleSubmitTransaction(true);
-      if (response) {
-        setSimResponse(response);
-        if (SorobanRpc.Api.isSimulationSuccess(response)) {
-          setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
-        }
+    setSimResponse(undefined);
+    setParsedSimResult(undefined);
+    let response = await handleSubmitTransaction(true);
+    if (response) {
+      setSimResponse(response);
+      if (SorobanRpc.Api.isSimulationSuccess(response)) {
+        setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
       }
     }
+    setLoadingEstimate(false);
   });
 
   let newPositionEstimate =
@@ -84,34 +86,16 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
     setToLend('');
   }
 
-  // verify that the user can act
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError, extraContent } = useMemo(
-    () =>
-      getErrorFromSim(simResponse, () => {
-        const errorProps: Partial<SubmitError> = {};
-        if (!toLend) {
-          errorProps.isSubmitDisabled = true;
-          errorProps.isError = true;
-          errorProps.isMaxDisabled = false;
-          errorProps.extraContent = undefined;
-          errorProps.reason = 'Please enter an amount to lend.';
-          errorProps.disabledType = 'info';
-        } else if (toLend.split('.')[1]?.length > decimals) {
-          setValidDecimals(false);
-          errorProps.isSubmitDisabled = true;
-          errorProps.isError = true;
-          errorProps.isMaxDisabled = false;
-          errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
-          errorProps.disabledType = 'warning';
-        }
-        return errorProps;
-      }),
-    [freeUserBalanceScaled, toLend, simResponse]
+    () => getErrorFromSim(toLend, decimals, loading, simResponse, undefined),
+    [freeUserBalanceScaled, toLend, simResponse, loading]
   );
+
   const handleLendMax = () => {
     if (userPoolData) {
       if (freeUserBalanceScaled > 0) {
         setToLend(freeUserBalanceScaled.toFixed(decimals));
+        setLoadingEstimate(true);
       }
     }
   };
@@ -165,7 +149,10 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
             <InputBar
               symbol={symbol}
               value={toLend}
-              onValueChange={setToLend}
+              onValueChange={(v) => {
+                setToLend(v);
+                setLoadingEstimate(true);
+              }}
               onSetMax={handleLendMax}
               palette={theme.palette.lend}
               sx={{ width: '100%' }}
@@ -200,56 +187,42 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
         </Box>
         {!isError && (
           <TxOverview>
-            {!isLoading && (
-              <>
-                <Value title="Amount to supply" value={`${toLend ?? '0'} ${symbol}`} />
-                <Value
-                  title={
-                    <>
-                      <Image src="/icons/dashboard/gascan.svg" alt="blend" width={20} height={20} />{' '}
-                      Gas
-                    </>
-                  }
-                  value={`${toBalance(
-                    BigInt((simResponse as any)?.minResourceFee ?? 0),
-                    decimals
-                  )} XLM`}
-                />
-                <ValueChange
-                  title="Your total supplied"
-                  curValue={`${toBalance(
-                    userPoolData?.positionEstimates?.collateral?.get(assetId) ?? 0,
-                    decimals
-                  )} ${symbol}`}
-                  newValue={`${toBalance(
-                    newPositionEstimate?.collateral.get(assetId) ?? 0,
-                    decimals
-                  )} ${symbol}`}
-                />
-                <ValueChange
-                  title="Borrow capacity"
-                  curValue={`$${toBalance(curBorrowCap)}`}
-                  newValue={`$${toBalance(nextBorrowCap)}`}
-                />
-                <ValueChange
-                  title="Borrow limit"
-                  curValue={toPercentage(curBorrowLimit)}
-                  newValue={toPercentage(nextBorrowLimit)}
-                />
-              </>
-            )}
-            {isLoading && (
-              <Box
-                sx={{
-                  width: '100%',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <CircularProgress color={'lend' as any} />
-              </Box>
-            )}
+            <>
+              <Value title="Amount to supply" value={`${toLend ?? '0'} ${symbol}`} />
+              <Value
+                title={
+                  <>
+                    <Image src="/icons/dashboard/gascan.svg" alt="blend" width={20} height={20} />{' '}
+                    Gas
+                  </>
+                }
+                value={`${toBalance(
+                  BigInt((simResponse as any)?.minResourceFee ?? 0),
+                  decimals
+                )} XLM`}
+              />
+              <ValueChange
+                title="Your total supplied"
+                curValue={`${toBalance(
+                  userPoolData?.positionEstimates?.collateral?.get(assetId) ?? 0,
+                  decimals
+                )} ${symbol}`}
+                newValue={`${toBalance(
+                  newPositionEstimate?.collateral.get(assetId) ?? 0,
+                  decimals
+                )} ${symbol}`}
+              />
+              <ValueChange
+                title="Borrow capacity"
+                curValue={`$${toBalance(curBorrowCap)}`}
+                newValue={`$${toBalance(nextBorrowCap)}`}
+              />
+              <ValueChange
+                title="Borrow limit"
+                curValue={toPercentage(curBorrowLimit)}
+                newValue={toPercentage(nextBorrowLimit)}
+              />
+            </>
           </TxOverview>
         )}
         {isError && (

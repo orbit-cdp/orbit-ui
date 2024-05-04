@@ -42,22 +42,24 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const [toBorrow, setToBorrow] = useState<string>('');
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
   const [parsedSimResult, setParsedSimResult] = useState<UserPositions>();
-  const [validDecimals, setValidDecimals] = useState<boolean>(true);
+  const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
+  const loading = isLoading || loadingEstimate;
 
   if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toBorrow) != 0) {
     setToBorrow('');
   }
 
   useDebouncedState(toBorrow, RPC_DEBOUNCE_DELAY, txType, async () => {
-    if (validDecimals) {
-      let response = await handleSubmitTransaction(true);
-      if (response) {
-        setSimResponse(response);
-        if (SorobanRpc.Api.isSimulationSuccess(response)) {
-          setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
-        }
+    setSimResponse(undefined);
+    setParsedSimResult(undefined);
+    let response = await handleSubmitTransaction(true);
+    if (response) {
+      setSimResponse(response);
+      if (SorobanRpc.Api.isSimulationSuccess(response)) {
+        setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
       }
     }
+    setLoadingEstimate(false);
   });
 
   let newPositionEstimate =
@@ -97,38 +99,24 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
       Add {reserve?.tokenMetadata.asset?.code} Trustline
     </OpaqueButton>
   );
-  // verify that the user can act
-  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent, isError } = useMemo(
-    () =>
-      getErrorFromSim(simResponse, () => {
-        const errorProps: Partial<SubmitError> = {};
-        const hasTokenTrustline = !requiresTrustline(userAccount, reserve?.tokenMetadata?.asset);
-        if (!hasTokenTrustline) {
-          errorProps.isSubmitDisabled = true;
-          errorProps.isError = true;
-          errorProps.isMaxDisabled = true;
-          errorProps.reason = 'You need a trustline for this asset in order to borrow it.';
-          errorProps.disabledType = 'warning';
-          errorProps.extraContent = AddTrustlineButton;
-        } else if (!toBorrow) {
-          errorProps.isSubmitDisabled = true;
-          errorProps.isError = true;
-          errorProps.isMaxDisabled = false;
-          errorProps.extraContent = undefined;
-          errorProps.reason = 'Please enter an amount to borrow.';
-          errorProps.disabledType = 'info';
-        } else if (toBorrow.split('.')[1]?.length > decimals) {
-          setValidDecimals(false);
-          errorProps.isSubmitDisabled = true;
-          errorProps.isError = true;
-          errorProps.isMaxDisabled = false;
-          errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
-          errorProps.disabledType = 'warning';
-        }
-        return errorProps;
-      }),
-    [toBorrow, simResponse, userPoolData?.positionEstimates]
-  );
+
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent, isError } =
+    useMemo(() => {
+      const hasTokenTrustline = !requiresTrustline(userAccount, reserve?.tokenMetadata?.asset);
+      if (!hasTokenTrustline) {
+        let submitError: SubmitError = {
+          isSubmitDisabled: true,
+          isError: true,
+          isMaxDisabled: true,
+          reason: 'You need a trustline for this asset in order to borrow it.',
+          disabledType: 'warning',
+          extraContent: AddTrustlineButton,
+        };
+        return submitError;
+      } else {
+        return getErrorFromSim(toBorrow, decimals, loading, simResponse, undefined);
+      }
+    }, [toBorrow, simResponse, userPoolData?.positionEstimates]);
 
   const handleBorrowMax = () => {
     if (reserve && userPoolData) {
@@ -142,6 +130,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
           reserve.estimates.borrowed
       );
       setToBorrow(Math.max(to_borrow, 0).toFixed(7));
+      setLoadingEstimate(true);
     }
   };
 
@@ -201,7 +190,10 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
             <InputBar
               symbol={symbol}
               value={toBorrow}
-              onValueChange={setToBorrow}
+              onValueChange={(v) => {
+                setToBorrow(v);
+                setLoadingEstimate(true);
+              }}
               onSetMax={handleBorrowMax}
               palette={theme.palette.borrow}
               sx={{ width: '100%' }}

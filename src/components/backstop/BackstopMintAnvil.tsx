@@ -1,5 +1,5 @@
 import { parseResult } from '@blend-capital/blend-sdk';
-import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import { Address, SorobanRpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
@@ -38,6 +38,7 @@ export const BackstopMintAnvil: React.FC<{
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
   const [toSwap, setToSwap] = useState<string>('');
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
+  const loading = isLoading || loadingEstimate;
 
   /** run function on each state change */
   useDebouncedState(toSwap, RPC_DEBOUNCE_DELAY, txType, handleSwapChange);
@@ -58,70 +59,54 @@ export const BackstopMintAnvil: React.FC<{
   // verify that the user can act
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError, extraContent } = useMemo(
     () =>
-      getErrorFromSim(simResponse, () => {
+      getErrorFromSim(toSwap, decimals, loading, simResponse, () => {
         const errorProps: Partial<SubmitError> = {};
         const currentDepositTokenBalance =
           balancesByAddress.get(currentDepositToken.address ?? '') || 0;
+        const validDecimals = toSwap.split('.')[1]?.length ?? 0 <= decimals;
         if (currentDepositTokenBalance <= BigInt(0)) {
           errorProps.isSubmitDisabled = true;
           errorProps.isError = true;
           errorProps.isMaxDisabled = true;
           errorProps.reason = 'You do not have any available balance to mint.';
           errorProps.disabledType = 'warning';
-        } else if (!toSwap) {
-          errorProps.isSubmitDisabled = true;
-          errorProps.isError = true;
-          errorProps.isMaxDisabled = false;
-          errorProps.reason = 'Please enter an amount to mint.';
-          errorProps.disabledType = 'info';
-        } else if (toSwap.split('.')[1]?.length > decimals) {
-          errorProps.isSubmitDisabled = true;
-          errorProps.isError = true;
-          errorProps.isMaxDisabled = false;
-          errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
-          errorProps.disabledType = 'warning';
-        } else if (scaleInputToBigInt(toSwap, decimals) > currentDepositTokenBalance) {
+        } else if (
+          validDecimals &&
+          scaleInputToBigInt(toSwap, decimals) > currentDepositTokenBalance
+        ) {
           errorProps.isSubmitDisabled = true;
           errorProps.isError = true;
           errorProps.isMaxDisabled = false;
           errorProps.reason = 'You do not have enough available balance to mint.';
           errorProps.disabledType = 'warning';
         } else if (
+          validDecimals &&
           currentDepositToken.address === blndAddress &&
           !!currentPoolBLNDBalance &&
-          scaleInputToBigInt(toSwap, decimals) > currentPoolBLNDBalance / BigInt(2) - BigInt(1)
+          scaleInputToBigInt(toSwap, decimals) > currentPoolBLNDBalance / BigInt(3) - BigInt(1)
         ) {
           errorProps.isSubmitDisabled = true;
           errorProps.isError = true;
           errorProps.isMaxDisabled = true;
-          errorProps.reason = `Cannot deposit more than half of the pools token balance, estimated max deposit amount: ${toBalance(
-            currentPoolBLNDBalance / BigInt(2) - BigInt(1),
+          errorProps.reason = `Cannot deposit more than a third of the pools token balance, estimated max deposit amount: ${toBalance(
+            currentPoolBLNDBalance / BigInt(3) - BigInt(1),
             decimals
           )}`;
           errorProps.disabledType = 'warning';
         } else if (
+          validDecimals &&
           currentDepositToken.address === usdcAddress &&
           !!currentPoolUSDCBalance &&
-          scaleInputToBigInt(toSwap, decimals) > currentPoolUSDCBalance / BigInt(2) - BigInt(1)
+          scaleInputToBigInt(toSwap, decimals) > currentPoolUSDCBalance / BigInt(3) - BigInt(1)
         ) {
           errorProps.isSubmitDisabled = true;
           errorProps.isError = true;
           errorProps.isMaxDisabled = true;
-          errorProps.reason = `Cannot deposit more than half of the pools token balance, estimated max deposit amount: ${toBalance(
-            currentPoolUSDCBalance / BigInt(2) - BigInt(1),
+          errorProps.reason = `Cannot deposit more than a third of the pools token balance, estimated max deposit amount: ${toBalance(
+            currentPoolUSDCBalance / BigInt(3) - BigInt(1),
             decimals
           )}`;
           errorProps.disabledType = 'warning';
-        } else if (!toMint || !!loadingEstimate) {
-          errorProps.isSubmitDisabled = true;
-          errorProps.isError = true;
-          errorProps.isMaxDisabled = false;
-          errorProps.reason = 'Loading estimate...';
-          errorProps.disabledType = 'info';
-        } else {
-          errorProps.isSubmitDisabled = false;
-          errorProps.isError = false;
-          errorProps.isMaxDisabled = false;
         }
         return errorProps;
       }),
@@ -149,6 +134,8 @@ export const BackstopMintAnvil: React.FC<{
   async function handleSwapChange(value: string) {
     /**  get comet estimate LP token for the inputted swap token and set in mint input  */
     const validDecimals = value.split('.')[1]?.length ?? 0 <= decimals;
+    setSimResponse(undefined);
+    setToMint(0);
     if (currentDepositToken.address && validDecimals) {
       const bigintValue = scaleInputToBigInt(value, decimals);
       const currentDepositTokenBalance =
@@ -382,41 +369,27 @@ export const BackstopMintAnvil: React.FC<{
         </Box>
         {!isError && (
           <TxOverview>
-            {!isLoading && !loadingEstimate && (
-              <>
-                {' '}
-                <Value title="Amount to mint" value={`${toMint ?? '0'} BLND-USDC LP`} />
-                <Value
-                  title={
-                    <>
-                      <Image src="/icons/dashboard/gascan.svg" alt="blend" width={20} height={20} />{' '}
-                      Gas
-                    </>
-                  }
-                  value={`${toBalance(
-                    BigInt((simResponse as any)?.minResourceFee ?? 0),
-                    decimals
-                  )} XLM`}
-                />
-                <ValueChange
-                  title="Your total mint"
-                  curValue={`${toBalance(userLPBalance)} BLND-USDC LP`}
-                  newValue={`${toBalance(userLPBalance + toMint)} BLND-USDC LP`}
-                />
-              </>
-            )}
-            {(isLoading || loadingEstimate) && (
-              <Box
-                sx={{
-                  width: '100%',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <CircularProgress color={'backstop' as any} />
-              </Box>
-            )}
+            <>
+              {' '}
+              <Value title="Amount to mint" value={`${toMint ?? '0'} BLND-USDC LP`} />
+              <Value
+                title={
+                  <>
+                    <Image src="/icons/dashboard/gascan.svg" alt="blend" width={20} height={20} />{' '}
+                    Gas
+                  </>
+                }
+                value={`${toBalance(
+                  BigInt((simResponse as any)?.minResourceFee ?? 0),
+                  decimals
+                )} XLM`}
+              />
+              <ValueChange
+                title="Your total mint"
+                curValue={`${toBalance(userLPBalance)} BLND-USDC LP`}
+                newValue={`${toBalance(userLPBalance + toMint)} BLND-USDC LP`}
+              />
+            </>
           </TxOverview>
         )}
         {isError && (

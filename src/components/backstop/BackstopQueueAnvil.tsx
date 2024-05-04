@@ -4,7 +4,7 @@ import {
   PoolBackstopActionArgs,
   Q4W,
 } from '@blend-capital/blend-sdk';
-import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
@@ -14,7 +14,7 @@ import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
 import { scaleInputToBigInt } from '../../utils/scval';
-import { getErrorFromSim, SubmitError } from '../../utils/txSim';
+import { getErrorFromSim } from '../../utils/txSim';
 import { AnvilAlert } from '../common/AnvilAlert';
 import { InputBar } from '../common/InputBar';
 import { OpaqueButton } from '../common/OpaqueButton';
@@ -46,32 +46,23 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const [toQueue, setToQueue] = useState<string>('');
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
   const [parsedSimResult, setParsedSimResult] = useState<Q4W>();
-  const [validDecimals, setValidDecimals] = useState<boolean>(true);
+  const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
+  const loading = isLoading || loadingEstimate;
 
   useDebouncedState(toQueue, RPC_DEBOUNCE_DELAY, txType, async () => {
-    handleSubmitTransaction(true);
+    setSimResponse(undefined);
+    setParsedSimResult(undefined);
+    await handleSubmitTransaction(true);
+    setLoadingEstimate(false);
   });
 
   if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toQueue) != 0) {
     setToQueue('');
   }
 
-  // verify that the user can act
   const { isError, isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent } = useMemo(
-    () =>
-      getErrorFromSim(simResponse, (): Partial<SubmitError> => {
-        const errorProps: Partial<SubmitError> = {};
-        if (toQueue.split('.')[1]?.length > decimals) {
-          setValidDecimals(false);
-          errorProps.isError = true;
-          errorProps.isSubmitDisabled = true;
-          errorProps.isMaxDisabled = false;
-          errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
-          errorProps.disabledType = 'warning';
-        }
-        return errorProps;
-      }),
-    [simResponse, toQueue, userBackstopData]
+    () => getErrorFromSim(toQueue, decimals, loading, simResponse, undefined),
+    [simResponse, toQueue, userBackstopData, loading]
   );
 
   const handleQueueMax = () => {
@@ -80,7 +71,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
     }
   };
   const handleSubmitTransaction = async (sim: boolean) => {
-    if (toQueue && connected && validDecimals) {
+    if (toQueue && connected) {
       let depositArgs: PoolBackstopActionArgs = {
         from: walletAddress,
         pool_address: poolId,
@@ -127,7 +118,10 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
             <InputBar
               symbol={'BLND-USDC LP'}
               value={toQueue}
-              onValueChange={setToQueue}
+              onValueChange={(v) => {
+                setToQueue(v);
+                setLoadingEstimate(true);
+              }}
               onSetMax={handleQueueMax}
               palette={theme.palette.backstop}
               sx={{ width: '100%', display: 'flex' }}
@@ -162,60 +156,44 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
         </Box>
         {!isError && (
           <TxOverview>
-            {!isLoading && (
-              <>
-                <Value title="Amount to queue" value={`${toQueue ?? '0'} BLND-USDC LP`} />
-                <Value
-                  title={
-                    <>
-                      <Image src="/icons/dashboard/gascan.svg" alt="blend" width={20} height={20} />{' '}
-                      Gas
-                    </>
-                  }
-                  value={`${toBalance(
-                    BigInt((simResponse as any)?.minResourceFee ?? 0),
-                    decimals
-                  )} XLM`}
-                />
-                <Value
-                  title="New queue expiration"
-                  value={
-                    (parsedSimResult
-                      ? new Date(Number(parsedSimResult.exp) * 1000)
-                      : new Date(Date.now() + 21 * 24 * 60 * 60 * 1000)
-                    )
-                      .toISOString()
-                      .split('T')[0]
-                  }
-                />
+            <>
+              <Value title="Amount to queue" value={`${toQueue ?? '0'} BLND-USDC LP`} />
+              <Value
+                title={
+                  <>
+                    <Image src="/icons/dashboard/gascan.svg" alt="blend" width={20} height={20} />{' '}
+                    Gas
+                  </>
+                }
+                value={`${toBalance(
+                  BigInt((simResponse as any)?.minResourceFee ?? 0),
+                  decimals
+                )} XLM`}
+              />
+              <Value
+                title="New queue expiration"
+                value={
+                  (parsedSimResult
+                    ? new Date(Number(parsedSimResult.exp) * 1000)
+                    : new Date(Date.now() + 21 * 24 * 60 * 60 * 1000)
+                  )
+                    .toISOString()
+                    .split('T')[0]
+                }
+              />
 
-                <ValueChange
-                  title="Your total amount queued"
-                  curValue={`${toBalance(userPoolBackstopEst?.totalQ4W)} BLND-USDC LP`}
-                  newValue={`${toBalance(
-                    userPoolBackstopEst && parsedSimResult
-                      ? userPoolBackstopEst.totalQ4W +
-                          Number(parsedSimResult.amount) * sharesToTokens
-                      : 0
-                  )} BLND-USDC LP`}
-                />
-              </>
-            )}
-            {isLoading && (
-              <Box
-                sx={{
-                  width: '100%',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <CircularProgress color={'backstop' as any} />
-              </Box>
-            )}
+              <ValueChange
+                title="Your total amount queued"
+                curValue={`${toBalance(userPoolBackstopEst?.totalQ4W)} BLND-USDC LP`}
+                newValue={`${toBalance(
+                  userPoolBackstopEst && parsedSimResult
+                    ? userPoolBackstopEst.totalQ4W + Number(parsedSimResult.amount) * sharesToTokens
+                    : 0
+                )} BLND-USDC LP`}
+              />
+            </>
           </TxOverview>
         )}
-
         {isError && (
           <AnvilAlert severity={disabledType} message={reason} extraContent={extraContent} />
         )}
