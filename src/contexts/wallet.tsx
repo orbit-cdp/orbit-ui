@@ -38,7 +38,6 @@ import {
   cometPoolDepositArgs,
   cometPoolGetDepositAmountByLPArgs,
 } from '../utils/comet';
-import { useSettings } from './settings';
 
 export interface IWalletContext {
   connected: boolean;
@@ -118,8 +117,6 @@ export enum TxType {
 const WalletContext = React.createContext<IWalletContext | undefined>(undefined);
 
 export const WalletProvider = ({ children = null as any }) => {
-  const { lastPool } = useSettings();
-
   const network = useStore((state) => state.network);
   const rpc = useStore((state) => state.rpcServer());
   const loadBlendData = useStore((state) => state.loadBlendData);
@@ -500,7 +497,7 @@ export const WalletProvider = ({ children = null as any }) => {
    * @returns The Positions, or undefined
    */
   async function backstopMintByDepositTokenAmount(
-    { depositTokenAddress, depositTokenAmount, minLPTokenAmount }: cometPoolDepositArgs,
+    { depositTokenAddress, depositTokenAmount, minLPTokenAmount, user }: cometPoolDepositArgs,
     sim: boolean,
     lpTokenAddress: string
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse | undefined> {
@@ -511,7 +508,7 @@ export const WalletProvider = ({ children = null as any }) => {
           depositTokenAddress,
           depositTokenAmount,
           minLPTokenAmount,
-          walletAddress
+          user
         );
         if (sim) {
           return await simulateOperation(operation);

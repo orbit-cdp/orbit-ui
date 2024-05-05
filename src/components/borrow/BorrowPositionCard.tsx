@@ -85,7 +85,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
             title={formatter.getEmissionTextFromValue(
               getEmissionsPerDayPerUnit(
                 reserve.borrowEmissions?.config.eps || BigInt(0),
-                reserve.estimates.supplied,
+                reserve.estimates.borrowed,
                 reserve.config.decimals
               ),
               reserve.tokenMetadata.symbol
