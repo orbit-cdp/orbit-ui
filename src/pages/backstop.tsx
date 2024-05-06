@@ -6,6 +6,7 @@ import { Address, SorobanRpc, scValToBigInt, xdr } from '@stellar/stellar-sdk';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { BackstopAPY } from '../components/backstop/BackstopAPY';
 import { BackstopBalanceCard } from '../components/backstop/BackstopBalanceCard';
 import { BackstopQueueMod } from '../components/backstop/BackstopQueueMod';
 import { CustomButton } from '../components/common/CustomButton';
@@ -24,17 +25,12 @@ import { getTokenBalance } from '../external/token';
 import { useStore } from '../store/store';
 import theme from '../theme';
 import { toBalance, toPercentage } from '../utils/formatter';
+import { getEmissionsPerYearPerUnit } from '../utils/token';
 
 const Backstop: NextPage = () => {
   const router = useRouter();
   const { viewType } = useSettings();
-  const {
-    connected,
-    walletAddress,
-    backstopClaim,
-    backstopMintByDepositTokenAmount,
-    createTrustline,
-  } = useWallet();
+  const { connected, walletAddress, backstopClaim, backstopMintByDepositTokenAmount } = useWallet();
   const loadBlendData = useStore((state) => state.loadBlendData);
   const network = useStore((state) => state.network);
   const rpcServer = useStore((state) => state.rpcServer());
@@ -58,6 +54,15 @@ const Backstop: NextPage = () => {
           poolData.estimates.totalBorrow) /
         backstopPoolData.estimates.totalSpotValue
       : 0;
+  const backstopEmissionsPerDayPerLPToken =
+    backstopPoolData && backstopPoolData.emissions
+      ? getEmissionsPerYearPerUnit(
+          backstopPoolData.emissions.config.eps,
+          Number(backstopPoolData.poolBalance.shares - backstopPoolData.poolBalance.q4w) / 1e7,
+          7
+        )
+      : 0;
+
   const handleClaimEmissionsClick = async () => {
     if (connected && userBackstopData && userEmissions) {
       let claimArgs: BackstopClaimArgs = {
@@ -183,35 +188,33 @@ const Backstop: NextPage = () => {
       </Row>
       <Divider />
       <Row>
-        <Section width={SectionSize.THIRD}>
-          <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-            <StackedText
-              title="Backstop APY"
-              text={toPercentage(estBackstopApy)}
-              sx={{ width: '100%', padding: '6px' }}
-            ></StackedText>
-            <Tooltip
-              title="Estimated APY based on backstop emissions and pool interest sharing."
-              placement="top"
-            >
-              <HelpOutline sx={{ width: '15px', color: 'text.secondary' }} />
-            </Tooltip>
-          </Box>
+        <Section width={SectionSize.THIRD} sx={{ alignItems: 'center' }}>
+          <BackstopAPY poolId={safePoolId} />
         </Section>
         <Section width={SectionSize.THIRD}>
-          <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-            <StackedText
-              title="Q4W"
-              text={toPercentage(backstopPoolData?.estimates?.q4wPercentage)}
-              sx={{ width: '100%', padding: '6px' }}
-            ></StackedText>
-            <Tooltip
-              title="Percent of capital insuring this pool queued for withdrawal (Q4W). A higher percent indicates potential risks."
-              placement="top"
-            >
-              <HelpOutline sx={{ marginLeft: '-15px', width: '15px', color: 'text.secondary' }} />
-            </Tooltip>
-          </Box>
+          <Tooltip
+            title="Percent of capital insuring this pool queued for withdrawal (Q4W). A higher percent indicates potential risks."
+            placement="top"
+            enterTouchDelay={0}
+            enterDelay={500}
+            leaveTouchDelay={3000}
+          >
+            <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+              <StackedText
+                title="Q4W"
+                text={toPercentage(backstopPoolData?.estimates?.q4wPercentage)}
+                sx={{ width: '100%', padding: '6px' }}
+              ></StackedText>
+              <HelpOutline
+                sx={{
+                  marginLeft: '-10px',
+                  marginTop: '9px',
+                  width: '15px',
+                  color: 'text.secondary',
+                }}
+              />
+            </Box>
+          </Tooltip>
         </Section>
         <Section width={SectionSize.THIRD}>
           <StackedText

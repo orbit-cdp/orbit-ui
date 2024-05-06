@@ -72,95 +72,97 @@ export const BorrowCapRing: React.FC<BorrowCapRingProps> = ({ poolId, ...props }
     }
   }
   return (
-    <Box
-      sx={{
-        width: '100px',
-        display: 'flex',
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-      }}
+    <Tooltip
+      title="The percentage of your borrow capacity being used."
+      placement="top"
+      enterTouchDelay={0}
+      enterDelay={500}
+      leaveTouchDelay={3000}
     >
       <Box
         sx={{
-          position: 'relative',
+          width: '100px',
           display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          width: '50px',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
         }}
       >
-        <CircularProgress
-          sx={{
-            color: getColorByCapacity(capacityPercentage),
-            marginLeft: '18px',
-            position: 'absolute',
-          }}
-          size="30px"
-          thickness={4.5}
-          variant="determinate"
-          value={capacityPercentage}
-        />
-        <CircularProgress
-          sx={{
-            color: getBackgroundByCapacity(capacityPercentage),
-            marginLeft: '18px',
-            position: 'absolute',
-          }}
-          size="30px"
-          thickness={4.5}
-          variant="determinate"
-          value={100}
-        />
         <Box
-          style={{
-            position: 'absolute',
-            width: '24px',
-            height: '24px',
-            top: 'calc(50% - 12px)',
-            padding: 'none !important',
-            left: 'calc(50% - 12px)',
-            background: 'transparent',
-            borderRadius: '50%',
+          sx={{
+            position: 'relative',
             display: 'flex',
-            alignItems: 'center',
             justifyContent: 'center',
+            alignItems: 'center',
+            width: '50px',
           }}
         >
-          {getIconByCapacity(capacityPercentage)}
-        </Box>
-      </Box>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'end',
-          width: '45px',
-        }}
-      >
-        <Box>
-          <Tooltip
-            title="The percentage of your borrow capacity being used."
-            placement="top"
-            color="disabled"
+          <CircularProgress
+            sx={{
+              color: getColorByCapacity(capacityPercentage),
+              marginLeft: '18px',
+              position: 'absolute',
+            }}
+            size="30px"
+            thickness={4.5}
+            variant="determinate"
+            value={capacityPercentage}
+          />
+          <CircularProgress
+            sx={{
+              color: getBackgroundByCapacity(capacityPercentage),
+              marginLeft: '18px',
+              position: 'absolute',
+            }}
+            size="30px"
+            thickness={4.5}
+            variant="determinate"
+            value={100}
+          />
+          <Box
+            style={{
+              position: 'absolute',
+              width: '24px',
+              height: '24px',
+              top: 'calc(50% - 12px)',
+              padding: 'none !important',
+              left: 'calc(50% - 12px)',
+              background: 'transparent',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
-            <HelpOutline sx={{ width: '15px', marginTop: '-4px' }} />
-          </Tooltip>
+            {getIconByCapacity(capacityPercentage)}
+          </Box>
         </Box>
         <Box
           sx={{
-            color: getColorByCapacity(capacityPercentage),
-            background: getBackgroundByCapacity(capacityPercentage),
-            fontSize: '16px',
-            width: 'max-content',
-            lineHeight: '16px',
-            padding: '2px',
-            borderRadius: '4px',
-            boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'end',
+            width: '45px',
           }}
         >
-          {capacityPercentage}
+          <HelpOutline
+            sx={{ color: theme.palette.text.secondary, width: '15px', marginTop: '-4px' }}
+          />
+          <Box
+            sx={{
+              color: getColorByCapacity(capacityPercentage),
+              background: getBackgroundByCapacity(capacityPercentage),
+              fontSize: '16px',
+              width: 'max-content',
+              lineHeight: '16px',
+              padding: '2px',
+              borderRadius: '4px',
+              boxSizing: 'border-box',
+            }}
+          >
+            {capacityPercentage}
+          </Box>
         </Box>
       </Box>
-    </Box>
+    </Tooltip>
   );
 };

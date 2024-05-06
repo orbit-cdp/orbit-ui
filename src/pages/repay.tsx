@@ -10,7 +10,7 @@ import { StackedText } from '../components/common/StackedText';
 import { RepayAnvil } from '../components/repay/RepayAnvil';
 import { useStore } from '../store/store';
 import { getEmissionTextFromValue, toBalance, toPercentage } from '../utils/formatter';
-import { getEmissionsPerDayPerUnit } from '../utils/token';
+import { getEmissionsPerYearPerUnit } from '../utils/token';
 
 const Repay: NextPage = () => {
   const theme = useTheme();
@@ -76,7 +76,7 @@ const Repay: NextPage = () => {
                   width={22}
                   height={22}
                   title={getEmissionTextFromValue(
-                    getEmissionsPerDayPerUnit(
+                    getEmissionsPerYearPerUnit(
                       reserve?.borrowEmissions?.config.eps || BigInt(0),
                       reserve?.estimates.borrowed || 0,
                       reserve?.config.decimals

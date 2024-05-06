@@ -10,7 +10,7 @@ import { StackedText } from '../components/common/StackedText';
 import { WithdrawAnvil } from '../components/withdraw/WithdrawAnvil';
 import { useStore } from '../store/store';
 import { getEmissionTextFromValue, toBalance, toPercentage } from '../utils/formatter';
-import { getEmissionsPerDayPerUnit } from '../utils/token';
+import { getEmissionsPerYearPerUnit } from '../utils/token';
 
 const Withdraw: NextPage = () => {
   const theme = useTheme();
@@ -75,7 +75,7 @@ const Withdraw: NextPage = () => {
                   width={22}
                   height={22}
                   title={getEmissionTextFromValue(
-                    getEmissionsPerDayPerUnit(
+                    getEmissionsPerYearPerUnit(
                       reserve?.supplyEmissions?.config.eps || BigInt(0),
                       reserve?.estimates.supplied || 0,
                       reserve?.config.decimals

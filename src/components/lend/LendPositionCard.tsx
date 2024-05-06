@@ -4,7 +4,7 @@ import { Box, Typography, useTheme } from '@mui/material';
 import { useRouter } from 'next/router';
 import { ViewType, useSettings } from '../../contexts';
 import * as formatter from '../../utils/formatter';
-import { getEmissionsPerDayPerUnit } from '../../utils/token';
+import { getEmissionsPerYearPerUnit } from '../../utils/token';
 import { FlameIcon } from '../common/FlameIcon';
 import { LinkBox } from '../common/LinkBox';
 import { OpaqueButton } from '../common/OpaqueButton';
@@ -85,7 +85,7 @@ export const LendPositionCard: React.FC<LendPositionCardProps> = ({
             width={22}
             height={22}
             title={formatter.getEmissionTextFromValue(
-              getEmissionsPerDayPerUnit(
+              getEmissionsPerYearPerUnit(
                 reserve.supplyEmissions?.config.eps || BigInt(0),
                 reserve.estimates.supplied,
                 reserve.config.decimals
