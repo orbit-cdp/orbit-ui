@@ -108,6 +108,6 @@ export function toTimeSpan(secondsLeft: number): string {
   return tmp.join(' ');
 }
 
-export function getEmissionTextFromValue(value: string | number, symbol: string) {
-  return ` This asset earns ${value} BLND a day per ${symbol}`;
+export function getEmissionTextFromValue(value: number, symbol: string) {
+  return ` This position earns ${toBalance(value, 7)} BLND a year per ${symbol}`;
 }

@@ -31,9 +31,7 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
 
   const handleSubmitTransaction = async () => {
     if (connected && userPoolData) {
-      let reserves_to_claim = Array.from(userPoolData.emissions.entries()).map(
-        (emission) => emission[0]
-      );
+      let reserves_to_claim = userPoolData.emissionEstimates?.tokenIdsToClaim ?? [];
       if (reserves_to_claim.length > 0) {
         let claimArgs: PoolClaimArgs = {
           from: walletAddress,

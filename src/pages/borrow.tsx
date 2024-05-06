@@ -12,7 +12,7 @@ import { StackedText } from '../components/common/StackedText';
 import { useWallet } from '../contexts/wallet';
 import { useStore } from '../store/store';
 import { getEmissionTextFromValue, toBalance, toPercentage } from '../utils/formatter';
-import { getEmissionsPerDayPerUnit, getTokenLinkFromReserve } from '../utils/token';
+import { getEmissionsPerYearPerUnit, getTokenLinkFromReserve } from '../utils/token';
 
 const Borrow: NextPage = () => {
   const theme = useTheme();
@@ -102,7 +102,7 @@ const Borrow: NextPage = () => {
                   width={22}
                   height={22}
                   title={getEmissionTextFromValue(
-                    getEmissionsPerDayPerUnit(
+                    getEmissionsPerYearPerUnit(
                       reserve?.borrowEmissions?.config.eps || BigInt(0),
                       reserve?.estimates.borrowed || 0,
                       reserve?.config.decimals
