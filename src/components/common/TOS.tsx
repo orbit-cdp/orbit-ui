@@ -9,12 +9,12 @@ export const TOS = () => {
       <Typography variant="body2" sx={{ marginBottom: '12px' }}>
         Please review these Terms of Use (“Terms”) carefully, as they set forth the legally binding
         terms and conditions that govern your use and access to our web-hosted user interface
-        located at https://app.blend.capital (the “App” or “Blend”), including related trademarks,
-        software code, and other intellectual property. The App provides access to a decentralized
-        protocol on the Stellar blockchain that allows suppliers and borrowers of certain
-        cryptoassets to participate in decentralized money markets. These Terms expressly cover your
-        rights and obligations, and our disclaimers and limitations of legal liability, relating to
-        your use of, and access to, the App.
+        located at https://mainnet.blend.capital (the “App” or “Blend”), including related
+        trademarks, software code, and other intellectual property. The App provides access to a
+        decentralized protocol on the Stellar blockchain that allows suppliers and borrowers of
+        certain cryptoassets to participate in decentralized money markets. These Terms expressly
+        cover your rights and obligations, and our disclaimers and limitations of legal liability,
+        relating to your use of, and access to, the App.
       </Typography>
       <Typography variant="body2" sx={{ marginBottom: '12px' }}>
         The App is a copyrighted work belonging to Script3 Ltd. (“Script3,” “Company,” “us,” “our,”
