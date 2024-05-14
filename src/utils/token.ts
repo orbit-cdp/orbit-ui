@@ -6,7 +6,6 @@ export function getEmissionsPerYearPerUnit(eps: bigint, totalAmount: number, dec
   if (eps === BigInt(0) || totalAmount === 0) {
     return 0;
   }
-  console.log('eps: ', eps, 'totalAmount: ', totalAmount, 'decimals: ', decimals);
   const epsNum = Number(Number(eps) / Math.pow(10, decimals || STELLAR_DECIMALS));
   const toReturn = Number((epsNum * SECONDS_PER_DAY) / totalAmount);
   const decimalCount = toReturn.toString().split('.')[1]?.length || 0;
