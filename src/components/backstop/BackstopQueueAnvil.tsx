@@ -17,6 +17,7 @@ import { scaleInputToBigInt } from '../../utils/scval';
 import { getErrorFromSim } from '../../utils/txSim';
 import { AnvilAlert } from '../common/AnvilAlert';
 import { InputBar } from '../common/InputBar';
+import { InputButton } from '../common/InputButton';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
@@ -36,7 +37,7 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
   const backstopPoolData = useStore((state) => state.backstop?.pools?.get(poolId));
   const userBackstopData = useStore((state) => state.backstopUserData);
   const userPoolBackstopEst = userBackstopData?.estimates.get(poolId);
-  const backstopTokenPrice = backstop?.lpTokenPrice ?? 1;
+  const backstopTokenPrice = backstop?.backstopToken.lpTokenPrice ?? 1;
   const decimals = 7;
   const sharesToTokens =
     Number(backstopPoolData?.poolBalance.tokens) /
@@ -122,11 +123,16 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
                 setToQueue(v);
                 setLoadingEstimate(true);
               }}
-              onSetMax={handleQueueMax}
               palette={theme.palette.backstop}
               sx={{ width: '100%', display: 'flex' }}
-              isMaxDisabled={isMaxDisabled}
-            />
+            >
+              <InputButton
+                palette={theme.palette.backstop}
+                onClick={handleQueueMax}
+                disabled={isMaxDisabled}
+                text="MAX"
+              />
+            </InputBar>
             {viewType !== ViewType.MOBILE && (
               <OpaqueButton
                 onClick={() => handleSubmitTransaction(false)}

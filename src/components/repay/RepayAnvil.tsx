@@ -20,6 +20,7 @@ import { scaleInputToBigInt } from '../../utils/scval';
 import { getErrorFromSim } from '../../utils/txSim';
 import { AnvilAlert } from '../common/AnvilAlert';
 import { InputBar } from '../common/InputBar';
+import { InputButton } from '../common/InputButton';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
@@ -160,11 +161,16 @@ export const RepayAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId })
                 setToRepay(v);
                 setLoadingEstimate(true);
               }}
-              onSetMax={handleRepayMax}
               palette={theme.palette.borrow}
               sx={{ width: '100%' }}
-              isMaxDisabled={isMaxDisabled}
-            />
+            >
+              <InputButton
+                palette={theme.palette.borrow}
+                onClick={handleRepayMax}
+                disabled={isMaxDisabled}
+                text="MAX"
+              />
+            </InputBar>
             {viewType !== ViewType.MOBILE && (
               <OpaqueButton
                 onClick={() => handleSubmitTransaction(false)}

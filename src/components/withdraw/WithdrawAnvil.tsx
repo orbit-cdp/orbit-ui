@@ -20,6 +20,7 @@ import { scaleInputToBigInt } from '../../utils/scval';
 import { getErrorFromSim, SubmitError } from '../../utils/txSim';
 import { AnvilAlert } from '../common/AnvilAlert';
 import { InputBar } from '../common/InputBar';
+import { InputButton } from '../common/InputButton';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
@@ -202,11 +203,16 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
                 handleWithdrawAmountChange(v);
                 setLoadingEstimate(true);
               }}
-              onSetMax={handleWithdrawMax}
               palette={theme.palette.lend}
               sx={{ width: '100%' }}
-              isMaxDisabled={isMaxDisabled}
-            />
+            >
+              <InputButton
+                palette={theme.palette.lend}
+                onClick={handleWithdrawMax}
+                disabled={isMaxDisabled}
+                text="MAX"
+              />
+            </InputBar>
             {viewType !== ViewType.MOBILE && (
               <OpaqueButton
                 onClick={() => handleSubmitTransaction(false)}
