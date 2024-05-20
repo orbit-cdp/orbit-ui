@@ -120,6 +120,22 @@ export const BackstopExitAnvil = () => {
           disabledType: 'warning',
           extraContent: AddUSDCTrustlineButton,
         } as SubmitError;
+      } else if (Number(input.slippage) < 0.1) {
+        return {
+          isSubmitDisabled: true,
+          isError: true,
+          isMaxDisabled: false,
+          reason: 'Slippage must be at least 0.1%.',
+          disabledType: 'warning',
+        } as SubmitError;
+      } else if (Number(input.slippage) > 10.0) {
+        return {
+          isSubmitDisabled: true,
+          isError: true,
+          isMaxDisabled: false,
+          reason: 'Slippage can be at most 10%',
+          disabledType: 'warning',
+        } as SubmitError;
       } else {
         return getErrorFromSim(input.amount, decimals, loading, simResponse, undefined);
       }
