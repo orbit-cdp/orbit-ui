@@ -1,6 +1,5 @@
 import { Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
-import { useRouter } from 'next/router';
 import { BackstopExitAnvil } from '../components/backstop/BackstopExitAnvil';
 import { BackstopJoinAnvil } from '../components/backstop/BackstopJoinAnvil';
 import { Divider } from '../components/common/Divider';
@@ -16,7 +15,6 @@ import { toBalance } from '../utils/formatter';
 
 const BackstopToken: NextPage = () => {
   const theme = useTheme();
-  const router = useRouter();
   const { showJoinPool, setShowJoinPool, viewType } = useSettings();
 
   const backstopData = useStore((state) => state.backstop);

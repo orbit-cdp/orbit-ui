@@ -2,7 +2,7 @@ import { Box, Typography, useTheme } from '@mui/material';
 import { useStore } from '../../store/store';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
-import { SectionSize } from '../common/Section';
+import { Section, SectionSize } from '../common/Section';
 import { BackstopQueueItem } from './BackstopQueueItem';
 
 export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
@@ -35,7 +35,7 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
 
   return (
     <Row>
-      <Box width={SectionSize.FULL} sx={{ display: 'flex', flexDirection: 'column' }}>
+      <Section width={SectionSize.FULL} sx={{ display: 'flex', flexDirection: 'column' }}>
         <Row>
           <Box
             sx={{
@@ -68,7 +68,7 @@ export const BackstopQueueMod: React.FC<PoolComponentProps> = ({ poolId }) => {
               inTokens={toTokens(q4w.amount)}
             />
           ))}
-      </Box>
+      </Section>
     </Row>
   );
 };

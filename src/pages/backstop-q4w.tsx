@@ -108,14 +108,7 @@ const BackstopQ4W: NextPage = () => {
         </Section>
       </Row>
       <BackstopQueueAnvil poolId={safePoolId} />
-      <Section
-        width={SectionSize.FULL}
-        sx={{
-          backgroundColor: theme.palette.background.paper,
-        }}
-      >
-        <BackstopQueueMod poolId={safePoolId} />
-      </Section>
+      <BackstopQueueMod poolId={safePoolId} />
     </>
   );
 };

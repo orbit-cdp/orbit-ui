@@ -190,6 +190,7 @@ export const BackstopJoinAnvil = () => {
       } else if (currentToken.symbol === 'USDC' && curTokenBalance > maxUSDCDeposit) {
         max = maxUSDCDeposit;
       }
+      setLoadingEstimate(true);
       handleSetInputAmount((Number(max) / 10 ** decimals).toFixed(decimals));
     } else if (backstopData) {
       const slippageAsNum = Number(input.slippage) / 100;
@@ -200,6 +201,7 @@ export const BackstopJoinAnvil = () => {
           usdcBalance,
           slippageAsNum
         );
+        setLoadingEstimate(true);
         handleSetInputAmount(est_max_join.toFixed(7));
       }
     }

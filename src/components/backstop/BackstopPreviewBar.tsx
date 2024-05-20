@@ -193,10 +193,7 @@ export const BackstopPreviewBar: React.FC<PoolComponentProps> = ({ poolId }) => 
               </Box>
             </Tooltip>
           </Box>
-          <LinkBox
-            sx={{ width: '100%' }}
-            to={{ pathname: '/backstop-q4w', query: { poolId: 'poolId' } }}
-          >
+          <LinkBox sx={{ width: '100%' }} to={{ pathname: '/backstop', query: { poolId: poolId } }}>
             <CustomButton
               sx={{
                 width: '100%',

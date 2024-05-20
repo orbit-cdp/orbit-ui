@@ -136,6 +136,7 @@ export const BackstopExitAnvil = () => {
 
   const handleMaxClick = () => {
     if (lpBalance > BigInt(0)) {
+      setLoadingEstimate(true);
       handleSetInputAmount((Number(lpBalance) / 1e7).toFixed(7));
     }
   };

@@ -243,7 +243,7 @@ const Backstop: NextPage = () => {
               to={{ pathname: '/backstop-deposit', query: { poolId: poolId } }}
             >
               <OpaqueButton palette={theme.palette.backstop} sx={{ width: '100%', padding: '6px' }}>
-                Deposit
+                Backstop Deposit
               </OpaqueButton>
             </LinkBox>
           </Box>
@@ -291,15 +291,15 @@ const Backstop: NextPage = () => {
             to={{ pathname: 'backstop-q4w', query: { poolId: poolId } }}
           >
             <OpaqueButton
-              palette={theme.palette.backstop}
+              palette={theme.palette.positive}
               sx={{ width: '100%', margin: '6px', padding: '6px' }}
             >
               Queue for Withdrawal
             </OpaqueButton>
           </LinkBox>
-          <BackstopQueueMod poolId={safePoolId} />
         </Section>
       </Row>
+      <BackstopQueueMod poolId={safePoolId} />
     </>
   );
 };
