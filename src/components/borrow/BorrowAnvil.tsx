@@ -20,6 +20,7 @@ import { scaleInputToBigInt } from '../../utils/scval';
 import { getErrorFromSim, SubmitError } from '../../utils/txSim';
 import { AnvilAlert } from '../common/AnvilAlert';
 import { InputBar } from '../common/InputBar';
+import { InputButton } from '../common/InputButton';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
@@ -194,11 +195,16 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
                 setToBorrow(v);
                 setLoadingEstimate(true);
               }}
-              onSetMax={handleBorrowMax}
               palette={theme.palette.borrow}
               sx={{ width: '100%' }}
-              isMaxDisabled={isMaxDisabled}
-            />
+            >
+              <InputButton
+                palette={theme.palette.borrow}
+                onClick={handleBorrowMax}
+                disabled={isMaxDisabled}
+                text="MAX"
+              />
+            </InputBar>
             {viewType !== ViewType.MOBILE && (
               <OpaqueButton
                 onClick={() => handleSubmitTransaction(false)}

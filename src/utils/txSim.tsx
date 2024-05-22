@@ -47,24 +47,30 @@ export function getErrorFromSim(
     errorProps.reason = 'Please enter an amount.';
     errorProps.disabledType = 'info';
     return errorProps;
-  } else if (input.split('.')[1]?.length > decimals) {
+  }
+  if (input.split('.')[1]?.length > decimals) {
     errorProps.isError = true;
     errorProps.isSubmitDisabled = true;
     errorProps.isMaxDisabled = false;
     errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
     errorProps.disabledType = 'warning';
     return errorProps;
-  } else if (loading) {
+  }
+  if (loading) {
     errorProps.isSubmitDisabled = true;
     errorProps.isError = true;
     errorProps.isMaxDisabled = false;
     errorProps.reason = 'Loading estimate...';
     errorProps.disabledType = 'info';
     return errorProps;
-  } else if (!!extraValidations) {
+  }
+  if (!!extraValidations) {
     errorProps = { ...errorProps, ...extraValidations() };
-    return errorProps;
-  } else if (simulationResult && SorobanRpc.Api.isSimulationRestore(simulationResult)) {
+    if (errorProps.isError) {
+      return errorProps;
+    }
+  }
+  if (simulationResult && SorobanRpc.Api.isSimulationRestore(simulationResult)) {
     errorProps.isError = true;
     errorProps.extraContent = <RestoreButton simResponse={simulationResult} />;
     errorProps.isSubmitDisabled = true;
@@ -73,7 +79,8 @@ export function getErrorFromSim(
     errorProps.reason =
       'This transaction ran into expired entries that need to be restored before proceeding.';
     return errorProps;
-  } else if (simulationResult && SorobanRpc.Api.isSimulationError(simulationResult)) {
+  }
+  if (simulationResult && SorobanRpc.Api.isSimulationError(simulationResult)) {
     const error = parseError(simulationResult);
     errorProps.isError = true;
     errorProps.isSubmitDisabled = true;

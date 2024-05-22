@@ -1,5 +1,6 @@
 import { Box } from '@mui/material';
 import { useRouter } from 'next/router';
+import { useSettings } from '../../contexts';
 import { TxStatus, TxType, useWallet } from '../../contexts/wallet';
 import { OverlayModalFail } from './OverlayModalFail';
 import { OverlayModalSuccess } from './OverlayModalSuccess';
@@ -11,11 +12,14 @@ export interface CloseableOverlayProps {
 
 export const OverlayModal: React.FC = () => {
   const router = useRouter();
+  const { lastPool } = useSettings();
   const { txStatus, txType, clearLastTx } = useWallet();
 
   const display = txStatus !== TxStatus.NONE ? 'flex' : 'none';
 
   const { poolId } = router.query;
+
+  const lastPoolId = poolId ?? lastPool;
 
   const handleReturn = () => {
     const returnToHomePage = txStatus != TxStatus.FAIL;
@@ -25,9 +29,9 @@ export const OverlayModal: React.FC = () => {
       if (router.route == '/') {
         router.push({ pathname: '/' });
       } else if (router.route.includes('backstop')) {
-        router.push({ pathname: `/backstop`, query: { poolId: poolId } });
+        router.push({ pathname: `/backstop`, query: { poolId: lastPoolId } });
       } else {
-        router.push({ pathname: `/dashboard`, query: { poolId: poolId } });
+        router.push({ pathname: `/dashboard`, query: { poolId: lastPoolId } });
       }
     }
   };

@@ -52,17 +52,40 @@ export const BackstopQueueItem: React.FC<BackstopQueueItemProps> = ({ q4w, inTok
     <Row>
       <Box sx={{ margin: '6px', padding: '6px', display: 'flex', alignItems: 'center' }}>
         {timeLeft > 0 ? (
-          <CircularProgress
+          <Box
             sx={{
-              color: theme.palette.backstop.main,
-              marginLeft: '6px',
-              marginRight: '12px',
+              position: 'relative',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              width: '50px',
             }}
-            size="30px"
-            thickness={4.5}
-            variant="determinate"
-            value={timeWaitedPercentage * 100}
-          />
+          >
+            <CircularProgress
+              sx={{
+                color: theme.palette.positive.main,
+                marginLeft: '6px',
+                marginRight: '12px',
+                position: 'absolte',
+              }}
+              size="30px"
+              thickness={4.5}
+              variant="determinate"
+              value={timeWaitedPercentage * 100}
+            />
+            <CircularProgress
+              sx={{
+                color: theme.palette.positive.opaque,
+                marginLeft: '6px',
+                marginRight: '12px',
+                position: 'absolute',
+              }}
+              size="30px"
+              thickness={4.5}
+              variant="determinate"
+              value={100}
+            />
+          </Box>
         ) : (
           <CheckCircleOutlineIcon
             sx={{ color: theme.palette.primary.main, marginRight: '12px', fontSize: '35px' }}

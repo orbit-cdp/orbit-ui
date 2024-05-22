@@ -11,6 +11,7 @@ import {
   SubmitArgs,
 } from '@blend-capital/blend-sdk';
 import {
+  AlbedoModule,
   FreighterModule,
   ISupportedWallet,
   LobstrModule,
@@ -33,11 +34,7 @@ import {
 import React, { useContext, useEffect, useState } from 'react';
 import { useLocalStorageState } from '../hooks';
 import { useStore } from '../store/store';
-import {
-  CometClient,
-  cometPoolDepositArgs,
-  cometPoolGetDepositAmountByLPArgs,
-} from '../utils/comet';
+import { CometClient, CometLiquidityArgs, CometSingleSidedDepositArgs } from '../utils/comet';
 
 export interface IWalletContext {
   connected: boolean;
@@ -83,15 +80,20 @@ export interface IWalletContext {
     args: BackstopClaimArgs,
     sim: boolean
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse | undefined>;
-  backstopMintByDepositTokenAmount(
-    args: cometPoolDepositArgs,
-    sim: boolean,
-    lpTokenAddress: string
+  cometSingleSidedDeposit(
+    cometPoolId: string,
+    args: CometSingleSidedDepositArgs,
+    sim: boolean
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse | undefined>;
-  backstopMintByLPTokenAmount(
-    args: cometPoolGetDepositAmountByLPArgs,
-    sim: boolean,
-    lpTokenAddress: string
+  cometJoin(
+    cometPoolId: string,
+    args: CometLiquidityArgs,
+    sim: boolean
+  ): Promise<SorobanRpc.Api.SimulateTransactionResponse | undefined>;
+  cometExit(
+    cometPoolId: string,
+    args: CometLiquidityArgs,
+    sim: boolean
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse | undefined>;
   faucet(): Promise<undefined>;
   createTrustline(asset: Asset): Promise<void>;
@@ -136,7 +138,7 @@ export const WalletProvider = ({ children = null as any }) => {
   const walletKit: StellarWalletsKit = new StellarWalletsKit({
     network: network.passphrase as WalletNetwork,
     selectedWalletId: autoConnect !== undefined && autoConnect !== 'false' ? autoConnect : XBULL_ID,
-    modules: [new xBullModule(), new FreighterModule(), new LobstrModule()],
+    modules: [new xBullModule(), new FreighterModule(), new LobstrModule(), new AlbedoModule()],
   });
 
   useEffect(() => {
@@ -144,7 +146,7 @@ export const WalletProvider = ({ children = null as any }) => {
       // @dev: timeout ensures chrome has the ability to load extensions
       setTimeout(() => {
         handleSetWalletAddress();
-      }, 500);
+      }, 750);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoConnect]);
@@ -490,26 +492,23 @@ export const WalletProvider = ({ children = null as any }) => {
       await invokeSorobanOperation(operation);
     }
   }
+
   /**
-   * Execute a mint for the Backstop LP token using deposit token amount
+   * Execute a single sided deposit against a comet pool
+   * @param cometPoolId - The comet pool id
    * @param args - The args of the deposit
    * @param sim - "true" if simulating the transaction, "false" if submitting
-   * @returns The Positions, or undefined
+   * @returns The simulated transaction response, or undefined
    */
-  async function backstopMintByDepositTokenAmount(
-    { depositTokenAddress, depositTokenAmount, minLPTokenAmount, user }: cometPoolDepositArgs,
-    sim: boolean,
-    lpTokenAddress: string
+  async function cometSingleSidedDeposit(
+    cometPoolId: string,
+    args: CometSingleSidedDepositArgs,
+    sim: boolean
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse | undefined> {
     try {
       if (connected) {
-        let cometClient = new CometClient(lpTokenAddress);
-        let operation = cometClient.depositTokenInGetLPOut(
-          depositTokenAddress,
-          depositTokenAmount,
-          minLPTokenAmount,
-          user
-        );
+        let cometClient = new CometClient(cometPoolId);
+        let operation = cometClient.depositTokenInGetLPOut(args);
         if (sim) {
           return await simulateOperation(operation);
         }
@@ -519,33 +518,42 @@ export const WalletProvider = ({ children = null as any }) => {
       throw e;
     }
   }
-  /**
-   * Execute a mint for the Backstop LP token using LP token amount
-   * @param args - The args of the deposit
-   * @param sim - "true" if simulating the transaction, "false" if submitting
-   * @returns The Positions, or undefined
-   */
-  async function backstopMintByLPTokenAmount(
-    {
-      depositTokenAddress,
-      LPTokenAmount,
-      maxDepositTokenAmount,
-    }: cometPoolGetDepositAmountByLPArgs,
-    sim: boolean,
-    lpTokenAddress: string
+
+  async function cometJoin(
+    cometPoolId: string,
+    args: CometLiquidityArgs,
+    sim: boolean
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse | undefined> {
-    if (connected) {
-      let cometClient = new CometClient(lpTokenAddress);
-      let operation = cometClient.depositTokenInGetLPOut(
-        depositTokenAddress,
-        LPTokenAmount,
-        maxDepositTokenAmount,
-        walletAddress
-      );
-      if (sim) {
-        return await simulateOperation(operation);
+    try {
+      if (connected) {
+        let cometClient = new CometClient(cometPoolId);
+        let operation = cometClient.join(args);
+        if (sim) {
+          return await simulateOperation(operation);
+        }
+        await invokeSorobanOperation(operation);
       }
-      await invokeSorobanOperation(operation);
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  async function cometExit(
+    cometPoolId: string,
+    args: CometLiquidityArgs,
+    sim: boolean
+  ): Promise<SorobanRpc.Api.SimulateTransactionResponse | undefined> {
+    try {
+      if (connected) {
+        let cometClient = new CometClient(cometPoolId);
+        let operation = cometClient.exit(args);
+        if (sim) {
+          return await simulateOperation(operation);
+        }
+        await invokeSorobanOperation(operation);
+      }
+    } catch (e) {
+      throw e;
     }
   }
 
@@ -649,8 +657,9 @@ export const WalletProvider = ({ children = null as any }) => {
         backstopQueueWithdrawal,
         backstopDequeueWithdrawal,
         backstopClaim,
-        backstopMintByDepositTokenAmount,
-        backstopMintByLPTokenAmount,
+        cometSingleSidedDeposit,
+        cometJoin,
+        cometExit,
         faucet,
         createTrustline,
         getNetworkDetails,
