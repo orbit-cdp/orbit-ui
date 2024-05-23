@@ -1,4 +1,5 @@
 import { BackstopPool, Pool } from '@blend-capital/blend-sdk';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, BoxProps, Typography, useTheme } from '@mui/material';
@@ -120,15 +121,22 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({
             color: theme.palette.text.secondary,
             cursor: 'default',
           }}
-          onClick={() =>
-            window.open(
-              `${process.env.NEXT_PUBLIC_STELLAR_EXPERT_URL}/contract/${poolData.config.oracle}`,
-              '_blank'
-            )
-          }
+          onClick={() => {
+            if (poolData.config.admin.charAt(0) === 'G') {
+              window.open(
+                `${process.env.NEXT_PUBLIC_STELLAR_EXPERT_URL}/account/${poolData.config.admin}`,
+                '_blank'
+              );
+            } else {
+              window.open(
+                `${process.env.NEXT_PUBLIC_STELLAR_EXPERT_URL}/contract/${poolData.config.admin}`,
+                '_blank'
+              );
+            }
+          }}
         >
-          <Box sx={{ margin: '6px', height: '30px' }}>
-            <Icon src={'/icons/blend_logo.svg'} alt="oracle-icon" isCircle={false} />
+          <Box sx={{ margin: '6px', height: '30px', width: '30px' }}>
+            <AdminPanelSettingsIcon sx={{ fontSize: 30 }} />
           </Box>
           <Box sx={{ padding: '6px', display: 'flex', flexDirection: 'row', height: '30px' }}>
             <Box sx={{ paddingRight: '12px', lineHeight: '100%' }}>{`Admin ${toCompactAddress(
