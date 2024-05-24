@@ -1,4 +1,5 @@
-import { Typography, useTheme } from '@mui/material';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { IconButton, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { BackstopExitAnvil } from '../components/backstop/BackstopExitAnvil';
 import { BackstopJoinAnvil } from '../components/backstop/BackstopJoinAnvil';
@@ -37,11 +38,34 @@ const BackstopToken: NextPage = () => {
     }
   };
 
+  const title = viewType === ViewType.MOBILE ? 'BLND-USDC LP' : '80:20 BLND-USDC Liquidity Pool';
+
   return (
     <>
       <Row sx={{ margin: '12px', justifyContent: 'flex-start', alignItems: 'center' }}>
         <GoBackButton sx={{ backgroundColor: theme.palette.background.paper, margin: '12px' }} />
-        <Typography variant="h2">80:20 BLND-USDC Liquidity Pool</Typography>
+        <Icon
+          src={'/icons/pageicons/blnd_usdc_pair.svg'}
+          alt={`blndusdclp`}
+          isCircle={false}
+          sx={{ marginRight: '12px', height: '42px', width: '42px' }}
+        />
+        <Typography variant="h2">{title}</Typography>
+        <IconButton
+          onClick={() =>
+            window.open(
+              `${process.env.NEXT_PUBLIC_STELLAR_EXPERT_URL}/contract/${backstopData?.config?.backstopTkn}`,
+              '_blank'
+            )
+          }
+          size="small"
+          sx={{
+            marginLeft: '6px',
+            color: theme.palette.text.secondary,
+          }}
+        >
+          <OpenInNewIcon fontSize="inherit" />
+        </IconButton>
       </Row>
       <Divider />
       <Row>

@@ -1,4 +1,5 @@
 import { BackstopPool, Pool } from '@blend-capital/blend-sdk';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, BoxProps, Typography, useTheme } from '@mui/material';
@@ -40,12 +41,7 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({
       }}
       {...props}
     >
-      <Row
-        sx={{
-          flex: 'flex',
-          flexDirection: viewType === ViewType.REGULAR ? 'row' : 'column',
-        }}
-      >
+      <Row>
         <OpaqueButton
           palette={theme.palette.accent}
           sx={{
@@ -77,6 +73,13 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({
             </Box>
           </Box>
         </OpaqueButton>
+      </Row>
+      <Row
+        sx={{
+          flex: 'flex',
+          flexDirection: viewType === ViewType.REGULAR ? 'row' : 'column',
+        }}
+      >
         <OpaqueButton
           palette={theme.palette.accent}
           sx={{
@@ -101,6 +104,43 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({
           <Box sx={{ padding: '6px', display: 'flex', flexDirection: 'row', height: '30px' }}>
             <Box sx={{ paddingRight: '12px', lineHeight: '100%' }}>{`Oracle ${toCompactAddress(
               poolData.config.oracle
+            )}`}</Box>
+            <Box>
+              <OpenInNewIcon fontSize="inherit" />
+            </Box>
+          </Box>
+        </OpaqueButton>
+        <OpaqueButton
+          palette={theme.palette.accent}
+          sx={{
+            width: SectionSize.FULL,
+            margin: '6px',
+            padding: '6px',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            color: theme.palette.text.secondary,
+            cursor: 'default',
+          }}
+          onClick={() => {
+            if (poolData.config.admin.charAt(0) === 'G') {
+              window.open(
+                `${process.env.NEXT_PUBLIC_STELLAR_EXPERT_URL}/account/${poolData.config.admin}`,
+                '_blank'
+              );
+            } else {
+              window.open(
+                `${process.env.NEXT_PUBLIC_STELLAR_EXPERT_URL}/contract/${poolData.config.admin}`,
+                '_blank'
+              );
+            }
+          }}
+        >
+          <Box sx={{ margin: '6px', height: '30px', width: '30px' }}>
+            <AdminPanelSettingsIcon sx={{ fontSize: 30 }} />
+          </Box>
+          <Box sx={{ padding: '6px', display: 'flex', flexDirection: 'row', height: '30px' }}>
+            <Box sx={{ paddingRight: '12px', lineHeight: '100%' }}>{`Admin ${toCompactAddress(
+              poolData.config.admin
             )}`}</Box>
             <Box>
               <OpenInNewIcon fontSize="inherit" />
@@ -161,13 +201,18 @@ export const MarketCardCollapse: React.FC<MarketCardCollapseProps> = ({
               </Row>
               <Row>
                 <StackedTextBox
-                  name="Backstop APY"
+                  name="APY"
                   text={toPercentage(estBackstopApy)}
                   sx={{ width: '50%' }}
                 />
                 <StackedTextBox
                   name="Q4W"
                   text={toPercentage(backstopPoolData.estimates.q4wPercentage)}
+                  sx={{ width: '50%', color: theme.palette.backstop.main }}
+                />
+                <StackedTextBox
+                  name="Take Rate"
+                  text={toPercentage(poolData.config.backstopRate / 1e7)}
                   sx={{ width: '50%', color: theme.palette.backstop.main }}
                 />
               </Row>

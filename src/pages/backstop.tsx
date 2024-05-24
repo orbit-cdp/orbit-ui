@@ -235,7 +235,7 @@ const Backstop: NextPage = () => {
           >
             <LinkBox sx={{ width: SectionSize.TILE }} to={{ pathname: '/backstop-token' }}>
               <OpaqueButton palette={theme.palette.primary} sx={{ width: '100%', padding: '6px' }}>
-                Get More
+                Manage
               </OpaqueButton>
             </LinkBox>
             <LinkBox
