@@ -5,7 +5,7 @@ import { StellarTokenMetadata, getTokenMetadataFromTOML } from '../external/stel
 import { BLEND_TESTNET_ASSET, USDC_TESTNET_ASSET } from '../utils/token_display';
 import { DataStore } from './store';
 
-export const BACKSTOP_ID = 'CD66EGYOKJ4DPY4FADXZS5FNL3DEVANWRNPNVANF6RQIN44GDB3HKANF';
+export const BACKSTOP_ID = 'CDYUY5DAXPG6FO53KVWSGO4GMHVF2OFMDTAXV65PO3IDUE3MJOIWNKK2';
 /**
  * Ledger state for the Blend protocol
  */
