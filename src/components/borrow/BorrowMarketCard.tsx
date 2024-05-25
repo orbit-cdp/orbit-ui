@@ -4,7 +4,7 @@ import { Box, Typography, useTheme } from '@mui/material';
 import { ViewType, useSettings } from '../../contexts';
 import * as formatter from '../../utils/formatter';
 
-import { getEmissionsPerDayPerUnit } from '../../utils/token';
+import { getEmissionsPerYearPerUnit } from '../../utils/token';
 import { CustomButton } from '../common/CustomButton';
 import { FlameIcon } from '../common/FlameIcon';
 import { LinkBox } from '../common/LinkBox';
@@ -81,7 +81,7 @@ export const BorrowMarketCard: React.FC<BorrowMarketCardProps> = ({
                 width={22}
                 height={22}
                 title={formatter.getEmissionTextFromValue(
-                  getEmissionsPerDayPerUnit(
+                  getEmissionsPerYearPerUnit(
                     reserve.borrowEmissions?.config.eps || BigInt(0),
                     reserve.estimates.borrowed,
                     reserve.config.decimals

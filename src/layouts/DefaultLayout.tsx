@@ -1,12 +1,14 @@
 import { Box } from '@mui/material';
+import { Networks } from '@stellar/stellar-sdk';
 import { useRouter } from 'next/router';
 import { ReactNode, useEffect } from 'react';
 import { FaucetBanner } from '../components/common/FaucetBanner';
 import { OverlayModal } from '../components/common/OverlayModal';
+import { OverlayModalTOS } from '../components/common/OverlayModalTOS';
 import { Row } from '../components/common/Row';
 import { WalletWarning } from '../components/common/WalletWarning';
 import { NavBar } from '../components/nav/NavBar';
-import { ViewType, useSettings } from '../contexts';
+import { useSettings, ViewType } from '../contexts';
 import { useWallet } from '../contexts/wallet';
 import { useStore } from '../store/store';
 
@@ -20,6 +22,8 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
 
   const loadBlendData = useStore((state) => state.loadBlendData);
   const rewardZone = useStore((state) => state.backstop?.config?.rewardZone ?? []);
+
+  const isTestnet = process.env.NEXT_PUBLIC_PASSPHRASE === Networks.TESTNET;
 
   useEffect(() => {
     const update = async () => {
@@ -52,13 +56,14 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
             <Row>
               <WalletWarning />
             </Row>
-            {faucet_pool && (
+            {faucet_pool && isTestnet && (
               <Row>
                 <FaucetBanner poolId={faucet_pool} />
               </Row>
             )}
             {children}
             <OverlayModal />
+            <OverlayModalTOS />
           </Box>
         </Box>
         <Box />

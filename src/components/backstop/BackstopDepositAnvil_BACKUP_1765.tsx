@@ -1,9 +1,4 @@
-import {
-  BackstopContract,
-  parseResult,
-  PoolBackstopActionArgs,
-  Q4W,
-} from '@blend-capital/blend-sdk';
+import { BackstopContract, parseResult, PoolBackstopActionArgs } from '@blend-capital/blend-sdk';
 import { Box, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
 import Image from 'next/image';
@@ -26,66 +21,66 @@ import { TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
-export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
+export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) => {
   const theme = useTheme();
   const { viewType } = useSettings();
+  const { connected, walletAddress, backstopDeposit, txStatus, txType, isLoading } = useWallet();
 
-  const { connected, walletAddress, backstopQueueWithdrawal, txType, txStatus, isLoading } =
-    useWallet();
-
-  const backstop = useStore((state) => state.backstop);
+  const backstopData = useStore((state) => state.backstop);
   const backstopPoolData = useStore((state) => state.backstop?.pools?.get(poolId));
   const userBackstopData = useStore((state) => state.backstopUserData);
-  const userPoolBackstopEst = userBackstopData?.estimates.get(poolId);
-  const backstopTokenPrice = backstop?.backstopToken.lpTokenPrice ?? 1;
+  const userBackstopEst = userBackstopData?.estimates.get(poolId);
+  const userBalance = Number(userBackstopData?.tokens ?? BigInt(0)) / 1e7;
   const decimals = 7;
-  const sharesToTokens =
-    Number(backstopPoolData?.poolBalance.tokens) /
-    Number(backstopPoolData?.poolBalance.shares) /
-    1e7;
+  let sharesToTokens = backstopPoolData
+    ? Number(backstopPoolData.poolBalance.tokens) /
+      Number(backstopPoolData.poolBalance.shares) /
+      1e7
+    : 0;
 
-  const [toQueue, setToQueue] = useState<string>('');
+  const [toDeposit, setToDeposit] = useState<string>('');
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
-  const [parsedSimResult, setParsedSimResult] = useState<Q4W>();
+  const [parsedSimResult, setParsedSimResult] = useState<bigint>();
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
+  if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toDeposit) != 0) {
+    setToDeposit('');
+  }
   const loading = isLoading || loadingEstimate;
 
-  useDebouncedState(toQueue, RPC_DEBOUNCE_DELAY, txType, async () => {
+  useDebouncedState(toDeposit, RPC_DEBOUNCE_DELAY, txType, async () => {
     setSimResponse(undefined);
-    setParsedSimResult(undefined);
     await handleSubmitTransaction(true);
     setLoadingEstimate(false);
   });
 
-  if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toQueue) != 0) {
-    setToQueue('');
-  }
-
-  const { isError, isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent } = useMemo(
-    () => getErrorFromSim(toQueue, decimals, loading, simResponse, undefined),
-    [simResponse, toQueue, userBackstopData, loading]
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError, extraContent } = useMemo(
+    () => getErrorFromSim(toDeposit, decimals, loading, simResponse, undefined),
+    [simResponse, toDeposit, userBalance, loading]
   );
 
-  const handleQueueMax = () => {
-    if (userPoolBackstopEst && userPoolBackstopEst.tokens > 0) {
-      setToQueue(userPoolBackstopEst.tokens.toFixed(7));
+  const handleDepositMax = () => {
+    if (userBackstopData) {
+      setToDeposit(userBalance.toFixed(7));
     }
   };
+
   const handleSubmitTransaction = async (sim: boolean) => {
-    if (toQueue && connected) {
-      let depositArgs: PoolBackstopActionArgs = {
+    if (toDeposit && connected) {
+      const depositArgs: PoolBackstopActionArgs = {
         from: walletAddress,
         pool_address: poolId,
-        amount: scaleInputToBigInt(toQueue, 7),
+        amount: scaleInputToBigInt(toDeposit, 7),
       };
-      let response = await backstopQueueWithdrawal(depositArgs, sim);
+      const response = await backstopDeposit(depositArgs, sim);
       if (response) {
         setSimResponse(response);
         if (SorobanRpc.Api.isSimulationSuccess(response)) {
-          setParsedSimResult(parseResult(response, BackstopContract.parsers.queueWithdrawal));
+          const result = parseResult(response, BackstopContract.parsers.deposit);
+          setParsedSimResult(result);
         }
       }
     }
+    setLoadingEstimate(false);
   };
 
   return (
@@ -105,11 +100,12 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
           }}
         >
           <Typography variant="body2" sx={{ marginLeft: '12px', marginBottom: '12px' }}>
-            Amount to queue for withdrawal
+            Amount to deposit
           </Typography>
           <Box
             sx={{
               width: '100%',
+              height: '35px',
               display: 'flex',
               gap: '12px',
               flexDirection: viewType !== ViewType.MOBILE ? 'row' : 'column',
@@ -118,17 +114,17 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
           >
             <InputBar
               symbol={'BLND-USDC LP'}
-              value={toQueue}
+              value={toDeposit}
               onValueChange={(v) => {
-                setToQueue(v);
+                setToDeposit(v);
                 setLoadingEstimate(true);
               }}
               palette={theme.palette.backstop}
-              sx={{ width: '100%', display: 'flex' }}
+              sx={{ width: '100%' }}
             >
               <InputButton
                 palette={theme.palette.backstop}
-                onClick={handleQueueMax}
+                onClick={handleDepositMax}
                 disabled={isMaxDisabled}
                 text="MAX"
               />
@@ -137,33 +133,72 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
               <OpaqueButton
                 onClick={() => handleSubmitTransaction(false)}
                 palette={theme.palette.backstop}
-                sx={{ minWidth: '108px', padding: '6px', display: 'flex' }}
+                sx={{ minWidth: '108px', padding: '6px' }}
                 disabled={isSubmitDisabled}
               >
-                Queue
+                Deposit
               </OpaqueButton>
             )}
           </Box>
           <Box sx={{ marginLeft: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(Number(toQueue ?? 0) * backstopTokenPrice)}`}
+              {`$${toBalance(
+                Number(toDeposit ?? 0) * (backstopData?.backstopToken.lpTokenPrice ?? 1)
+              )}`}
             </Typography>
             {viewType === ViewType.MOBILE && (
               <OpaqueButton
                 onClick={() => handleSubmitTransaction(false)}
                 palette={theme.palette.backstop}
-                sx={{ minWidth: '108px', padding: '6px', display: 'flex', width: '100%' }}
+                sx={{ minWidth: '108px', padding: '6px', width: '100%' }}
                 disabled={isSubmitDisabled}
               >
-                Queue
+                Deposit
               </OpaqueButton>
             )}
           </Box>
         </Box>
         {!isError && (
           <TxOverview>
+<<<<<<< HEAD
+            {!isLoading && (
+              <>
+                <Value title="Amount to deposit" value={`${toDeposit ?? '0'} BLND-USDC LP`} />
+                <Value
+                  title={
+                    <>
+                      <Image src="/icons/dashboard/gascan.svg" alt="blend" width={20} height={20} />{' '}
+                      Gas
+                    </>
+                  }
+                  value={`${simResponse && (simResponse as any).minResourceFee !== undefined ? toBalance(BigInt((simResponse as any).minResourceFee), decimals) : '0'} XLM`}
+                />
+                <ValueChange
+                  title="Your total deposit"
+                  curValue={`${toBalance(userBackstopEst?.tokens)} BLND-USDC LP`}
+                  newValue={`${toBalance(
+                    parsedSimResult && userBackstopEst
+                      ? userBackstopEst.tokens + Number(parsedSimResult) * sharesToTokens
+                      : 0
+                  )} BLND-USDC LP`}
+                />
+              </>
+            )}
+            {isLoading && (
+              <Box
+                sx={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <CircularProgress color={'backstop' as any} />
+              </Box>
+            )}
+=======
             <>
-              <Value title="Amount to queue" value={`${toQueue ?? '0'} BLND-USDC LP`} />
+              <Value title="Amount to deposit" value={`${toDeposit ?? '0'} BLND-USDC LP`} />
               <Value
                 title={
                   <>
@@ -176,28 +211,17 @@ export const BackstopQueueAnvil: React.FC<PoolComponentProps> = ({ poolId }) => 
                   decimals
                 )} XLM`}
               />
-              <Value
-                title="New queue expiration"
-                value={
-                  (parsedSimResult
-                    ? new Date(Number(parsedSimResult.exp) * 1000)
-                    : new Date(Date.now() + 21 * 24 * 60 * 60 * 1000)
-                  )
-                    .toISOString()
-                    .split('T')[0]
-                }
-              />
-
               <ValueChange
-                title="Your total amount queued"
-                curValue={`${toBalance(userPoolBackstopEst?.totalQ4W)} BLND-USDC LP`}
+                title="Your total deposit"
+                curValue={`${toBalance(userBackstopEst?.tokens)} BLND-USDC LP`}
                 newValue={`${toBalance(
-                  userPoolBackstopEst && parsedSimResult
-                    ? userPoolBackstopEst.totalQ4W + Number(parsedSimResult.amount) * sharesToTokens
+                  parsedSimResult && userBackstopEst
+                    ? userBackstopEst.tokens + Number(parsedSimResult) * sharesToTokens
                     : 0
                 )} BLND-USDC LP`}
               />
             </>
+>>>>>>> 829d361222a6371616b13b6bb8d7c1e42d6434fd
           </TxOverview>
         )}
         {isError && (

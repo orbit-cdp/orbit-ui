@@ -34,12 +34,12 @@ export default function NetworkPage() {
   return (
     <>
       <>
-        <Row>
+        <Row sx={{ margin: '12px', padding: '12px' }}>
           <Typography variant="h1">Network Configuration</Typography>
         </Row>
         <Divider />
         {!!network.rpc && (
-          <Row sx={{ gap: '1rem', flexDirection: 'column' }}>
+          <Row sx={{ gap: '1rem', flexDirection: 'column', margin: '12px', padding: '12px' }}>
             <Typography variant="h2">Current Network Details</Typography>
             <Typography variant="h3">RPC Url</Typography>
             <Typography variant="h4" sx={{ color: theme.palette.text.secondary }}>
@@ -56,7 +56,15 @@ export default function NetworkPage() {
           </Row>
         )}
         <Divider />
-        <Row sx={{ flexDirection: 'column', gap: '1rem', alignItems: 'start' }}>
+        <Row
+          sx={{
+            flexDirection: 'column',
+            gap: '1rem',
+            alignItems: 'start',
+            margin: '12px',
+            padding: '12px',
+          }}
+        >
           <Typography variant="h2">Update Network Details</Typography>
 
           <Row sx={{ flexDirection: 'column', display: 'flex', gap: '1rem' }}>

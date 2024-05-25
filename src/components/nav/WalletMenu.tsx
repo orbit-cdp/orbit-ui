@@ -21,7 +21,7 @@ import { CustomButton } from '../common/CustomButton';
 
 export const WalletMenu = () => {
   const theme = useTheme();
-  const { connect, disconnect, connected, walletAddress } = useWallet();
+  const { connect, disconnect, connected, walletAddress, isLoading } = useWallet();
 
   //snackbars
   const [openCon, setOpenCon] = React.useState(false);
@@ -80,6 +80,7 @@ export const WalletMenu = () => {
           color="primary"
           endIcon={<ArrowDropDownIcon />}
           onClick={handleClickConnect}
+          disabled={isLoading}
           sx={{ width: '100%' }}
         >
           Connect Wallet

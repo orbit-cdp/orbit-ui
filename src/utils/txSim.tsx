@@ -26,6 +26,9 @@ export function RestoreButton({
   );
 }
 export function getErrorFromSim(
+  input: string | undefined,
+  decimals: number,
+  loading: boolean,
   simulationResult: SorobanRpc.Api.SimulateTransactionResponse | undefined,
   extraValidations?: () => Partial<SubmitError>
 ): SubmitError {
@@ -37,6 +40,36 @@ export function getErrorFromSim(
     disabledType: undefined,
     extraContent: undefined,
   };
+  if (input == undefined || input === '') {
+    errorProps.isSubmitDisabled = true;
+    errorProps.isError = true;
+    errorProps.isMaxDisabled = false;
+    errorProps.reason = 'Please enter an amount.';
+    errorProps.disabledType = 'info';
+    return errorProps;
+  }
+  if (input.split('.')[1]?.length > decimals) {
+    errorProps.isError = true;
+    errorProps.isSubmitDisabled = true;
+    errorProps.isMaxDisabled = false;
+    errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
+    errorProps.disabledType = 'warning';
+    return errorProps;
+  }
+  if (loading) {
+    errorProps.isSubmitDisabled = true;
+    errorProps.isError = true;
+    errorProps.isMaxDisabled = false;
+    errorProps.reason = 'Loading estimate...';
+    errorProps.disabledType = 'info';
+    return errorProps;
+  }
+  if (!!extraValidations) {
+    errorProps = { ...errorProps, ...extraValidations() };
+    if (errorProps.isError) {
+      return errorProps;
+    }
+  }
   if (simulationResult && SorobanRpc.Api.isSimulationRestore(simulationResult)) {
     errorProps.isError = true;
     errorProps.extraContent = <RestoreButton simResponse={simulationResult} />;
@@ -45,16 +78,16 @@ export function getErrorFromSim(
     errorProps.disabledType = 'warning';
     errorProps.reason =
       'This transaction ran into expired entries that need to be restored before proceeding.';
-  } else if (simulationResult && SorobanRpc.Api.isSimulationError(simulationResult)) {
+    return errorProps;
+  }
+  if (simulationResult && SorobanRpc.Api.isSimulationError(simulationResult)) {
     const error = parseError(simulationResult);
     errorProps.isError = true;
     errorProps.isSubmitDisabled = true;
     errorProps.isMaxDisabled = false;
     errorProps.reason = error.message || ContractErrorType[error.type];
     errorProps.disabledType = 'error';
-  }
-  if (!!extraValidations) {
-    errorProps = { ...errorProps, ...extraValidations() };
+    return errorProps;
   }
   return errorProps;
 }

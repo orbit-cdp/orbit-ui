@@ -6,7 +6,7 @@ import {
   SubmitArgs,
   UserPositions,
 } from '@blend-capital/blend-sdk';
-import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
@@ -20,6 +20,7 @@ import { scaleInputToBigInt } from '../../utils/scval';
 import { getErrorFromSim, SubmitError } from '../../utils/txSim';
 import { AnvilAlert } from '../common/AnvilAlert';
 import { InputBar } from '../common/InputBar';
+import { InputButton } from '../common/InputButton';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { ReserveComponentProps } from '../common/ReserveComponentProps';
 import { Row } from '../common/Row';
@@ -42,18 +43,20 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
   const [toWithdraw, setToWithdraw] = useState<string>('');
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
   const [parsedSimResult, setParsedSimResult] = useState<UserPositions>();
-  const [validDecimals, setValidDecimals] = useState<boolean>(true);
+  const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
+  const loading = isLoading || loadingEstimate;
 
   useDebouncedState(toWithdrawSubmit, RPC_DEBOUNCE_DELAY, txType, async () => {
-    if (validDecimals) {
-      let response = await handleSubmitTransaction(true);
-      if (response) {
-        setSimResponse(response);
-        if (SorobanRpc.Api.isSimulationSuccess(response)) {
-          setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
-        }
+    setSimResponse(undefined);
+    setParsedSimResult(undefined);
+    let response = await handleSubmitTransaction(true);
+    if (response) {
+      setSimResponse(response);
+      if (SorobanRpc.Api.isSimulationSuccess(response)) {
+        setParsedSimResult(parseResult(response, PoolContract.parsers.submit));
       }
     }
+    setLoadingEstimate(false);
   });
 
   let newPositionEstimate =
@@ -87,40 +90,24 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
       Add {reserve?.tokenMetadata.asset?.code} Trustline
     </OpaqueButton>
   );
-  // verify that the user can act
-  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent, isError } = useMemo(
-    () =>
-      getErrorFromSim(simResponse, () => {
-        const errorProps: Partial<SubmitError> = {};
-        const hasTokenTrustline = !requiresTrustline(userAccount, reserve?.tokenMetadata?.asset);
 
-        if (!hasTokenTrustline) {
-          errorProps.isSubmitDisabled = true;
-          errorProps.isError = true;
-          errorProps.isMaxDisabled = true;
-          errorProps.reason = 'You need a trustline for this asset in order to borrow it.';
-          errorProps.disabledType = 'warning';
-          errorProps.extraContent = AddTrustlineButton;
-        } else if (!toWithdraw) {
-          errorProps.isSubmitDisabled = true;
-          errorProps.isError = true;
-          errorProps.isMaxDisabled = false;
-          errorProps.extraContent = undefined;
-          errorProps.reason = 'Please enter an amount to withdraw.';
-          errorProps.disabledType = 'info';
-        } else if (toWithdraw.split('.')[1]?.length > decimals) {
-          setValidDecimals(false);
-          errorProps.isSubmitDisabled = true;
-          errorProps.isError = true;
-          errorProps.isMaxDisabled = false;
-          errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
-          errorProps.disabledType = 'warning';
-        }
-        return errorProps;
-      }),
-    [toWithdraw, simResponse]
-  );
-  // verify that the user can act
+  const { isSubmitDisabled, isMaxDisabled, reason, disabledType, extraContent, isError } =
+    useMemo(() => {
+      const hasTokenTrustline = !requiresTrustline(userAccount, reserve?.tokenMetadata?.asset);
+      if (!hasTokenTrustline) {
+        let submitError: SubmitError = {
+          isSubmitDisabled: true,
+          isError: true,
+          isMaxDisabled: true,
+          reason: 'You need a trustline for this asset in order to borrow it.',
+          disabledType: 'warning',
+          extraContent: AddTrustlineButton,
+        };
+        return submitError;
+      } else {
+        return getErrorFromSim(toWithdraw, decimals, loading, simResponse, undefined);
+      }
+    }, [toWithdraw, simResponse, loading]);
 
   const handleWithdrawAmountChange = (withdrawInput: string) => {
     if (reserve && userPoolData?.positionEstimates.collateral.get(assetId)) {
@@ -152,6 +139,7 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
         let withdrawAmount = Math.min(to_wd, curSupplied) + 1 / 10 ** decimals;
         handleWithdrawAmountChange(Math.max(withdrawAmount, 0).toFixed(decimals));
       }
+      setLoadingEstimate(true);
     }
   };
 
@@ -211,12 +199,20 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
             <InputBar
               symbol={reserve?.tokenMetadata?.symbol ?? ''}
               value={toWithdraw}
-              onValueChange={handleWithdrawAmountChange}
-              onSetMax={handleWithdrawMax}
+              onValueChange={(v) => {
+                handleWithdrawAmountChange(v);
+                setLoadingEstimate(true);
+              }}
               palette={theme.palette.lend}
               sx={{ width: '100%' }}
-              isMaxDisabled={isMaxDisabled}
-            />
+            >
+              <InputButton
+                palette={theme.palette.lend}
+                onClick={handleWithdrawMax}
+                disabled={isMaxDisabled}
+                text="MAX"
+              />
+            </InputBar>
             {viewType !== ViewType.MOBILE && (
               <OpaqueButton
                 onClick={() => handleSubmitTransaction(false)}
@@ -246,53 +242,42 @@ export const WithdrawAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId
         </Box>
         {!isError && (
           <TxOverview>
-            {!isLoading && (
-              <>
-                <Value title="Amount to withdraw" value={`${toWithdraw ?? '0'} ${symbol}`} />
-                <Value
-                  title={
-                    <>
-                      <Image src="/icons/dashboard/gascan.svg" alt="blend" width={20} height={20} />{' '}
-                      Gas
-                    </>
-                  }
-                  value={`${simResponse && (simResponse as any).minResourceFee !== undefined ? toBalance(BigInt((simResponse as any).minResourceFee), decimals) : '0'} XLM`}
-                />
-                <ValueChange
-                  title="Your total supplied"
-                  curValue={`${toBalance(
-                    userPoolData?.positionEstimates.collateral.get(assetId) ?? 0,
-                    decimals
-                  )} ${symbol}`}
-                  newValue={`${toBalance(
-                    newPositionEstimate?.collateral.get(assetId) ?? 0,
-                    decimals
-                  )} ${symbol}`}
-                />
-                <ValueChange
-                  title="Borrow capacity"
-                  curValue={`$${toBalance(curBorrowCap)}`}
-                  newValue={`$${toBalance(nextBorrowCap)}`}
-                />
-                <ValueChange
-                  title="Borrow limit"
-                  curValue={toPercentage(curBorrowLimit)}
-                  newValue={toPercentage(nextBorrowLimit)}
-                />
-              </>
-            )}
-            {isLoading && (
-              <Box
-                sx={{
-                  width: '100%',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <CircularProgress color={'lend' as any} />
-              </Box>
-            )}
+            <>
+              <Value title="Amount to withdraw" value={`${toWithdraw ?? '0'} ${symbol}`} />
+              <Value
+                title={
+                  <>
+                    <Image src="/icons/dashboard/gascan.svg" alt="blend" width={20} height={20} />{' '}
+                    Gas
+                  </>
+                }
+                value={`${toBalance(
+                  BigInt((simResponse as any)?.minResourceFee ?? 0),
+                  decimals
+                )} XLM`}
+              />
+              <ValueChange
+                title="Your total supplied"
+                curValue={`${toBalance(
+                  userPoolData?.positionEstimates.collateral.get(assetId) ?? 0,
+                  decimals
+                )} ${symbol}`}
+                newValue={`${toBalance(
+                  newPositionEstimate?.collateral.get(assetId) ?? 0,
+                  decimals
+                )} ${symbol}`}
+              />
+              <ValueChange
+                title="Borrow capacity"
+                curValue={`$${toBalance(curBorrowCap)}`}
+                newValue={`$${toBalance(nextBorrowCap)}`}
+              />
+              <ValueChange
+                title="Borrow limit"
+                curValue={toPercentage(curBorrowLimit)}
+                newValue={toPercentage(nextBorrowLimit)}
+              />
+            </>
           </TxOverview>
         )}
         {isError && (

@@ -16,8 +16,11 @@ export function FlameIcon({
       disableHoverListener={!title}
       disableFocusListener={!title}
       disableTouchListener={!title}
-      title={title || 'This is a flame icon'}
+      title={title || ''}
       placement="top"
+      enterTouchDelay={0}
+      enterDelay={500}
+      leaveTouchDelay={3000}
     >
       <Box
         sx={{

@@ -1,6 +1,8 @@
-import { Box, Typography, useTheme } from '@mui/material';
+import { HelpOutline } from '@mui/icons-material';
+import { Box, Tooltip, Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
+import { BackstopAPY } from '../components/backstop/BackstopAPY';
 import { BackstopDropdown } from '../components/backstop/BackstopDropdown';
 import { BackstopQueueAnvil } from '../components/backstop/BackstopQueueAnvil';
 import { BackstopQueueMod } from '../components/backstop/BackstopQueueMod';
@@ -69,19 +71,33 @@ const BackstopQ4W: NextPage = () => {
         </Section>
       </Row>
       <Row>
-        <Section width={SectionSize.THIRD}>
-          <StackedText
-            title="Backstop APY"
-            text={toPercentage(estBackstopApy)}
-            sx={{ width: '100%', padding: '6px' }}
-          ></StackedText>
+        <Section width={SectionSize.THIRD} sx={{ alignItems: 'center' }}>
+          <BackstopAPY poolId={safePoolId} />
         </Section>
         <Section width={SectionSize.THIRD}>
-          <StackedText
-            title="Q4W"
-            text={toPercentage(backstopPoolData?.estimates.q4wPercentage)}
-            sx={{ width: '100%', padding: '6px' }}
-          ></StackedText>
+          <Tooltip
+            title="Percent of capital insuring this pool queued for withdrawal (Q4W). A higher percent indicates potential risks."
+            placement="top"
+            enterTouchDelay={0}
+            enterDelay={500}
+            leaveTouchDelay={3000}
+          >
+            <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+              <StackedText
+                title="Q4W"
+                text={toPercentage(backstopPoolData?.estimates?.q4wPercentage)}
+                sx={{ width: '100%', padding: '6px' }}
+              ></StackedText>
+              <HelpOutline
+                sx={{
+                  marginLeft: '-10px',
+                  marginTop: '9px',
+                  width: '15px',
+                  color: 'text.secondary',
+                }}
+              />
+            </Box>
+          </Tooltip>
         </Section>
         <Section width={SectionSize.THIRD}>
           <StackedText

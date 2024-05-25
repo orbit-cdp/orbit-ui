@@ -1,5 +1,5 @@
 import { BackstopContract, parseResult, PoolBackstopActionArgs } from '@blend-capital/blend-sdk';
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
@@ -9,10 +9,9 @@ import { RPC_DEBOUNCE_DELAY, useDebouncedState } from '../../hooks/debounce';
 import { useStore } from '../../store/store';
 import { toBalance } from '../../utils/formatter';
 import { scaleInputToBigInt } from '../../utils/scval';
-import { getErrorFromSim } from '../../utils/txSim';
+import { getErrorFromSim, SubmitError } from '../../utils/txSim';
 import { AnvilAlert } from '../common/AnvilAlert';
 import { InputBar } from '../common/InputBar';
-import { InputButton } from '../common/InputButton';
 import { OpaqueButton } from '../common/OpaqueButton';
 import { PoolComponentProps } from '../common/PoolComponentProps';
 import { Row } from '../common/Row';
@@ -41,21 +40,29 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
   const [toDeposit, setToDeposit] = useState<string>('');
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
   const [parsedSimResult, setParsedSimResult] = useState<bigint>();
-  const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
   if (txStatus === TxStatus.SUCCESS && txType === TxType.CONTRACT && Number(toDeposit) != 0) {
     setToDeposit('');
   }
-  const loading = isLoading || loadingEstimate;
 
   useDebouncedState(toDeposit, RPC_DEBOUNCE_DELAY, txType, async () => {
-    setSimResponse(undefined);
-    await handleSubmitTransaction(true);
-    setLoadingEstimate(false);
+    handleSubmitTransaction(true);
   });
 
+  // verify that the user can act
   const { isSubmitDisabled, isMaxDisabled, reason, disabledType, isError, extraContent } = useMemo(
-    () => getErrorFromSim(toDeposit, decimals, loading, simResponse, undefined),
-    [simResponse, toDeposit, userBalance, loading]
+    () =>
+      getErrorFromSim(simResponse, (): Partial<SubmitError> => {
+        const errorProps: Partial<SubmitError> = {};
+        if (toDeposit.split('.')[1]?.length > decimals) {
+          errorProps.isError = true;
+          errorProps.isSubmitDisabled = true;
+          errorProps.isMaxDisabled = false;
+          errorProps.reason = `You cannot input more than ${decimals} decimal places.`;
+          errorProps.disabledType = 'warning';
+        }
+        return errorProps;
+      }),
+    [simResponse, toDeposit, userBalance]
   );
 
   const handleDepositMax = () => {
@@ -80,7 +87,6 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
         }
       }
     }
-    setLoadingEstimate(false);
   };
 
   return (
@@ -115,20 +121,12 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
             <InputBar
               symbol={'BLND-USDC LP'}
               value={toDeposit}
-              onValueChange={(v) => {
-                setToDeposit(v);
-                setLoadingEstimate(true);
-              }}
+              onValueChange={setToDeposit}
+              onSetMax={handleDepositMax}
               palette={theme.palette.backstop}
               sx={{ width: '100%' }}
-            >
-              <InputButton
-                palette={theme.palette.backstop}
-                onClick={handleDepositMax}
-                disabled={isMaxDisabled}
-                text="MAX"
-              />
-            </InputBar>
+              isMaxDisabled={isMaxDisabled}
+            />
             {viewType !== ViewType.MOBILE && (
               <OpaqueButton
                 onClick={() => handleSubmitTransaction(false)}
@@ -142,9 +140,7 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
           </Box>
           <Box sx={{ marginLeft: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-              {`$${toBalance(
-                Number(toDeposit ?? 0) * (backstopData?.backstopToken.lpTokenPrice ?? 1)
-              )}`}
+              {`$${toBalance(Number(toDeposit ?? 0) * (backstopData?.lpTokenPrice ?? 1))}`}
             </Typography>
             {viewType === ViewType.MOBILE && (
               <OpaqueButton
@@ -160,32 +156,44 @@ export const BackstopDepositAnvil: React.FC<PoolComponentProps> = ({ poolId }) =
         </Box>
         {!isError && (
           <TxOverview>
-            <>
-              <Value title="Amount to deposit" value={`${toDeposit ?? '0'} BLND-USDC LP`} />
-              <Value
-                title={
-                  <>
-                    <Image src="/icons/dashboard/gascan.svg" alt="blend" width={20} height={20} />{' '}
-                    Gas
-                  </>
-                }
-                value={`${toBalance(
-                  BigInt((simResponse as any)?.minResourceFee ?? 0),
-                  decimals
-                )} XLM`}
-              />
-              <ValueChange
-                title="Your total deposit"
-                curValue={`${toBalance(userBackstopEst?.tokens)} BLND-USDC LP`}
-                newValue={`${toBalance(
-                  parsedSimResult && userBackstopEst
-                    ? userBackstopEst.tokens + Number(parsedSimResult) * sharesToTokens
-                    : 0
-                )} BLND-USDC LP`}
-              />
-            </>
+            {!isLoading && (
+              <>
+                <Value title="Amount to deposit" value={`${toDeposit ?? '0'} BLND-USDC LP`} />
+                <Value
+                  title={
+                    <>
+                      <Image src="/icons/dashboard/gascan.svg" alt="blend" width={20} height={20} />{' '}
+                      Gas
+                    </>
+                  }
+                  value={`${simResponse && (simResponse as any).minResourceFee !== undefined ? toBalance(BigInt((simResponse as any).minResourceFee), decimals) : '0'} XLM`}
+                />
+                <ValueChange
+                  title="Your total deposit"
+                  curValue={`${toBalance(userBackstopEst?.tokens)} BLND-USDC LP`}
+                  newValue={`${toBalance(
+                    parsedSimResult && userBackstopEst
+                      ? userBackstopEst.tokens + Number(parsedSimResult) * sharesToTokens
+                      : 0
+                  )} BLND-USDC LP`}
+                />
+              </>
+            )}
+            {isLoading && (
+              <Box
+                sx={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <CircularProgress color={'backstop' as any} />
+              </Box>
+            )}
           </TxOverview>
         )}
+
         {isError && (
           <AnvilAlert severity={disabledType} message={reason} extraContent={extraContent} />
         )}
