@@ -65,6 +65,8 @@ export const createBlendSlice: StateCreator<DataStore, [], [], BlendSlice> = (se
               assetStellarMetadata.set(reserve.assetId, metadata);
             }
           }
+          console.log('Loaded pool data for pool ' + pool);
+          console.log(pool_data);
           pools.set(pool, pool_data);
         } catch (e) {
           console.error('Unable to load pool data for pool ' + pool);
