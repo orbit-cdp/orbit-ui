@@ -32,7 +32,7 @@ export const createUserSlice: StateCreator<DataStore, [], [], UserSlice> = (set,
       const networkPassphrase = network.passphrase;
 
       if (get().latestLedgerTimestamp == 0) {
-        await get().loadBlendData(true, "CCG4HM7SML3CUKWO2WOXDR2HCH5EMIIYVNPFB2EMQPWI6KURL46XB54H");
+        await get().loadBlendData(true, "CBYCVLEHLOVGH6XYYOMXNXWC3AVSYSRUXK3MHWKVIQSDF7JQ2YNEF2FN");
       }
 
       const backstop = get().backstop;
