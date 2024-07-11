@@ -55,23 +55,22 @@ export const createBlendSlice: StateCreator<DataStore, [], [], BlendSlice> = (se
       // all pools in the reward zone + the request pools are loaded on the backstop
       let horizonServer = get().horizonServer();
       let pools = new Map<string, Pool>();
+      let pool = "CBYCVLEHLOVGH6XYYOMXNXWC3AVSYSRUXK3MHWKVIQSDF7JQ2YNEF2FN";
       let assetStellarMetadata = new Map<string, StellarTokenMetadata>();
-      for (let pool of Array.from(backstop.pools.keys()).reverse()) {
-        try {
-          let pool_data = await Pool.load(network, pool, latest_ledger_close);
-          for (let reserve of Array.from(pool_data.reserves.values())) {
-            if (!assetStellarMetadata.has(reserve.assetId)) {
-              let metadata = await getTokenMetadataFromTOML(horizonServer, reserve);
-              assetStellarMetadata.set(reserve.assetId, metadata);
-            }
+      try {
+        let pool_data = await Pool.load(network, pool, latest_ledger_close);
+        for (let reserve of Array.from(pool_data.reserves.values())) {
+          if (!assetStellarMetadata.has(reserve.assetId)) {
+            let metadata = await getTokenMetadataFromTOML(horizonServer, reserve);
+            assetStellarMetadata.set(reserve.assetId, metadata);
           }
-          console.log('Loaded pool data for pool ' + pool);
-          console.log(pool_data);
-          pools.set(pool, pool_data);
-        } catch (e) {
-          console.error('Unable to load pool data for pool ' + pool);
-          console.error(e);
         }
+        console.log('Loaded pool data for pool ' + pool);
+        console.log(pool_data);
+        pools.set(pool, pool_data);
+      } catch (e) {
+        console.error('Unable to load pool data for pool ' + pool);
+        console.error(e);
       }
 
       // fetch XLM, USDC, and BLND metadata if needed
