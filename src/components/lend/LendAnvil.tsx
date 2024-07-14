@@ -425,6 +425,7 @@ export const LendAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) 
                 </Row>
                 <OpaqueButton
                   onClick={() => handleSubmitTransaction(false)}
+                  //@ts-ignore
                   palette={theme.palette.primary.dark}
                   sx={{ minWidth: '108px', padding: '10px' }}
                   disabled={isSubmitDisabled}

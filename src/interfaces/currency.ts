@@ -1,4 +1,4 @@
-import { TokenType } from 'interfaces';
+import { TokenType } from "./tokens";
 
 export type CurrencyAmount = {
   currency: TokenType;
