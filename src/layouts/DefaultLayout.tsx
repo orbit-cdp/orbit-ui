@@ -4,7 +4,6 @@ import { useRouter } from 'next/router';
 import { ReactNode, useEffect } from 'react';
 import { FaucetBanner } from '../components/common/FaucetBanner';
 import { OverlayModal } from '../components/common/OverlayModal';
-import { OverlayModalTOS } from '../components/common/OverlayModalTOS';
 import { Row } from '../components/common/Row';
 import { WalletWarning } from '../components/common/WalletWarning';
 import { NavBar } from '../components/nav/NavBar';
@@ -63,7 +62,6 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
             )}
             {children}
             <OverlayModal />
-            <OverlayModalTOS />
           </Box>
         </Box>
         <Box />
