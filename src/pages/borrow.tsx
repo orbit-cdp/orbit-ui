@@ -1,18 +1,16 @@
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { Box, Link, Typography, useTheme } from '@mui/material';
+import { Typography, useTheme } from '@mui/material';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { BorrowAnvil } from '../components/borrow/BorrowAnvil';
 import { FlameIcon } from '../components/common/FlameIcon';
-import { GoBackHeader } from '../components/common/GoBackHeader';
 import { ReserveDropdown } from '../components/common/ReserveDropdown';
 import { Row } from '../components/common/Row';
 import { Section, SectionSize } from '../components/common/Section';
 import { StackedText } from '../components/common/StackedText';
+import { LendAnvil } from '../components/lend/LendAnvil';
 import { useWallet } from '../contexts/wallet';
 import { useStore } from '../store/store';
 import { getEmissionTextFromValue, toBalance, toPercentage } from '../utils/formatter';
-import { getEmissionsPerYearPerUnit, getTokenLinkFromReserve } from '../utils/token';
+import { getEmissionsPerYearPerUnit } from '../utils/token';
 
 const Borrow: NextPage = () => {
   const theme = useTheme();
@@ -20,9 +18,10 @@ const Borrow: NextPage = () => {
 
   const router = useRouter();
   const { poolId, assetId } = router.query;
-  const safePoolId = typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : '';
-  const safeAssetId = typeof assetId == 'string' && /^[0-9A-Z]{56}$/.test(assetId) ? assetId : '';
-
+  const safePoolId = 'CBYCVLEHLOVGH6XYYOMXNXWC3AVSYSRUXK3MHWKVIQSDF7JQ2YNEF2FN';
+  const safeAssetId = 'CBGO6D5Q3SIPG6QHN2MJ5LQQ6XH2SRPKEB6PLRPS3KWDDPLBMDETEZRK';
+  const xlmAssetId = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC';
+  const usdcAssetId = 'CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU';
   const poolData = useStore((state) => state.pools.get(safePoolId));
 
   const reserve = poolData?.reserves.get(safeAssetId);
@@ -31,63 +30,8 @@ const Borrow: NextPage = () => {
   const totalSupplied = reserve?.estimates.supplied || 0;
   const availableToBorrow = totalSupplied * maxUtilFraction - (reserve?.estimates.borrowed || 0);
 
-  return (
+  return poolData ? (
     <>
-      <Row>
-        <GoBackHeader name={poolData?.config.name} />
-      </Row>
-      <Row>
-        <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>
-          <ReserveDropdown action="borrow" poolId={safePoolId} activeReserveId={safeAssetId} />
-        </Section>
-      </Row>
-      <Row>
-        <Section width={SectionSize.FULL} sx={{ padding: '12px' }}>
-          <Box
-            sx={{
-              width: '100%',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '6px',
-            }}
-          >
-            <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-              <Typography variant="h5" sx={{ marginRight: '6px' }}>
-                Available
-              </Typography>
-              <Typography variant="h4" sx={{ color: theme.palette.borrow.main }}>
-                {toBalance(availableToBorrow, reserve?.config.decimals)}
-              </Typography>
-            </Box>
-            <Box>
-              <Link
-                target="_blank"
-                href={getTokenLinkFromReserve(reserve)}
-                variant="h5"
-                rel="noopener"
-                sx={{
-                  color: theme.palette.text.secondary,
-                  cursor: 'pointer',
-                  textDecoration: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  borderBottom: '.5px solid transparent',
-                  '&:hover': {
-                    borderBottom: `.5px solid ${theme.palette.text.secondary}`,
-                  },
-                }}
-              >
-                <Typography variant="h5" sx={{ color: theme.palette.text.secondary }}>
-                  {reserve?.tokenMetadata?.symbol ?? ''}
-                </Typography>
-                <OpenInNewIcon fontSize="inherit" />
-              </Link>
-            </Box>
-          </Box>
-        </Section>
-      </Row>
       <Row>
         <Section
           width={SectionSize.THIRD}
@@ -131,9 +75,19 @@ const Borrow: NextPage = () => {
         </Section>
       </Row>
       <Row>
-        <BorrowAnvil poolId={safePoolId} assetId={safeAssetId} />
+        <Section width={SectionSize.FULL} sx={{ marginTop: '12px', marginBottom: '12px' }}>
+          <ReserveDropdown action="borrow" poolId={safePoolId} activeReserveId={safeAssetId} />
+        </Section>
+      </Row>
+
+      <Row>
+        <LendAnvil poolId={safePoolId} assetId={xlmAssetId} />
       </Row>
     </>
+  ) : (
+    <Typography variant="h3" sx={{ color: theme.palette.text.secondary }}>
+      {connected ? 'Loading...' : 'Please connect your wallet'}
+    </Typography>
   );
 };
 

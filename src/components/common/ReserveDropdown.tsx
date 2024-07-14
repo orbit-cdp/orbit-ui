@@ -1,7 +1,7 @@
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Box, Menu, MenuItem, Typography, useTheme } from '@mui/material';
 import { useRouter } from 'next/router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useStore } from '../../store/store';
 import { CustomButton } from './CustomButton';
 import { PoolComponentProps } from './PoolComponentProps';
@@ -19,6 +19,10 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
 
   const reserves = useStore((state) => state.pools.get(poolId)?.reserves);
   const activeReserve = reserves?.get(activeReserveId);
+
+  useEffect(() => {
+    console.log(activeReserveId);
+  }, [activeReserve]);
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -76,29 +80,59 @@ export const ReserveDropdown: React.FC<ReserveDropdown> = ({ action, poolId, act
           sx: { width: anchorEl && anchorEl.offsetWidth },
         }}
       >
-        {Array.from(reserves?.values() ?? []).map((reserve) => (
-          <MenuItem
-            key={reserve.assetId}
-            onClick={() => handleClickReserve(reserve.assetId)}
-            sx={{
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'flex-start',
-              alignItems: 'center',
-              borderRadius: '5px',
-              paddingLeft: '6px',
-            }}
-          >
-            <TokenIcon
-              symbol={reserve?.tokenMetadata?.symbol ?? 'unknown'}
-              assetId={reserve.assetId}
-              sx={{ height: '30px', width: '30px' }}
-            />
-            <Typography variant="h3" sx={{ marginLeft: '12px' }}>
-              {`${capitalizedAction} ${reserve?.tokenMetadata?.symbol ?? 'unknown'}`}
-            </Typography>
-          </MenuItem>
-        ))}
+        {action == 'supply'
+          ? Array.from(reserves?.values() ?? []).map(
+              (reserve) =>
+                reserve.config.l_factor == 0 && (
+                  <MenuItem
+                    key={reserve.assetId}
+                    onClick={() => handleClickReserve(reserve.assetId)}
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      justifyContent: 'flex-start',
+                      alignItems: 'center',
+                      borderRadius: '5px',
+                      paddingLeft: '6px',
+                    }}
+                  >
+                    <TokenIcon
+                      symbol={reserve?.tokenMetadata?.symbol ?? 'unknown'}
+                      assetId={reserve.assetId}
+                      sx={{ height: '30px', width: '30px' }}
+                    />
+                    <Typography variant="h3" sx={{ marginLeft: '12px' }}>
+                      {`${capitalizedAction} ${reserve?.tokenMetadata?.symbol ?? 'unknown'}`}
+                    </Typography>
+                  </MenuItem>
+                )
+            )
+          : Array.from(reserves?.values() ?? []).map(
+              (reserve) =>
+                reserve.config.l_factor > 0 && (
+                  <MenuItem
+                    key={reserve.assetId}
+                    onClick={() => handleClickReserve(reserve.assetId)}
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      justifyContent: 'flex-start',
+                      alignItems: 'center',
+                      borderRadius: '5px',
+                      paddingLeft: '6px',
+                    }}
+                  >
+                    <TokenIcon
+                      symbol={reserve?.tokenMetadata?.symbol ?? 'unknown'}
+                      assetId={reserve.assetId}
+                      sx={{ height: '30px', width: '30px' }}
+                    />
+                    <Typography variant="h3" sx={{ marginLeft: '12px' }}>
+                      {`${capitalizedAction} ${reserve?.tokenMetadata?.symbol ?? 'unknown'}`}
+                    </Typography>
+                  </MenuItem>
+                )
+            )}
       </Menu>
     </>
   );

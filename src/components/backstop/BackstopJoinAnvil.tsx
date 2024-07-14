@@ -356,7 +356,7 @@ export const BackstopJoinAnvil = () => {
             borderRadius: '5px',
             padding: '12px',
             marginBottom: '12px',
-            boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.25)',
+            boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.1)',
           }}
         >
           <Typography variant="body2" sx={{ marginLeft: '12px', marginBottom: '12px' }}>

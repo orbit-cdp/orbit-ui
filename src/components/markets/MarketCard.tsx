@@ -19,7 +19,6 @@ export const MarketCard: React.FC<PoolComponentProps> = ({ poolId, sx }) => {
 
   const poolData = useStore((state) => state.pools.get(poolId));
   const backstopPoolData = useStore((state) => state.backstop?.pools.get(poolId));
-  console.log('poolData', useStore((state) => state.backstop));
 
   const [expand, setExpand] = useState(false);
   const [rotateArrow, setRotateArrow] = useState(false);

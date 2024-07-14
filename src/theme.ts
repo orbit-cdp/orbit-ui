@@ -51,12 +51,12 @@ const theme: Theme = createTheme({
     mode: 'dark',
     tonalOffset: 0,
     background: {
-      default: '#191B1F',
-      paper: '#212429E5',
+      default: '#F1F3F4',
+      paper: '#ffffff',
     },
     primary: {
-      main: '#36B04A',
-      opaque: '#36B04A26',
+      main: '#185180',
+      opaque: '#b3e4ff',
       contrastText: 'white',
     },
     secondary: {
@@ -68,8 +68,8 @@ const theme: Theme = createTheme({
       opaque: '#00C4EF26',
     },
     borrow: {
-      main: '#FF8A00',
-      opaque: '#FF8A0026',
+      main: '#185180',
+      opaque: '#ffffff',
     },
     backstop: {
       main: '#E16BFF',
@@ -80,7 +80,7 @@ const theme: Theme = createTheme({
       opaque: '#2775C930',
     },
     accent: {
-      main: '#191B1F',
+      main: '#ffffff',
       opaque: '#191B1F',
     },
     menu: {
@@ -88,12 +88,12 @@ const theme: Theme = createTheme({
       light: '#2E313893',
     },
     text: {
-      primary: '#FFFFFF',
+      primary: '#185180',
       secondary: '#979797',
     },
     warning: {
-      main: '#FFCB00',
-      opaque: '#FFCB0026',
+      main: '#fc1500',
+      opaque: '#fc150026',
     },
     error: {
       main: '#FF3366',

@@ -55,7 +55,7 @@ export const createBlendSlice: StateCreator<DataStore, [], [], BlendSlice> = (se
       // all pools in the reward zone + the request pools are loaded on the backstop
       let horizonServer = get().horizonServer();
       let pools = new Map<string, Pool>();
-      let pool = "CBYCVLEHLOVGH6XYYOMXNXWC3AVSYSRUXK3MHWKVIQSDF7JQ2YNEF2FN";
+      let pool = 'CBYCVLEHLOVGH6XYYOMXNXWC3AVSYSRUXK3MHWKVIQSDF7JQ2YNEF2FN';
       let assetStellarMetadata = new Map<string, StellarTokenMetadata>();
       try {
         let pool_data = await Pool.load(network, pool, latest_ledger_close);
@@ -65,8 +65,6 @@ export const createBlendSlice: StateCreator<DataStore, [], [], BlendSlice> = (se
             assetStellarMetadata.set(reserve.assetId, metadata);
           }
         }
-        console.log('Loaded pool data for pool ' + pool);
-        console.log(pool_data);
         pools.set(pool, pool_data);
       } catch (e) {
         console.error('Unable to load pool data for pool ' + pool);

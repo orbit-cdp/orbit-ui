@@ -6,7 +6,7 @@ import {
   SubmitArgs,
   UserPositions,
 } from '@blend-capital/blend-sdk';
-import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
+import { Box, CircularProgress, Slider, TextField, Typography, useTheme } from '@mui/material';
 import { SorobanRpc } from '@stellar/stellar-sdk';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
@@ -29,6 +29,10 @@ import { TxOverview } from '../common/TxOverview';
 import { Value } from '../common/Value';
 import { ValueChange } from '../common/ValueChange';
 
+const XLM_ADDRESS = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC';
+
+const USDC_ADDRESS = 'CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU';
+
 export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }) => {
   const theme = useTheme();
   const { viewType } = useSettings();
@@ -41,6 +45,8 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
   const userAccount = useStore((state) => state.account);
 
   const [toBorrow, setToBorrow] = useState<string>('');
+  const [collateralRatio, setCollateralRatio] = useState<number>(110);
+  const [collateralAmount, setCollateralAmount] = useState<string>('0');
   const [simResponse, setSimResponse] = useState<SorobanRpc.Api.SimulateTransactionResponse>();
   const [parsedSimResult, setParsedSimResult] = useState<UserPositions>();
   const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
@@ -147,6 +153,11 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
             address: reserve.assetId,
             request_type: RequestType.Borrow,
           },
+          {
+            amount: scaleInputToBigInt(toBorrow, reserve.config.decimals),
+            request_type: RequestType.SupplyCollateral,
+            address: reserve.assetId,
+          },
         ],
       };
       return await poolSubmit(poolId, submitArgs, sim);
@@ -159,6 +170,24 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
       await createTrustline(reserveAsset);
     }
   }
+
+  const handleCollateralChange = (event: any, value: number | number[]) => {
+    if (typeof value === 'number') {
+      const fixedValues = [110, 200, 300, 500];
+      const closestFixedValue = fixedValues.reduce((prev, curr) =>
+        Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
+      );
+
+      if (fixedValues.includes(value)) {
+        setCollateralRatio(value);
+      } else {
+        setCollateralRatio(value);
+      }
+
+      const newCollateralAmount = ((Number(toBorrow) * value) / 100).toFixed(2);
+      setCollateralAmount(newCollateralAmount);
+    }
+  };
 
   return (
     <Row>
@@ -173,7 +202,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
             borderRadius: '5px',
             padding: '12px',
             marginBottom: '12px',
-            boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.25)',
+            boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.1)',
           }}
         >
           <Typography variant="body2" sx={{ marginLeft: '12px', marginBottom: '12px' }}>
@@ -196,7 +225,7 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
                 setLoadingEstimate(true);
               }}
               palette={theme.palette.borrow}
-              sx={{ width: '100%' }}
+              sx={{ width: '100%', background: '#F1F3F4' }}
             >
               <InputButton
                 palette={theme.palette.borrow}
@@ -230,6 +259,81 @@ export const BorrowAnvil: React.FC<ReserveComponentProps> = ({ poolId, assetId }
                 Borrow
               </OpaqueButton>
             )}
+          </Box>
+        </Box>
+        <Box
+          sx={{
+            background: theme.palette.background.default,
+            width: '100%',
+            borderRadius: '5px',
+            padding: '12px',
+            marginBottom: '12px',
+            boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          <Typography variant="body2" sx={{ marginLeft: '12px', marginBottom: '12px' }}>
+            Collateral Ratio
+          </Typography>
+          <Box sx={{ padding: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Slider
+              value={collateralRatio}
+              onChange={handleCollateralChange}
+              aria-labelledby="discrete-slider"
+              valueLabelDisplay="auto"
+              step={1}
+              marks={[
+                { value: 110, label: '110%' },
+                { value: 200, label: '200%' },
+                { value: 300, label: '300%' },
+                { value: 500, label: '500%' },
+              ]}
+              min={110}
+              max={500}
+              sx={{
+                flexGrow: 1,
+                marginRight: '12px',
+                '& .MuiSlider-mark': {
+                  height: '12px',
+                  width: '12px',
+                  borderRadius: '50%',
+                  backgroundColor: theme.palette.primary.main,
+                },
+                '& .MuiSlider-markLabel': {
+                  marginTop: '8px',
+                },
+              }}
+            />
+            <TextField
+              label="CR%"
+              value={`${collateralRatio}%`}
+              InputProps={{
+                readOnly: true,
+              }}
+              variant="outlined"
+              sx={{ minWidth: '120px' }}
+            />
+          </Box>
+        </Box>
+
+        <Box
+          sx={{
+            background: theme.palette.background.default,
+            width: '100%',
+            borderRadius: '5px',
+            padding: '12px',
+            marginBottom: '12px',
+            boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          <Typography variant="body2" sx={{ marginLeft: '12px', marginBottom: '12px' }}>
+            Info Fields
+          </Typography>
+          <Box sx={{ marginLeft: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <Value title="Collateral Ratio" value={`${collateralRatio}%`} />
+            <Value title="Debt" value={`${toBorrow} ${symbol}`} />
+            <Value title="Liquidation Price" value={`$${(Number(toBorrow) / 0.8).toFixed(2)}`} />
+            <Value title="Interest Rate" value="5%" />
+            <Value title="Collateral Value" value={`$${collateralAmount}`} />
           </Box>
         </Box>
         {!isError && (

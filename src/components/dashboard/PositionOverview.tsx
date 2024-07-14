@@ -246,7 +246,6 @@ export const PositionOverview: React.FC<PoolComponentProps> = ({ poolId }) => {
               <BorrowCapRing poolId={poolId} />
             </Box>
           </Box>
-          <Box sx={{ width: '100%' }}>{renderClaimButton()}</Box>
         </Row>
       )}
     </>

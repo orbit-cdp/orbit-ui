@@ -22,6 +22,7 @@ export function AnvilAlert({ severity, message, extraContent }: AnvilAlertProps)
         sx={{
           display: 'flex',
           justifyContent: 'flex-start',
+          background: 'white',
           alignItems: !!extraContent ? 'start' : 'center',
           width: '100%',
         }}

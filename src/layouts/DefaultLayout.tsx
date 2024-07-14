@@ -21,10 +21,13 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
     typeof poolId == 'string' && /^[0-9A-Z]{56}$/.test(poolId) ? poolId : undefined;
 
   const loadBlendData = useStore((state) => state.loadBlendData);
+  const rewardZone = useStore((state) => state.backstop?.config?.rewardZone ?? []);
+
+  const isTestnet = process.env.NEXT_PUBLIC_PASSPHRASE === Networks.TESTNET;
 
   useEffect(() => {
     const update = async () => {
-      await loadBlendData(false, "CCG4HM7SML3CUKWO2WOXDR2HCH5EMIIYVNPFB2EMQPWI6KURL46XB54H", connected ? walletAddress : undefined);
+      await loadBlendData(false, undefined, connected ? walletAddress : undefined);
     };
     update();
     const refreshInterval = setInterval(async () => {
@@ -32,6 +35,9 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
     }, 25 * 1000);
     return () => clearInterval(refreshInterval);
   }, [loadBlendData, connected, walletAddress]);
+
+  // get the last (oldest) pool in the reward zone
+  const faucet_pool = rewardZone.length > 0 ? rewardZone[rewardZone.length - 1] : undefined;
 
   if (safePoolId && safePoolId !== lastPool) {
     setLastPool(safePoolId);
@@ -50,6 +56,11 @@ export default function DefaultLayout({ children }: { children: ReactNode }) {
             <Row>
               <WalletWarning />
             </Row>
+            {faucet_pool && isTestnet && (
+              <Row>
+                <FaucetBanner poolId={faucet_pool} />
+              </Row>
+            )}
             {children}
             <OverlayModal />
             <OverlayModalTOS />

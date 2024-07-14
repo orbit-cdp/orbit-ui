@@ -43,7 +43,7 @@ export const BorrowPositionCard: React.FC<BorrowPositionCardProps> = ({
         backgroundColor: viewType == ViewType.MOBILE ? theme.palette.background.paper : 'inherit',
         padding: viewType == ViewType.MOBILE ? '1rem' : '0px',
         borderRadius: viewType == ViewType.MOBILE ? '6px' : '0px',
-        boxShadow: viewType === ViewType.MOBILE ? '0px 4px 4px rgba(0, 0, 0, 0.25)' : 'none',
+        boxShadow: viewType === ViewType.MOBILE ? '0px 4px 4px rgba(0, 0, 0, 0.1)' : 'none',
       }}
       onClick={() => {
         if (viewType === ViewType.MOBILE) {

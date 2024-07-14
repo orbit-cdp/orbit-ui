@@ -83,11 +83,6 @@ export const NavMenu = () => {
               GitHub
             </MenuItem>
           </a>
-          <Link href="/termsofservice">
-            <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
-              Terms of Service
-            </MenuItem>
-          </Link>
         </Menu>
       )}
       {viewType !== ViewType.REGULAR && (
@@ -137,11 +132,6 @@ export const NavMenu = () => {
               GitHub
             </MenuItem>
           </a>
-          <Link href="/termsofservice">
-            <MenuItem onClick={handleClose} sx={{ color: '#FFFFFF' }}>
-              Terms of Service
-            </MenuItem>
-          </Link>
         </Menu>
       )}
 
